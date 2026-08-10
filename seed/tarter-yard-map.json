@@ -1,0 +1,3391 @@
+{
+  "version": 5,
+  "updated": "2026-08-03T15:30:34.081Z",
+  "groups": [
+    {
+      "id": "A",
+      "name": "General stock (Door 5/6/7)",
+      "color": "#C0473B"
+    },
+    {
+      "id": "B",
+      "name": "Water troughs — main row",
+      "color": "#7e8681"
+    },
+    {
+      "id": "C",
+      "name": "Troughs & round bale",
+      "color": "#3E9E6E"
+    },
+    {
+      "id": "D",
+      "name": "Gates & panels",
+      "color": "#B5793C"
+    },
+    {
+      "id": "E",
+      "name": "Gates & bow gates",
+      "color": "#7E6CC4"
+    },
+    {
+      "id": "G",
+      "name": "Bow gates & sheeted",
+      "color": "#4FA3B5"
+    },
+    {
+      "id": "H",
+      "name": "Economy gates — long row",
+      "color": "#A9973C"
+    },
+    {
+      "id": "I",
+      "name": "Feeders / MTO",
+      "color": "#5B8DEF"
+    },
+    {
+      "id": "J",
+      "name": "Gate MTO (feeders)",
+      "color": "#7A8794"
+    },
+    {
+      "id": "K",
+      "name": "Gate MTO (KP / dividers)",
+      "color": "#6B7DB3"
+    },
+    {
+      "id": "L",
+      "name": "3 point",
+      "color": "#C25A4B"
+    },
+    {
+      "id": "M",
+      "name": "Water wagons",
+      "color": "#3D9BB0"
+    },
+    {
+      "id": "N",
+      "name": "Rodeo MTO",
+      "color": "#9C6BB0"
+    },
+    {
+      "id": "O",
+      "name": "Open field",
+      "color": "#6B8E4E"
+    },
+    {
+      "id": "P",
+      "name": "Smoker shed",
+      "color": "#B08A3C"
+    },
+    {
+      "id": "T",
+      "name": "Tank plant — new revision (Doors 8–10)",
+      "color": "#C98A2E"
+    },
+    {
+      "id": "X",
+      "name": "Added products",
+      "color": "#5b6673"
+    }
+  ],
+  "tiles": [
+    {
+      "sku": "1001361",
+      "x": -300,
+      "y": 526,
+      "g": "A"
+    },
+    {
+      "sku": "1002682",
+      "x": -228,
+      "y": 526,
+      "g": "A"
+    },
+    {
+      "sku": "1001357",
+      "x": -156,
+      "y": 526,
+      "g": "A"
+    },
+    {
+      "sku": "1002625",
+      "x": -300,
+      "y": 566,
+      "g": "A"
+    },
+    {
+      "sku": "1001356",
+      "x": -228,
+      "y": 566,
+      "g": "A"
+    },
+    {
+      "sku": "1001359",
+      "x": -156,
+      "y": 566,
+      "g": "A"
+    },
+    {
+      "sku": "1001353",
+      "x": -300,
+      "y": 606,
+      "g": "A"
+    },
+    {
+      "sku": "1001358",
+      "x": -228,
+      "y": 606,
+      "g": "A"
+    },
+    {
+      "sku": "1002627",
+      "x": -156,
+      "y": 606,
+      "g": "A"
+    },
+    {
+      "sku": "1002623",
+      "x": -300,
+      "y": 646,
+      "g": "A"
+    },
+    {
+      "sku": "1001355",
+      "x": -228,
+      "y": 646,
+      "g": "A"
+    },
+    {
+      "sku": "1002621",
+      "x": -156,
+      "y": 646,
+      "g": "A"
+    },
+    {
+      "sku": "1002626",
+      "x": -300,
+      "y": 686,
+      "g": "A"
+    },
+    {
+      "sku": "ECR12",
+      "x": 29,
+      "y": 777,
+      "g": "A",
+      "w": 66,
+      "h": 34
+    },
+    {
+      "sku": "ECGR12",
+      "x": 29,
+      "y": 817,
+      "g": "A",
+      "w": 66,
+      "h": 34
+    },
+    {
+      "sku": "ECG12T",
+      "x": 29,
+      "y": 857,
+      "g": "A",
+      "w": 66,
+      "h": 34
+    },
+    {
+      "sku": "1002622",
+      "x": 430,
+      "y": 600,
+      "g": "P"
+    },
+    {
+      "sku": "BBTHF",
+      "x": -385,
+      "y": 769,
+      "g": "I"
+    },
+    {
+      "sku": "FFCT",
+      "x": -745,
+      "y": 769,
+      "g": "I"
+    },
+    {
+      "sku": "RFM",
+      "x": -601,
+      "y": 769,
+      "g": "I"
+    },
+    {
+      "sku": "RHF",
+      "x": -889,
+      "y": 769,
+      "g": "I"
+    },
+    {
+      "sku": "RHFG",
+      "x": -673,
+      "y": 769,
+      "g": "I"
+    },
+    {
+      "sku": "MGF",
+      "x": -313,
+      "y": 769,
+      "g": "I"
+    },
+    {
+      "sku": "CHAS",
+      "x": -1781,
+      "y": 806,
+      "g": "N"
+    },
+    {
+      "sku": "CH9",
+      "x": -1781,
+      "y": 1437,
+      "g": "N"
+    },
+    {
+      "sku": "CHDE-3",
+      "x": -1788,
+      "y": 1129,
+      "g": "N"
+    },
+    {
+      "sku": "CHDE-2",
+      "x": -1788,
+      "y": 1083,
+      "g": "N"
+    },
+    {
+      "sku": "CHDE-1",
+      "x": -1781,
+      "y": 1036,
+      "g": "N"
+    },
+    {
+      "sku": "CHOS-1",
+      "x": -1782,
+      "y": 991,
+      "g": "N"
+    },
+    {
+      "sku": "CHBX1",
+      "x": -1787,
+      "y": 943,
+      "g": "N"
+    },
+    {
+      "sku": "CH8",
+      "x": -1787,
+      "y": 1395,
+      "g": "N"
+    },
+    {
+      "sku": "CH7-12",
+      "x": -1795,
+      "y": 1219,
+      "g": "N"
+    },
+    {
+      "sku": "CH7-10",
+      "x": -1802,
+      "y": 1265,
+      "g": "N"
+    },
+    {
+      "sku": "CH7-8",
+      "x": -1791,
+      "y": 1174,
+      "g": "N"
+    },
+    {
+      "sku": "CH5",
+      "x": -1787,
+      "y": 899,
+      "g": "N"
+    },
+    {
+      "sku": "CH3",
+      "x": -1785,
+      "y": 855,
+      "g": "N"
+    },
+    {
+      "sku": "CH2A",
+      "x": -1804,
+      "y": 1310,
+      "g": "N"
+    },
+    {
+      "sku": "CH1",
+      "x": -1795,
+      "y": 1352,
+      "g": "N"
+    },
+    {
+      "sku": "WT214",
+      "x": 922,
+      "y": 727,
+      "g": "B",
+      "w": 55,
+      "h": 67
+    },
+    {
+      "sku": "WT214CL",
+      "x": 983,
+      "y": 727,
+      "g": "B",
+      "w": 55,
+      "h": 67
+    },
+    {
+      "sku": "WT226",
+      "x": 1044,
+      "y": 727,
+      "g": "B",
+      "w": 55,
+      "h": 67
+    },
+    {
+      "sku": "WT226CL",
+      "x": 1105,
+      "y": 727,
+      "g": "B",
+      "w": 55,
+      "h": 67
+    },
+    {
+      "sku": "WT328",
+      "x": 1166,
+      "y": 727,
+      "g": "B",
+      "w": 55,
+      "h": 67
+    },
+    {
+      "sku": "WTR82",
+      "x": 1227,
+      "y": 727,
+      "g": "B",
+      "w": 55,
+      "h": 67
+    },
+    {
+      "sku": "WTR82CL",
+      "x": 1288,
+      "y": 727,
+      "g": "B",
+      "w": 55,
+      "h": 67
+    },
+    {
+      "sku": "WTR62",
+      "x": 1349,
+      "y": 727,
+      "g": "B",
+      "w": 55,
+      "h": 67
+    },
+    {
+      "sku": "WTR62CL",
+      "x": 1410,
+      "y": 727,
+      "g": "B",
+      "w": 55,
+      "h": 67
+    },
+    {
+      "sku": "RBGP318",
+      "x": 1471,
+      "y": 727,
+      "g": "B",
+      "w": 55,
+      "h": 67
+    },
+    {
+      "sku": "CHWW-1500",
+      "x": -1753,
+      "y": 1590,
+      "g": "M"
+    },
+    {
+      "sku": "CHWW-1000",
+      "x": -1755,
+      "y": 1638,
+      "g": "M"
+    },
+    {
+      "sku": "CHWW-500",
+      "x": -1754,
+      "y": 1688,
+      "g": "M"
+    },
+    {
+      "sku": "FR3CL",
+      "x": 2944,
+      "y": 522,
+      "g": "O"
+    },
+    {
+      "sku": "WT224",
+      "x": 740,
+      "y": 864,
+      "g": "B"
+    },
+    {
+      "sku": "WT224CL",
+      "x": 738,
+      "y": 905,
+      "g": "B"
+    },
+    {
+      "sku": "WT216",
+      "x": 812,
+      "y": 864,
+      "g": "B"
+    },
+    {
+      "sku": "WT216CL",
+      "x": 810,
+      "y": 905,
+      "g": "B"
+    },
+    {
+      "sku": "WT223",
+      "x": 884,
+      "y": 864,
+      "g": "B"
+    },
+    {
+      "sku": "GCT21",
+      "x": 956,
+      "y": 864,
+      "g": "B"
+    },
+    {
+      "sku": "GCT21CL",
+      "x": 1028,
+      "y": 864,
+      "g": "B"
+    },
+    {
+      "sku": "WT225",
+      "x": 1100,
+      "y": 864,
+      "g": "B"
+    },
+    {
+      "sku": "WTR42",
+      "x": 1172,
+      "y": 864,
+      "g": "B"
+    },
+    {
+      "sku": "WT228",
+      "x": 1244,
+      "y": 864,
+      "g": "B"
+    },
+    {
+      "sku": "WT328CL",
+      "x": 1316,
+      "y": 864,
+      "g": "B"
+    },
+    {
+      "sku": "GUT22",
+      "x": 1676,
+      "y": 864,
+      "g": "B"
+    },
+    {
+      "sku": "GCT21S",
+      "x": 1388,
+      "y": 864,
+      "g": "B"
+    },
+    {
+      "sku": "WTR32",
+      "x": 1460,
+      "y": 864,
+      "g": "B"
+    },
+    {
+      "sku": "WT214S",
+      "x": 1532,
+      "y": 864,
+      "g": "B"
+    },
+    {
+      "sku": "FR3",
+      "x": 1604,
+      "y": 864,
+      "g": "B"
+    },
+    {
+      "sku": "RBGP216",
+      "x": 2424,
+      "y": 854,
+      "g": "B"
+    },
+    {
+      "sku": "RBGP214",
+      "x": 2504,
+      "y": 856,
+      "g": "B"
+    },
+    {
+      "sku": "ECGR10CL",
+      "x": 882,
+      "y": 905,
+      "g": "D"
+    },
+    {
+      "sku": "EWGR4CL",
+      "x": 1551,
+      "y": 905,
+      "g": "D"
+    },
+    {
+      "sku": "EWGR6CL",
+      "x": 1623,
+      "y": 905,
+      "g": "D"
+    },
+    {
+      "sku": "EWGR64CL",
+      "x": 1695,
+      "y": 905,
+      "g": "D"
+    },
+    {
+      "sku": "ECG10T",
+      "x": 441,
+      "y": 1340,
+      "g": "D"
+    },
+    {
+      "sku": "ECG16T",
+      "x": 369,
+      "y": 1340,
+      "g": "D"
+    },
+    {
+      "sku": "6EG4E",
+      "x": 1017,
+      "y": 1340,
+      "g": "D"
+    },
+    {
+      "sku": "6EG8E",
+      "x": 1161,
+      "y": 1340,
+      "g": "D"
+    },
+    {
+      "sku": "6EG6E",
+      "x": 1089,
+      "y": 1340,
+      "g": "D"
+    },
+    {
+      "sku": "6EG12",
+      "x": 801,
+      "y": 1340,
+      "g": "D"
+    },
+    {
+      "sku": "6EG10",
+      "x": 729,
+      "y": 1340,
+      "g": "D"
+    },
+    {
+      "sku": "6EG4",
+      "x": 513,
+      "y": 1340,
+      "g": "D"
+    },
+    {
+      "sku": "6EG16",
+      "x": 945,
+      "y": 1340,
+      "g": "D"
+    },
+    {
+      "sku": "6EG8",
+      "x": 657,
+      "y": 1340,
+      "g": "D"
+    },
+    {
+      "sku": "6EG14",
+      "x": 873,
+      "y": 1340,
+      "g": "D"
+    },
+    {
+      "sku": "6EG6",
+      "x": 585,
+      "y": 1340,
+      "g": "D"
+    },
+    {
+      "sku": "WFGGSC12CL",
+      "x": 699,
+      "y": 1385,
+      "g": "D",
+      "w": 76,
+      "h": 35
+    },
+    {
+      "sku": "WFGGSC4CL",
+      "x": 371,
+      "y": 1385,
+      "g": "D",
+      "w": 76,
+      "h": 35
+    },
+    {
+      "sku": "WFGGSC4",
+      "x": 945,
+      "y": 1385,
+      "g": "D"
+    },
+    {
+      "sku": "WFGGSC10CL",
+      "x": 617,
+      "y": 1385,
+      "g": "D",
+      "w": 76,
+      "h": 35
+    },
+    {
+      "sku": "WFGGSC10",
+      "x": 1161,
+      "y": 1385,
+      "g": "D"
+    },
+    {
+      "sku": "WFGGSC8",
+      "x": 1089,
+      "y": 1385,
+      "g": "D"
+    },
+    {
+      "sku": "WFGGSC6",
+      "x": 1017,
+      "y": 1385,
+      "g": "D"
+    },
+    {
+      "sku": "WFGGSC14CL",
+      "x": 781,
+      "y": 1385,
+      "g": "D",
+      "w": 76,
+      "h": 35
+    },
+    {
+      "sku": "WFGGSC8CL",
+      "x": 535,
+      "y": 1385,
+      "g": "D",
+      "w": 76,
+      "h": 35
+    },
+    {
+      "sku": "WFGGSC6CL",
+      "x": 453,
+      "y": 1385,
+      "g": "D",
+      "w": 76,
+      "h": 35
+    },
+    {
+      "sku": "WFGGSC16CL",
+      "x": 863,
+      "y": 1385,
+      "g": "D",
+      "w": 76,
+      "h": 35
+    },
+    {
+      "sku": "BSBL",
+      "x": -1037,
+      "y": 2391,
+      "g": "L",
+      "w": 69,
+      "h": 33,
+      "img": "https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/tobkgjmjd55bd8j2dlta6rou1f/R-ZAwkNhP0Xp4139z-8aKtswTwY/m1200/1200"
+    },
+    {
+      "sku": "CA20BL",
+      "x": -1282,
+      "y": 1859,
+      "g": "L",
+      "w": 71,
+      "h": 35,
+      "img": "https://nrsworld.com/cdn/shop/files/177693-default-l.jpg?v=1759411499&width=800"
+    },
+    {
+      "sku": "HDBPCL",
+      "x": -959,
+      "y": 2458,
+      "g": "L",
+      "img": "https://tarterparts.com/cdn/shop/files/HDBP_5000x.png?v=1708722770"
+    },
+    {
+      "sku": "MBSSSCCL",
+      "x": -1037,
+      "y": 2471,
+      "g": "L",
+      "w": 69,
+      "h": 33,
+      "img": "https://media.tractorsupply.com/is/image/TractorSupplyCompany/2122476?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"
+    },
+    {
+      "sku": "PFQA12",
+      "x": -1037,
+      "y": 1942,
+      "g": "L",
+      "w": 69,
+      "h": 33,
+      "img": "https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/fmnm6emi1p0ht804gosu21ne4n/QfTqXA1iaDR9jkEyp7OaDavJdYc/m1200/1200"
+    },
+    {
+      "sku": "HF30BL",
+      "x": -1037,
+      "y": 1901,
+      "g": "L",
+      "w": 69,
+      "h": 33,
+      "img": "https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/5vond08vm57fn2pqg19baqbc6k/lj5iD3LVnJYmvBQjSVERKRR-Ru0/m800/800"
+    },
+    {
+      "sku": "BPCL",
+      "x": -1282,
+      "y": 1899,
+      "g": "L",
+      "w": 71,
+      "h": 35,
+      "img": "https://media.tractorsupply.com/is/image/TractorSupplyCompany/2128147?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"
+    },
+    {
+      "sku": "CACL",
+      "x": -1037,
+      "y": 2106,
+      "g": "L",
+      "w": 69,
+      "h": 33,
+      "img": "https://media.tractorsupply.com/is/image/TractorSupplyCompany/2089407?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"
+    },
+    {
+      "sku": "QASS",
+      "x": -1037,
+      "y": 2065,
+      "g": "L",
+      "w": 69,
+      "h": 33,
+      "img": "https://tarterparts.com/cdn/shop/collections/QASS__Front-AttachSuperBaleSpear_S-01_1200x.jpg?v=1664894129"
+    },
+    {
+      "sku": "FC201BL",
+      "x": -1037,
+      "y": 2229,
+      "g": "L",
+      "w": 69,
+      "h": 33,
+      "img": "https://tarterparts.com/cdn/shop/collections/FC201BL_1RowFieldCultivator200Series_S-01_1200x.jpg?v=1663271286"
+    },
+    {
+      "sku": "PFQA",
+      "x": -1037,
+      "y": 2024,
+      "g": "L",
+      "w": 69,
+      "h": 33,
+      "img": "https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/22kh3p9fhl6chcp9ocnloemc1q/8p4P87evDZ0T6kaUNXTtYeZfHmA/m1200/1200"
+    },
+    {
+      "sku": "HF20BL",
+      "x": -1037,
+      "y": 1860,
+      "g": "L",
+      "w": 69,
+      "h": 33,
+      "img": "https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/terml37tep3452occqi9fep75r/pOM9PswtpuTpwuuI1vAeoyCoW6Y/m800/800"
+    },
+    {
+      "sku": "SSTCL",
+      "x": -1037,
+      "y": 2351,
+      "g": "L",
+      "w": 69,
+      "h": 33,
+      "img": "https://media.tractorsupply.com/is/image/TractorSupplyCompany/2120288?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"
+    },
+    {
+      "sku": "ATVCD",
+      "x": -959,
+      "y": 2139,
+      "g": "L",
+      "img": "https://dam.generac.com/ImConvServlet/imconv/d727df186ab0d493a119194cd199e8a427fa6804/440Wx440H?hybrisId=Hybris&assetDescr=C00000000635"
+    },
+    {
+      "sku": "DH105BL",
+      "x": -959,
+      "y": 2259,
+      "g": "L",
+      "img": "https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/jbmfav7bsp7nj9sbnd92crip7f/WkgYsp1NgkXrnxbPm_IMHbXQwW4/m1200/1200"
+    },
+    {
+      "sku": "DSC5CL",
+      "x": -1037,
+      "y": 2311,
+      "g": "L",
+      "w": 69,
+      "h": 33,
+      "img": "https://media.tractorsupply.com/is/image/TractorSupplyCompany/2122492?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"
+    },
+    {
+      "sku": "LRWK",
+      "x": -959,
+      "y": 2019,
+      "g": "L",
+      "img": "https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/9ud6k19h316v1dvj49m9v76p77/wWR0aBEM_1s3XPh4uodR32US4kw/m800/800"
+    },
+    {
+      "sku": "WFSCL",
+      "x": -959,
+      "y": 2099,
+      "g": "L",
+      "img": "https://media.tractorsupply.com/is/image/TractorSupplyCompany/2130259?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"
+    },
+    {
+      "sku": "WS20BL",
+      "x": -1282,
+      "y": 1979,
+      "g": "L",
+      "w": 71,
+      "h": 35,
+      "img": "https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/ke04rl13od4m742mr6401r8117/6mOzJjO9qg81k7KFS2MW5-oAhfI/m800/800"
+    },
+    {
+      "sku": "BP20BL",
+      "x": -959,
+      "y": 2179,
+      "g": "L",
+      "img": "https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/7jq4afjkq15g5e7sge7ofr6p2n/eHPhh3ZQwTo36h2X8n9o0cLDwjg/m1200/1200"
+    },
+    {
+      "sku": "BP30BL",
+      "x": -959,
+      "y": 2219,
+      "g": "L",
+      "img": "https://nrsworld.com/cdn/shop/files/177687-default-l.jpg?v=1759411461&width=800"
+    },
+    {
+      "sku": "TM20BL",
+      "x": -959,
+      "y": 1859,
+      "g": "L",
+      "img": "https://nrsworld.com/cdn/shop/files/181538-default-l_1200x1200_crop_center.jpg?v=1759434584"
+    },
+    {
+      "sku": "TMCL",
+      "x": -959,
+      "y": 1899,
+      "g": "L",
+      "img": "https://media.tractorsupply.com/is/image/TractorSupplyCompany/2780703?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"
+    },
+    {
+      "sku": "DH206BL",
+      "x": -959,
+      "y": 2299,
+      "g": "L",
+      "img": "https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/dmgiqin7h56o15fskrqop6390m/OwC3E2SuLm5Zpl8_dWu1KGhaQxA/m1200/1200"
+    },
+    {
+      "sku": "DH307BL",
+      "x": -959,
+      "y": 2378,
+      "g": "L",
+      "img": "https://www.northerntool.com/products/602/images/6027431.jpg"
+    },
+    {
+      "sku": "MDD6CL",
+      "x": -959,
+      "y": 2418,
+      "g": "L",
+      "img": "https://media.tractorsupply.com/is/image/TractorSupplyCompany/2128260?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"
+    },
+    {
+      "sku": "HDD7CL",
+      "x": -1037,
+      "y": 2188,
+      "g": "L",
+      "w": 69,
+      "h": 33,
+      "img": "https://media.tractorsupply.com/is/image/TractorSupplyCompany/2128278?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"
+    },
+    {
+      "sku": "SS20BL",
+      "x": -396,
+      "y": 1857,
+      "g": "L",
+      "img": "https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/eoiajvcrc97ije64mnq1lpjr3f/vhxHit_GeobxtBqfCAhFem2ICFc/m1200/1200"
+    },
+    {
+      "sku": "SUBCL",
+      "x": -959,
+      "y": 1939,
+      "g": "L",
+      "img": "https://media.tractorsupply.com/is/image/TractorSupplyCompany/2089403?$456$"
+    },
+    {
+      "sku": "BSCL",
+      "x": -959,
+      "y": 1979,
+      "g": "L",
+      "img": "https://media.tractorsupply.com/is/image/TractorSupplyCompany/2120000?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"
+    },
+    {
+      "sku": "CULCL",
+      "x": -1037,
+      "y": 2431,
+      "g": "L",
+      "w": 69,
+      "h": 33,
+      "img": "https://media.tractorsupply.com/is/image/TractorSupplyCompany/2128139?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"
+    },
+    {
+      "sku": "RT4LDCL",
+      "x": -787,
+      "y": 2451,
+      "g": "L",
+      "w": 71,
+      "h": 32,
+      "img": "https://media.tractorsupply.com/is/image/TractorSupplyCompany/2127125?$456$"
+    },
+    {
+      "sku": "RT104BL",
+      "x": -787,
+      "y": 2171,
+      "g": "L",
+      "w": 71,
+      "h": 32,
+      "img": "https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/4ed5v9rhl96992psfn9kv6p530/vhfhh-GvuKQwo-_lDxO59TlQmNo/m800/800"
+    },
+    {
+      "sku": "RT207BL",
+      "x": -787,
+      "y": 2291,
+      "g": "L",
+      "w": 71,
+      "h": 32,
+      "img": "https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/8ctp6381bp5on9ar45jpfv0o2d/e_O2KSD6etHJupJXZZemyKeFdq4/m800/800"
+    },
+    {
+      "sku": "RC205BL",
+      "x": -789,
+      "y": 2053,
+      "g": "L",
+      "w": 71,
+      "h": 32,
+      "img": "https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/avhbo6s1eh2jt3rbvlal212c0g/aHPHCCR93haX3gwNkPe9945HplU/m1200/1200"
+    },
+    {
+      "sku": "RC206BL",
+      "x": -789,
+      "y": 2092,
+      "g": "L",
+      "w": 71,
+      "h": 32,
+      "img": "https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/q48odfpqg50ql4gpfp0bvca27c/bNdgaqLhk9bLbEjE2-lQ5F-HFpI/m1200/1200"
+    },
+    {
+      "sku": "RC104BL",
+      "x": -789,
+      "y": 2014,
+      "g": "L",
+      "w": 71,
+      "h": 32,
+      "img": "https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/ur4lvv67pt7tpf9sipkl79k26p/aFCpGl9dbRNwpeY0Run-c7SBYVE/m1200/1200"
+    },
+    {
+      "sku": "FM206",
+      "x": -1198,
+      "y": 2219,
+      "g": "L",
+      "img": "https://tarterparts.com/cdn/shop/collections/FM6_FinishMower_S-01_1200x.jpg?v=1663341006"
+    },
+    {
+      "sku": "RTFK4CL",
+      "x": -787,
+      "y": 2331,
+      "g": "L",
+      "w": 71,
+      "h": 32,
+      "img": "https://media.tractorsupply.com/is/image/TractorSupplyCompany/1725612?$456$"
+    },
+    {
+      "sku": "RT205BL",
+      "x": -787,
+      "y": 2211,
+      "g": "L",
+      "w": 71,
+      "h": 32,
+      "img": "https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/njiqjrrg3d5ldcabfj3ncfik3u/PKK0tDuV27Y-2yh6xdkLM2QH_FY/m800/800"
+    },
+    {
+      "sku": "RT206BL",
+      "x": -787,
+      "y": 2251,
+      "g": "L",
+      "w": 71,
+      "h": 32,
+      "img": "https://tarterparts.com/cdn/shop/collections/TSC_RT206BL_6_RotaryTiller200Series_S-01_1200x.jpg?v=1664304948"
+    },
+    {
+      "sku": "RBRC205CL",
+      "x": -789,
+      "y": 1975,
+      "g": "L",
+      "w": 71,
+      "h": 32,
+      "img": "https://media.tractorsupply.com/is/image/TractorSupplyCompany/1359331?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"
+    },
+    {
+      "sku": "RBRC402CL",
+      "x": -789,
+      "y": 1858,
+      "g": "L",
+      "w": 71,
+      "h": 32,
+      "img": "https://media.tractorsupply.com/is/image/TractorSupplyCompany/1359331?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"
+    },
+    {
+      "sku": "RBRC602CL",
+      "x": -789,
+      "y": 1936,
+      "g": "L",
+      "w": 71,
+      "h": 32,
+      "img": "https://media.tractorsupply.com/is/image/TractorSupplyCompany/1359332?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"
+    },
+    {
+      "sku": "RTFK5CL",
+      "x": -787,
+      "y": 2371,
+      "g": "L",
+      "w": 71,
+      "h": 32,
+      "img": "https://media.tractorsupply.com/is/image/TractorSupplyCompany/1725613?$256$"
+    },
+    {
+      "sku": "RTFK6CL",
+      "x": -787,
+      "y": 2411,
+      "g": "L",
+      "w": 71,
+      "h": 32,
+      "img": "https://media.tractorsupply.com/is/image/TractorSupplyCompany/1725614?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"
+    },
+    {
+      "sku": "LR6CL",
+      "x": -616,
+      "y": 1898,
+      "g": "L",
+      "img": "https://media.tractorsupply.com/is/image/TractorSupplyCompany/2122280?$456$"
+    },
+    {
+      "sku": "LR5CL",
+      "x": -616,
+      "y": 1858,
+      "g": "L",
+      "img": "https://media.tractorsupply.com/is/image/TractorSupplyCompany/2122280?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"
+    },
+    {
+      "sku": "LR7CL",
+      "x": -616,
+      "y": 1938,
+      "g": "L",
+      "img": "https://media.tractorsupply.com/is/image/TractorSupplyCompany/2188414?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"
+    },
+    {
+      "sku": "LRSC4CL",
+      "x": -616,
+      "y": 2138,
+      "g": "L",
+      "img": "https://media.tractorsupply.com/is/image/TractorSupplyCompany/1637224?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"
+    },
+    {
+      "sku": "GB6CL",
+      "x": -616,
+      "y": 2380,
+      "g": "L",
+      "img": "https://media.tractorsupply.com/is/image/TractorSupplyCompany/2130047?$456$"
+    },
+    {
+      "sku": "GB5CL",
+      "x": -616,
+      "y": 2340,
+      "g": "L",
+      "img": "https://media.tractorsupply.com/is/image/TractorSupplyCompany/2130005?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"
+    },
+    {
+      "sku": "GB7CL",
+      "x": -616,
+      "y": 2420,
+      "g": "L",
+      "img": "https://media.tractorsupply.com/is/image/TractorSupplyCompany/2130047?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"
+    },
+    {
+      "sku": "RBSC4CL",
+      "x": -789,
+      "y": 2131,
+      "g": "L",
+      "w": 71,
+      "h": 32,
+      "img": "https://media.tractorsupply.com/is/image/TractorSupplyCompany/1359330?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"
+    },
+    {
+      "sku": "LR206BL",
+      "x": -616,
+      "y": 2018,
+      "g": "L",
+      "img": "https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/3ej88i6roh4tr9bp30q072a20g/VSm4rrgG889awHcn2qns9-E67HY/m800/800"
+    },
+    {
+      "sku": "LR205BL",
+      "x": -616,
+      "y": 1978,
+      "g": "L",
+      "img": "https://tarterparts.com/cdn/shop/collections/LR205BL_5_LandscapeRake200Series_S-01_1200x.jpg?v=1663942290"
+    },
+    {
+      "sku": "LR207BL",
+      "x": -616,
+      "y": 2058,
+      "g": "L",
+      "img": "https://tarterparts.com/cdn/shop/collections/LR207BL_7_LandscapeRake200Series_S-01_1200x.jpg?v=1663942507"
+    },
+    {
+      "sku": "LR104BL",
+      "x": -616,
+      "y": 2098,
+      "g": "L",
+      "img": "https://tarterparts.com/cdn/shop/collections/TSC_LR104BL_LandscapeRake100Series_S-01_1200x.jpg?v=1665431788"
+    },
+    {
+      "sku": "GB206BL",
+      "x": -616,
+      "y": 2260,
+      "g": "L",
+      "img": "https://tarterparts.com/cdn/shop/collections/GB206BL_6_GraderBlade200Series_S-01_1200x.jpg?v=1664473169"
+    },
+    {
+      "sku": "GB207BL",
+      "x": -616,
+      "y": 2300,
+      "g": "L",
+      "img": "https://tarterparts.com/cdn/shop/collections/TSC_GB207BL_7_GraderBlade200Series_S-01_1200x.jpg?v=1664474540"
+    },
+    {
+      "sku": "GB205BL",
+      "x": -616,
+      "y": 2220,
+      "g": "L",
+      "img": "https://tarterparts.com/cdn/shop/collections/GB205BL_5_GraderBlade200Series_S-01-2_2000x.jpg?v=1662753673"
+    },
+    {
+      "sku": "GB104BL",
+      "x": -616,
+      "y": 2460,
+      "g": "L",
+      "img": "https://tarterparts.com/cdn/shop/collections/GB104BL_GradeBlade100Series_S-01_1600x.jpg?v=1641303260"
+    },
+    {
+      "sku": "BB6CL",
+      "x": -469,
+      "y": 1898,
+      "g": "L",
+      "img": "https://media.tractorsupply.com/is/image/TractorSupplyCompany/2131645?$456$"
+    },
+    {
+      "sku": "BB206BL",
+      "x": -469,
+      "y": 1978,
+      "g": "L",
+      "img": "https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/jef9304v210jv5ltlmqhvesf08/wK3CQA8UXnHHCymNlSa9udoWVIg/m800/800"
+    },
+    {
+      "sku": "BB5CL",
+      "x": -469,
+      "y": 1858,
+      "g": "L",
+      "img": "https://media.tractorsupply.com/is/image/TractorSupplyCompany/2131653?$456$"
+    },
+    {
+      "sku": "BB205BL",
+      "x": -469,
+      "y": 1938,
+      "g": "L",
+      "img": "https://webimages.theisens.com/m/e06c1a343cb7aad/Base-BB205_FR.jpg"
+    },
+    {
+      "sku": "BB104BL",
+      "x": -469,
+      "y": 2018,
+      "g": "L",
+      "img": "https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/j5e20ng6n51c12ibqe7hnj654l/9FUPMv66YiFY4TVRLn1aCPFiS80/m1200/1200"
+    },
+    {
+      "sku": "BBSC4CL",
+      "x": -469,
+      "y": 2058,
+      "g": "L",
+      "img": "https://media.tractorsupply.com/is/image/TractorSupplyCompany/2415099?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"
+    },
+    {
+      "sku": "MBCL",
+      "x": -396,
+      "y": 1899,
+      "g": "L",
+      "img": "https://media.tractorsupply.com/is/image/TractorSupplyCompany/2128228?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"
+    },
+    {
+      "sku": "MB20BL",
+      "x": -396,
+      "y": 1939,
+      "g": "L",
+      "img": "https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/14flt36nj14j75fa1ifo4iqf4b/plPcuTV5VdjKwjn_cEYMwAJy3aY/m1200/1200"
+    },
+    {
+      "sku": "ATVH44",
+      "x": -396,
+      "y": 2099,
+      "g": "L",
+      "img": "https://www.ruralking.com/_next/image?url=https%3A%2F%2Fd2dz5gposoi2o6.cloudfront.net%2Fecom%2Fprod%2Fitem_images%2Fb%2F9%2F4%2Fa%2Fb94a3c47c84a74f29f6173017bfaf2d684fd2497_2206014_TAR_ATVH44_IN_0001.jpg&w=1080&q=75"
+    },
+    {
+      "sku": "2RWU",
+      "x": -959,
+      "y": 2059,
+      "g": "L",
+      "img": "https://d2dz5gposoi2o6.cloudfront.net/ecom/prod/item_images/f/9/e/a/f9ea810a85fc72319dec0f9a71562eb1b7dbb3d1_130713244_130713244_image_2rwu.jpg"
+    },
+    {
+      "sku": "ATVS",
+      "x": -396,
+      "y": 1979,
+      "g": "L",
+      "img": "https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/5d4v7inu2h2ar17lf5bgoemf6g/bNUSM_3saRyrSMljJO-iTpCn2oE/m1200/1200"
+    },
+    {
+      "sku": "FS20",
+      "x": -396,
+      "y": 2059,
+      "g": "L",
+      "img": "https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/kgcvbal55d77738igpj383qv2m/fpcXdkrRdO-czeUXInc986MlXSQ/m800/800"
+    },
+    {
+      "sku": "PFS20",
+      "x": -396,
+      "y": 2019,
+      "g": "L",
+      "img": "https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/4k79gv68852j58et0hg1on0b3m/qLx8r7PCptVQorJw5Zmqmlo1jRI/m800/800"
+    },
+    {
+      "sku": "CCA",
+      "x": -1394,
+      "y": 1380,
+      "g": "J"
+    },
+    {
+      "sku": "CMSCA6",
+      "x": -1322,
+      "y": 1380,
+      "g": "J"
+    },
+    {
+      "sku": "MP1",
+      "x": -1250,
+      "y": 1380,
+      "g": "J"
+    },
+    {
+      "sku": "SCG",
+      "x": -1178,
+      "y": 1380,
+      "g": "J"
+    },
+    {
+      "sku": "SBMF",
+      "x": -1106,
+      "y": 1380,
+      "g": "J"
+    },
+    {
+      "sku": "SPGF",
+      "x": -1034,
+      "y": 1380,
+      "g": "J"
+    },
+    {
+      "sku": "PGF",
+      "x": -962,
+      "y": 1380,
+      "g": "J"
+    },
+    {
+      "sku": "WMHF",
+      "x": -890,
+      "y": 1380,
+      "g": "J"
+    },
+    {
+      "sku": "GLMF",
+      "x": -818,
+      "y": 1380,
+      "g": "J"
+    },
+    {
+      "sku": "BMF",
+      "x": -746,
+      "y": 1380,
+      "g": "J"
+    },
+    {
+      "sku": "EHB",
+      "x": -674,
+      "y": 1380,
+      "g": "J"
+    },
+    {
+      "sku": "HHGF",
+      "x": -602,
+      "y": 1380,
+      "g": "J"
+    },
+    {
+      "sku": "14G20",
+      "x": -1394,
+      "y": 1420,
+      "g": "J"
+    },
+    {
+      "sku": "HDBHF",
+      "x": -1322,
+      "y": 1420,
+      "g": "J"
+    },
+    {
+      "sku": "GFP",
+      "x": -1250,
+      "y": 1420,
+      "g": "J"
+    },
+    {
+      "sku": "TBFBR",
+      "x": -529,
+      "y": 769,
+      "g": "I"
+    },
+    {
+      "sku": "CBFG",
+      "x": -1106,
+      "y": 1420,
+      "g": "J"
+    },
+    {
+      "sku": "1PB5",
+      "x": -1034,
+      "y": 1420,
+      "g": "J"
+    },
+    {
+      "sku": "1PGB5",
+      "x": -962,
+      "y": 1420,
+      "g": "J"
+    },
+    {
+      "sku": "1PB10",
+      "x": -890,
+      "y": 1420,
+      "g": "J"
+    },
+    {
+      "sku": "1PEB10",
+      "x": -818,
+      "y": 1420,
+      "g": "J"
+    },
+    {
+      "sku": "AFBF",
+      "x": -746,
+      "y": 1420,
+      "g": "J"
+    },
+    {
+      "sku": "LSBF",
+      "x": -674,
+      "y": 1420,
+      "g": "J"
+    },
+    {
+      "sku": "KPW5",
+      "x": -1394,
+      "y": 1540,
+      "g": "K"
+    },
+    {
+      "sku": "KP5",
+      "x": -1322,
+      "y": 1540,
+      "g": "K"
+    },
+    {
+      "sku": "KP10",
+      "x": -1250,
+      "y": 1540,
+      "g": "K"
+    },
+    {
+      "sku": "10WKE",
+      "x": -1178,
+      "y": 1540,
+      "g": "K"
+    },
+    {
+      "sku": "10WK",
+      "x": -1106,
+      "y": 1540,
+      "g": "K"
+    },
+    {
+      "sku": "DKSMDB10/DKF2DHDG",
+      "x": -1034,
+      "y": 1540,
+      "g": "K"
+    },
+    {
+      "sku": "DKSMDB5/DKFMDB5",
+      "x": -962,
+      "y": 1540,
+      "g": "K"
+    },
+    {
+      "sku": "DKMDB",
+      "x": -890,
+      "y": 1540,
+      "g": "K"
+    },
+    {
+      "sku": "DKSHDG",
+      "x": -818,
+      "y": 1540,
+      "g": "K"
+    },
+    {
+      "sku": "DKHDG",
+      "x": -746,
+      "y": 1540,
+      "g": "K"
+    },
+    {
+      "sku": "AHGF",
+      "x": -674,
+      "y": 1540,
+      "g": "K"
+    },
+    {
+      "sku": "DTSAF",
+      "x": -602,
+      "y": 1540,
+      "g": "K"
+    },
+    {
+      "sku": "HP8",
+      "x": -1394,
+      "y": 1580,
+      "g": "K"
+    },
+    {
+      "sku": "CPH",
+      "x": -1322,
+      "y": 1580,
+      "g": "K"
+    },
+    {
+      "sku": "WPG16",
+      "x": -1250,
+      "y": 1580,
+      "g": "K"
+    },
+    {
+      "sku": "CPCT",
+      "x": -1178,
+      "y": 1580,
+      "g": "K"
+    },
+    {
+      "sku": "WP4466416",
+      "x": -1106,
+      "y": 1580,
+      "g": "K"
+    },
+    {
+      "sku": "CPS10",
+      "x": -1034,
+      "y": 1580,
+      "g": "K"
+    },
+    {
+      "sku": "WTDT214G",
+      "x": 1623,
+      "y": 731,
+      "g": "B",
+      "w": 63,
+      "h": 25
+    },
+    {
+      "sku": "WTDT216G",
+      "x": 1623,
+      "y": 762,
+      "g": "B",
+      "w": 63,
+      "h": 25
+    },
+    {
+      "sku": "WTDT224G",
+      "x": 1623,
+      "y": 793,
+      "g": "B",
+      "w": 63,
+      "h": 25
+    },
+    {
+      "sku": "WTDT226G",
+      "x": 1692,
+      "y": 731,
+      "g": "B",
+      "w": 63,
+      "h": 25
+    },
+    {
+      "sku": "WTDT328G",
+      "x": 1692,
+      "y": 762,
+      "g": "B",
+      "w": 63,
+      "h": 25
+    },
+    {
+      "sku": "WTDT62G",
+      "x": 1692,
+      "y": 793,
+      "g": "B",
+      "w": 63,
+      "h": 25
+    },
+    {
+      "sku": "WTDT102G",
+      "x": 2588,
+      "y": 589,
+      "g": "T"
+    },
+    {
+      "sku": "TW323",
+      "x": 1748,
+      "y": 864,
+      "g": "B"
+    },
+    {
+      "sku": "SWT323",
+      "x": 1820,
+      "y": 864,
+      "g": "B"
+    },
+    {
+      "sku": "TRBGP312",
+      "x": 1892,
+      "y": 864,
+      "g": "B"
+    },
+    {
+      "sku": "SRBGP313",
+      "x": 1964,
+      "y": 864,
+      "g": "B"
+    },
+    {
+      "sku": "OVERFLOW",
+      "x": 2509,
+      "y": 902,
+      "g": "T"
+    },
+    {
+      "sku": "WFGGRSC4",
+      "x": 1026,
+      "y": 905,
+      "g": "D",
+      "w": 69,
+      "h": 34
+    },
+    {
+      "sku": "WFGGRSC6",
+      "x": 1101,
+      "y": 905,
+      "g": "D",
+      "w": 69,
+      "h": 34
+    },
+    {
+      "sku": "WFGGRSC8",
+      "x": 1176,
+      "y": 905,
+      "g": "D",
+      "w": 69,
+      "h": 34
+    },
+    {
+      "sku": "WFGGRSC10",
+      "x": 1251,
+      "y": 905,
+      "g": "D",
+      "w": 69,
+      "h": 34
+    },
+    {
+      "sku": "WFGGRSC12",
+      "x": 1326,
+      "y": 905,
+      "g": "D",
+      "w": 69,
+      "h": 34
+    },
+    {
+      "sku": "WFGGRSC14",
+      "x": 1401,
+      "y": 905,
+      "g": "D",
+      "w": 69,
+      "h": 34
+    },
+    {
+      "sku": "WFGGRSC16",
+      "x": 1476,
+      "y": 905,
+      "g": "D",
+      "w": 69,
+      "h": 34
+    },
+    {
+      "sku": "EWGR4CL",
+      "x": 1767,
+      "y": 905,
+      "g": "D"
+    },
+    {
+      "sku": "EWGR6CL",
+      "x": 1839,
+      "y": 905,
+      "g": "D"
+    },
+    {
+      "sku": "EWGR66CL",
+      "x": 1911,
+      "y": 905,
+      "g": "D"
+    },
+    {
+      "sku": "6MDG4IFA",
+      "x": 1983,
+      "y": 905,
+      "g": "D"
+    },
+    {
+      "sku": "6MDG6IFA",
+      "x": 2055,
+      "y": 905,
+      "g": "D"
+    },
+    {
+      "sku": "6MDG8IFA",
+      "x": 2127,
+      "y": 905,
+      "g": "D"
+    },
+    {
+      "sku": "6MDG10IFA",
+      "x": 2199,
+      "y": 905,
+      "g": "D",
+      "w": 72,
+      "h": 34
+    },
+    {
+      "sku": "6MDG12IFA",
+      "x": 2277,
+      "y": 905,
+      "g": "D",
+      "w": 72,
+      "h": 34
+    },
+    {
+      "sku": "6MDG14IFA",
+      "x": 2355,
+      "y": 905,
+      "g": "D",
+      "w": 72,
+      "h": 34
+    },
+    {
+      "sku": "6MDG16IFA",
+      "x": 2433,
+      "y": 905,
+      "g": "D",
+      "w": 72,
+      "h": 34
+    },
+    {
+      "sku": "ECGR10",
+      "x": 954,
+      "y": 905,
+      "g": "D"
+    },
+    {
+      "sku": "6GG4",
+      "x": 739,
+      "y": 1012,
+      "g": "D"
+    },
+    {
+      "sku": "6GG6",
+      "x": 811,
+      "y": 1012,
+      "g": "D"
+    },
+    {
+      "sku": "6GG8",
+      "x": 883,
+      "y": 1012,
+      "g": "D"
+    },
+    {
+      "sku": "6GG10",
+      "x": 955,
+      "y": 1012,
+      "g": "D"
+    },
+    {
+      "sku": "6GG12",
+      "x": 1027,
+      "y": 1012,
+      "g": "D"
+    },
+    {
+      "sku": "6GG14",
+      "x": 1099,
+      "y": 1012,
+      "g": "D"
+    },
+    {
+      "sku": "6GG16",
+      "x": 1171,
+      "y": 1012,
+      "g": "D"
+    },
+    {
+      "sku": "6EGR4CL",
+      "x": 1243,
+      "y": 1012,
+      "g": "D"
+    },
+    {
+      "sku": "6EGR6CL",
+      "x": 1315,
+      "y": 1012,
+      "g": "D"
+    },
+    {
+      "sku": "6EGR8CL",
+      "x": 1387,
+      "y": 1012,
+      "g": "D"
+    },
+    {
+      "sku": "6EGR10CL",
+      "x": 1459,
+      "y": 1012,
+      "g": "D"
+    },
+    {
+      "sku": "6EGR12CL",
+      "x": 1531,
+      "y": 1012,
+      "g": "D"
+    },
+    {
+      "sku": "6EGR14CL",
+      "x": 1603,
+      "y": 1012,
+      "g": "D"
+    },
+    {
+      "sku": "6EGR16CL",
+      "x": 1675,
+      "y": 1012,
+      "g": "D"
+    },
+    {
+      "sku": "WGSC4",
+      "x": 1747,
+      "y": 1012,
+      "g": "D"
+    },
+    {
+      "sku": "WGSC6",
+      "x": 1819,
+      "y": 1012,
+      "g": "D"
+    },
+    {
+      "sku": "WGSC8",
+      "x": 1891,
+      "y": 1012,
+      "g": "D"
+    },
+    {
+      "sku": "WGSC10",
+      "x": 1963,
+      "y": 1012,
+      "g": "D"
+    },
+    {
+      "sku": "WGSC12",
+      "x": 2035,
+      "y": 1012,
+      "g": "D"
+    },
+    {
+      "sku": "WGSC14",
+      "x": 2107,
+      "y": 1012,
+      "g": "D"
+    },
+    {
+      "sku": "WGSC16",
+      "x": 2179,
+      "y": 1012,
+      "g": "D"
+    },
+    {
+      "sku": "6GC12",
+      "x": 2251,
+      "y": 1012,
+      "g": "D"
+    },
+    {
+      "sku": "6EGR4IFA",
+      "x": 741,
+      "y": 1051,
+      "g": "D",
+      "w": 69,
+      "h": 33
+    },
+    {
+      "sku": "6EGR6IFA",
+      "x": 816,
+      "y": 1051,
+      "g": "D",
+      "w": 69,
+      "h": 33
+    },
+    {
+      "sku": "6EGR8IFA",
+      "x": 891,
+      "y": 1051,
+      "g": "D",
+      "w": 69,
+      "h": 33
+    },
+    {
+      "sku": "6EGR10IFA",
+      "x": 966,
+      "y": 1051,
+      "g": "D",
+      "w": 69,
+      "h": 33
+    },
+    {
+      "sku": "6EGR12IFA",
+      "x": 1041,
+      "y": 1051,
+      "g": "D",
+      "w": 69,
+      "h": 33
+    },
+    {
+      "sku": "6EGR14IFA",
+      "x": 1116,
+      "y": 1051,
+      "g": "D",
+      "w": 69,
+      "h": 33
+    },
+    {
+      "sku": "6EGR16IFA",
+      "x": 1191,
+      "y": 1051,
+      "g": "D",
+      "w": 69,
+      "h": 33
+    },
+    {
+      "sku": "ECR8",
+      "x": 1266,
+      "y": 1051,
+      "g": "D"
+    },
+    {
+      "sku": "ECR10",
+      "x": 1338,
+      "y": 1051,
+      "g": "D"
+    },
+    {
+      "sku": "ECR16",
+      "x": 1410,
+      "y": 1051,
+      "g": "D"
+    },
+    {
+      "sku": "ECBR10",
+      "x": 1482,
+      "y": 1051,
+      "g": "D"
+    },
+    {
+      "sku": "ECBR14",
+      "x": 1554,
+      "y": 1051,
+      "g": "D"
+    },
+    {
+      "sku": "ECBR16",
+      "x": 1626,
+      "y": 1051,
+      "g": "D"
+    },
+    {
+      "sku": "WGSC4CL",
+      "x": 1720,
+      "y": 1052,
+      "g": "D"
+    },
+    {
+      "sku": "WGSC6CL",
+      "x": 1792,
+      "y": 1052,
+      "g": "D"
+    },
+    {
+      "sku": "WGSC8CL",
+      "x": 1864,
+      "y": 1052,
+      "g": "D"
+    },
+    {
+      "sku": "WGSC10CL",
+      "x": 1936,
+      "y": 1052,
+      "g": "D"
+    },
+    {
+      "sku": "WGSC12CL",
+      "x": 2008,
+      "y": 1052,
+      "g": "D"
+    },
+    {
+      "sku": "WGSC14CL",
+      "x": 2080,
+      "y": 1052,
+      "g": "D"
+    },
+    {
+      "sku": "WGSC16CL",
+      "x": 2152,
+      "y": 1052,
+      "g": "D"
+    },
+    {
+      "sku": "6ER4",
+      "x": 733,
+      "y": 1137,
+      "g": "D"
+    },
+    {
+      "sku": "6ER6",
+      "x": 805,
+      "y": 1137,
+      "g": "D"
+    },
+    {
+      "sku": "6ER8",
+      "x": 877,
+      "y": 1137,
+      "g": "D"
+    },
+    {
+      "sku": "6ER10",
+      "x": 949,
+      "y": 1137,
+      "g": "D"
+    },
+    {
+      "sku": "6ER12",
+      "x": 1021,
+      "y": 1137,
+      "g": "D"
+    },
+    {
+      "sku": "6ER14",
+      "x": 1093,
+      "y": 1137,
+      "g": "D"
+    },
+    {
+      "sku": "6ER16",
+      "x": 1165,
+      "y": 1137,
+      "g": "D"
+    },
+    {
+      "sku": "6ER4CL",
+      "x": 1237,
+      "y": 1137,
+      "g": "D"
+    },
+    {
+      "sku": "6ER6CL",
+      "x": 1309,
+      "y": 1137,
+      "g": "D"
+    },
+    {
+      "sku": "6ER8CL",
+      "x": 1381,
+      "y": 1137,
+      "g": "D"
+    },
+    {
+      "sku": "6ER10CL",
+      "x": 1453,
+      "y": 1137,
+      "g": "D"
+    },
+    {
+      "sku": "6ER12CL",
+      "x": 1525,
+      "y": 1137,
+      "g": "D"
+    },
+    {
+      "sku": "6ER14CL",
+      "x": 1597,
+      "y": 1137,
+      "g": "D"
+    },
+    {
+      "sku": "6ER16CL",
+      "x": 1669,
+      "y": 1137,
+      "g": "D"
+    },
+    {
+      "sku": "2RGCH4",
+      "x": 1741,
+      "y": 1137,
+      "g": "D"
+    },
+    {
+      "sku": "2RGCH6",
+      "x": 1813,
+      "y": 1137,
+      "g": "D"
+    },
+    {
+      "sku": "2RGCH8",
+      "x": 1885,
+      "y": 1137,
+      "g": "D"
+    },
+    {
+      "sku": "2RGCH10",
+      "x": 1957,
+      "y": 1137,
+      "g": "D"
+    },
+    {
+      "sku": "2RGCH12",
+      "x": 2029,
+      "y": 1137,
+      "g": "D"
+    },
+    {
+      "sku": "2RGCH14",
+      "x": 2101,
+      "y": 1137,
+      "g": "D"
+    },
+    {
+      "sku": "2RGCH16",
+      "x": 2173,
+      "y": 1137,
+      "g": "D"
+    },
+    {
+      "sku": "2RGCH4CL",
+      "x": 2245,
+      "y": 1137,
+      "g": "D"
+    },
+    {
+      "sku": "2RGCH6CL",
+      "x": 2317,
+      "y": 1137,
+      "g": "D"
+    },
+    {
+      "sku": "2RGCH8CL",
+      "x": 2389,
+      "y": 1137,
+      "g": "D"
+    },
+    {
+      "sku": "2RGCH10CL",
+      "x": 2461,
+      "y": 1137,
+      "g": "D",
+      "w": 69,
+      "h": 34
+    },
+    {
+      "sku": "2RGCH12CL",
+      "x": 2536,
+      "y": 1137,
+      "g": "D",
+      "w": 69,
+      "h": 34
+    },
+    {
+      "sku": "2RGCH14CL",
+      "x": 2611,
+      "y": 1137,
+      "g": "D",
+      "w": 69,
+      "h": 34
+    },
+    {
+      "sku": "2RGCH16CL",
+      "x": 2686,
+      "y": 1137,
+      "g": "D",
+      "w": 69,
+      "h": 34
+    },
+    {
+      "sku": "6EBR4",
+      "x": 733,
+      "y": 1185,
+      "g": "D"
+    },
+    {
+      "sku": "6EBR6",
+      "x": 805,
+      "y": 1185,
+      "g": "D"
+    },
+    {
+      "sku": "6EBR8",
+      "x": 877,
+      "y": 1185,
+      "g": "D"
+    },
+    {
+      "sku": "6EBR10",
+      "x": 949,
+      "y": 1185,
+      "g": "D"
+    },
+    {
+      "sku": "6EBR12",
+      "x": 1021,
+      "y": 1185,
+      "g": "D"
+    },
+    {
+      "sku": "6EBR14",
+      "x": 1093,
+      "y": 1185,
+      "g": "D"
+    },
+    {
+      "sku": "6EBR16",
+      "x": 1165,
+      "y": 1185,
+      "g": "D"
+    },
+    {
+      "sku": "WFGBRSC4",
+      "x": 1237,
+      "y": 1185,
+      "g": "D"
+    },
+    {
+      "sku": "WFGBRSC6",
+      "x": 1309,
+      "y": 1185,
+      "g": "D"
+    },
+    {
+      "sku": "WFGBRSC8",
+      "x": 1381,
+      "y": 1185,
+      "g": "D"
+    },
+    {
+      "sku": "WFGBRSC10",
+      "x": 1453,
+      "y": 1185,
+      "g": "D"
+    },
+    {
+      "sku": "WFGBRSC12",
+      "x": 1525,
+      "y": 1185,
+      "g": "D"
+    },
+    {
+      "sku": "WFGBRSC14",
+      "x": 1597,
+      "y": 1185,
+      "g": "D"
+    },
+    {
+      "sku": "WFGBRSC16",
+      "x": 1669,
+      "y": 1185,
+      "g": "D"
+    },
+    {
+      "sku": "2BRGCH4",
+      "x": 1741,
+      "y": 1185,
+      "g": "D"
+    },
+    {
+      "sku": "2BRGCH6",
+      "x": 1813,
+      "y": 1185,
+      "g": "D"
+    },
+    {
+      "sku": "2BRGCH8",
+      "x": 1885,
+      "y": 1185,
+      "g": "D"
+    },
+    {
+      "sku": "2BRGCH10",
+      "x": 1957,
+      "y": 1185,
+      "g": "D"
+    },
+    {
+      "sku": "2BRGCH12",
+      "x": 2029,
+      "y": 1185,
+      "g": "D"
+    },
+    {
+      "sku": "2BRGCH14",
+      "x": 2101,
+      "y": 1185,
+      "g": "D"
+    },
+    {
+      "sku": "2BRGCH16",
+      "x": 2173,
+      "y": 1185,
+      "g": "D"
+    },
+    {
+      "sku": "6EG10E",
+      "x": 1233,
+      "y": 1340,
+      "g": "D"
+    },
+    {
+      "sku": "6EG12E",
+      "x": 1305,
+      "y": 1340,
+      "g": "D"
+    },
+    {
+      "sku": "6EG14E",
+      "x": 1377,
+      "y": 1340,
+      "g": "D"
+    },
+    {
+      "sku": "6EG16E",
+      "x": 1449,
+      "y": 1340,
+      "g": "D"
+    },
+    {
+      "sku": "2GGCH4",
+      "x": 1521,
+      "y": 1340,
+      "g": "D"
+    },
+    {
+      "sku": "2GGCH6",
+      "x": 1593,
+      "y": 1340,
+      "g": "D"
+    },
+    {
+      "sku": "2GGCH8",
+      "x": 1665,
+      "y": 1340,
+      "g": "D"
+    },
+    {
+      "sku": "2GGCH10",
+      "x": 1737,
+      "y": 1340,
+      "g": "D"
+    },
+    {
+      "sku": "2GGCH12",
+      "x": 1809,
+      "y": 1340,
+      "g": "D"
+    },
+    {
+      "sku": "2GGCH14",
+      "x": 1881,
+      "y": 1340,
+      "g": "D"
+    },
+    {
+      "sku": "2GGCH16",
+      "x": 1953,
+      "y": 1340,
+      "g": "D"
+    },
+    {
+      "sku": "EWG66",
+      "x": 2025,
+      "y": 1340,
+      "g": "D"
+    },
+    {
+      "sku": "EWG6",
+      "x": 2097,
+      "y": 1340,
+      "g": "D"
+    },
+    {
+      "sku": "EWG4",
+      "x": 2169,
+      "y": 1340,
+      "g": "D"
+    },
+    {
+      "sku": "WFGGSC14",
+      "x": 1305,
+      "y": 1385,
+      "g": "D"
+    },
+    {
+      "sku": "WFGGSC16",
+      "x": 1377,
+      "y": 1385,
+      "g": "D"
+    },
+    {
+      "sku": "WFGBLSC4",
+      "x": 1449,
+      "y": 1385,
+      "g": "D"
+    },
+    {
+      "sku": "WFGBLSC6",
+      "x": 1521,
+      "y": 1385,
+      "g": "D",
+      "w": 69,
+      "h": 35
+    },
+    {
+      "sku": "WFGBLSC8",
+      "x": 1596,
+      "y": 1385,
+      "g": "D",
+      "w": 69,
+      "h": 35
+    },
+    {
+      "sku": "WFGBLSC10",
+      "x": 1671,
+      "y": 1385,
+      "g": "D",
+      "w": 69,
+      "h": 35
+    },
+    {
+      "sku": "WFGBLSC12",
+      "x": 1746,
+      "y": 1385,
+      "g": "D",
+      "w": 69,
+      "h": 35
+    },
+    {
+      "sku": "WFGBLSC14",
+      "x": 1821,
+      "y": 1385,
+      "g": "D",
+      "w": 69,
+      "h": 35
+    },
+    {
+      "sku": "WFGBLSC16",
+      "x": 1896,
+      "y": 1385,
+      "g": "D",
+      "w": 69,
+      "h": 35
+    },
+    {
+      "sku": "6EGBL4",
+      "x": 1971,
+      "y": 1385,
+      "g": "D"
+    },
+    {
+      "sku": "6EBL6",
+      "x": 2043,
+      "y": 1385,
+      "g": "D"
+    },
+    {
+      "sku": "6EGBL8",
+      "x": 2115,
+      "y": 1385,
+      "g": "D"
+    },
+    {
+      "sku": "6EGBL10",
+      "x": 2187,
+      "y": 1385,
+      "g": "D"
+    },
+    {
+      "sku": "6EGBL12",
+      "x": 2259,
+      "y": 1385,
+      "g": "D"
+    },
+    {
+      "sku": "6EGBL14",
+      "x": 2331,
+      "y": 1385,
+      "g": "D"
+    },
+    {
+      "sku": "6EGBL16",
+      "x": 2403,
+      "y": 1385,
+      "g": "D"
+    },
+    {
+      "sku": "WTP82",
+      "x": 1538,
+      "y": 727,
+      "g": "X",
+      "w": 72,
+      "h": 84,
+      "c": "#0b6fea"
+    },
+    {
+      "sku": "WFGGSC12",
+      "x": 1233,
+      "y": 1385,
+      "g": "D"
+    },
+    {
+      "sku": "TBF",
+      "x": -457,
+      "y": 769,
+      "g": "I"
+    },
+    {
+      "sku": "FF",
+      "x": -817,
+      "y": 769,
+      "g": "I"
+    },
+    {
+      "sku": "GHF",
+      "x": -961,
+      "y": 769,
+      "g": "I"
+    },
+    {
+      "sku": "GFOE",
+      "x": -1033,
+      "y": 769,
+      "g": "I"
+    },
+    {
+      "sku": "GFM",
+      "x": -1105,
+      "y": 769,
+      "g": "I"
+    },
+    {
+      "sku": "ECBR12",
+      "x": 102,
+      "y": 776,
+      "g": "X",
+      "w": 66,
+      "h": 34
+    },
+    {
+      "sku": "DTPBL512",
+      "x": 102,
+      "y": 816,
+      "g": "X",
+      "w": 66,
+      "h": 34
+    },
+    {
+      "sku": "ECGR12CL",
+      "x": 102,
+      "y": 856,
+      "g": "X",
+      "w": 66,
+      "h": 34
+    },
+    {
+      "sku": "LR307BL",
+      "x": -616,
+      "y": 2178,
+      "g": "L"
+    },
+    {
+      "sku": "RBRC502CL",
+      "x": -789,
+      "y": 1897,
+      "g": "L",
+      "w": 71,
+      "h": 32
+    },
+    {
+      "sku": "PFQA12WDL",
+      "x": -1037,
+      "y": 1983,
+      "g": "L",
+      "w": 69,
+      "h": 33
+    },
+    {
+      "sku": "2BPCL",
+      "x": -1037,
+      "y": 2147,
+      "g": "L",
+      "w": 69,
+      "h": 33,
+      "img": "https://media.tractorsupply.com/is/image/TractorSupplyCompany/2128066_A4?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"
+    },
+    {
+      "sku": "QASP8",
+      "x": -1198,
+      "y": 1859,
+      "g": "L"
+    },
+    {
+      "sku": "QASP7",
+      "x": -1198,
+      "y": 1899,
+      "g": "L"
+    },
+    {
+      "sku": "ATVFD",
+      "x": -1198,
+      "y": 1939,
+      "g": "L",
+      "img": "https://tarterparts.com/cdn/shop/collections/ATVFD_FlipDisc_S-02_2000x.jpg?v=1664889938"
+    },
+    {
+      "sku": "ATVCPDC",
+      "x": -1198,
+      "y": 1979,
+      "g": "L",
+      "img": "https://tarterparts.com/cdn/shop/collections/ATVCPDC_DiscCulitPackerCombo_S-01_2_1200x.jpg?v=1664889442"
+    },
+    {
+      "sku": "ATVTD8",
+      "x": -1198,
+      "y": 2019,
+      "g": "L",
+      "img": "https://tarterparts.com/cdn/shop/collections/ATVTD8_8-BladeDiscHarrow_S-01_1200x.jpg?v=1664889535"
+    },
+    {
+      "sku": "QASP6",
+      "x": -1198,
+      "y": 2059,
+      "g": "L"
+    },
+    {
+      "sku": "SP6BDK",
+      "x": -1198,
+      "y": 2099,
+      "g": "L"
+    },
+    {
+      "sku": "SP7BDK",
+      "x": -1198,
+      "y": 2139,
+      "g": "L"
+    },
+    {
+      "sku": "BSQA-2BL",
+      "x": -1198,
+      "y": 2179,
+      "g": "L",
+      "img": "https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/trp6gdbo652d13u2tthdekmr2f/Z9oOCYU9tNkAClZlyTygQtEBmLA/m800/800"
+    },
+    {
+      "sku": "LG114.5BL",
+      "x": -1198,
+      "y": 2259,
+      "g": "L",
+      "w": 69,
+      "h": 34
+    },
+    {
+      "sku": "LG215BL",
+      "x": -1198,
+      "y": 2299,
+      "g": "L",
+      "w": 69,
+      "h": 34
+    },
+    {
+      "sku": "LG216BL",
+      "x": -1198,
+      "y": 2339,
+      "g": "L",
+      "w": 69,
+      "h": 34
+    },
+    {
+      "sku": "TGQA54-2BL",
+      "x": -1198,
+      "y": 2379,
+      "g": "L",
+      "w": 69,
+      "h": 34
+    },
+    {
+      "sku": "1BPCL",
+      "x": -1282,
+      "y": 1939,
+      "g": "L",
+      "w": 71,
+      "h": 35,
+      "img": "https://media.tractorsupply.com/is/image/TractorSupplyCompany/2128058?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"
+    },
+    {
+      "sku": "QH201BL",
+      "x": -1037,
+      "y": 2270,
+      "g": "L",
+      "w": 69,
+      "h": 33
+    },
+    {
+      "sku": "DH207CL",
+      "x": -959,
+      "y": 2339,
+      "g": "L",
+      "w": 69,
+      "h": 33
+    },
+    {
+      "sku": "MBSS10CL",
+      "x": -396,
+      "y": 2142,
+      "g": "X",
+      "img": "https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/desktop/optimized/rev-ee97c48/tarter.canto.com/direct/image/u527lp1b9d5j7821ttf5qr5932/abzXfHrTDzzGfui3N0hlzXF0-k8/m1200/1200"
+    },
+    {
+      "sku": "1234",
+      "x": -383,
+      "y": 2199,
+      "g": "X"
+    }
+  ],
+  "bg": [
+    {
+      "type": "poly",
+      "pts": [
+        [
+          -1782,
+          -70
+        ],
+        [
+          -1758,
+          70
+        ],
+        [
+          -1788,
+          210
+        ],
+        [
+          -1762,
+          370
+        ],
+        [
+          -1786,
+          530
+        ],
+        [
+          -1764,
+          710
+        ],
+        [
+          -1784,
+          890
+        ],
+        [
+          -1766,
+          1070
+        ],
+        [
+          -1782,
+          1250
+        ],
+        [
+          -1768,
+          1410
+        ]
+      ],
+      "closed": false,
+      "kind": "creek"
+    },
+    {
+      "type": "rect",
+      "x": 2368,
+      "y": 73,
+      "w": 700,
+      "h": 360,
+      "label": "SECONDS",
+      "kind": "zone"
+    },
+    {
+      "type": "rect",
+      "x": 1951,
+      "y": 427,
+      "w": 270,
+      "h": 361,
+      "label": "CUSTOMER PICKUP",
+      "kind": "zone"
+    },
+    {
+      "type": "rect",
+      "x": -208,
+      "y": 1559,
+      "w": 1210,
+      "h": 618,
+      "label": "TRAILER PARKING",
+      "kind": "zone"
+    },
+    {
+      "type": "rect",
+      "x": 500,
+      "y": 60,
+      "w": 1200,
+      "h": 660,
+      "label": "TARTER — MAIN BUILDING",
+      "kind": "buildingbig"
+    },
+    {
+      "type": "rect",
+      "x": 332,
+      "y": 912,
+      "w": 326,
+      "h": 340,
+      "label": "LOADING",
+      "kind": "building"
+    },
+    {
+      "type": "rect",
+      "x": 385,
+      "y": 970,
+      "w": 210,
+      "h": 95,
+      "label": "PIT #1",
+      "kind": "pit"
+    },
+    {
+      "type": "rect",
+      "x": 394,
+      "y": 1117,
+      "w": 210,
+      "h": 95,
+      "label": "PIT #2",
+      "kind": "pit"
+    },
+    {
+      "type": "rect",
+      "x": 400,
+      "y": 70,
+      "w": 96,
+      "h": 66,
+      "label": "Dust coll.",
+      "kind": "box"
+    },
+    {
+      "type": "rect",
+      "x": 372,
+      "y": 384,
+      "w": 120,
+      "h": 86,
+      "label": "Smoker shed",
+      "kind": "box"
+    },
+    {
+      "type": "rect",
+      "x": 443,
+      "y": 723,
+      "w": 53,
+      "h": 48,
+      "label": "Diesel",
+      "kind": "box"
+    },
+    {
+      "type": "rect",
+      "x": 507,
+      "y": 727,
+      "w": 108,
+      "h": 134,
+      "label": "Break room",
+      "kind": "box"
+    },
+    {
+      "type": "rect",
+      "x": 744,
+      "y": 728,
+      "w": 83,
+      "h": 44,
+      "label": "AIR LIQUIDE",
+      "kind": "box"
+    },
+    {
+      "type": "rect",
+      "x": 846,
+      "y": 730,
+      "w": 57,
+      "h": 43,
+      "label": "CO2",
+      "kind": "box"
+    },
+    {
+      "type": "rect",
+      "x": 1740,
+      "y": 520,
+      "w": 120,
+      "h": 44,
+      "label": "Propane",
+      "kind": "box"
+    },
+    {
+      "type": "rect",
+      "x": 1740,
+      "y": 596,
+      "w": 120,
+      "h": 60,
+      "label": "Burner-Off",
+      "kind": "box"
+    },
+    {
+      "type": "rect",
+      "x": 2540,
+      "y": 326,
+      "w": 150,
+      "h": 110,
+      "label": "",
+      "kind": "grid"
+    },
+    {
+      "type": "rect",
+      "x": 2210,
+      "y": 110,
+      "w": 120,
+      "h": 44,
+      "label": "GARBAGE",
+      "kind": "box"
+    },
+    {
+      "type": "rect",
+      "x": 2210,
+      "y": 178,
+      "w": 120,
+      "h": 44,
+      "label": "GARBAGE",
+      "kind": "box"
+    },
+    {
+      "type": "rect",
+      "x": 2210,
+      "y": 246,
+      "w": 120,
+      "h": 44,
+      "label": "GARBAGE",
+      "kind": "box"
+    },
+    {
+      "type": "door",
+      "x": 1600,
+      "y": 60,
+      "label": "#1",
+      "vert": false
+    },
+    {
+      "type": "door",
+      "x": 1700,
+      "y": 150,
+      "label": "#2",
+      "vert": true
+    },
+    {
+      "type": "door",
+      "x": 1700,
+      "y": 330,
+      "label": "#3",
+      "vert": true
+    },
+    {
+      "type": "door",
+      "x": 1700,
+      "y": 510,
+      "label": "#4",
+      "vert": true
+    },
+    {
+      "type": "door",
+      "x": 700,
+      "y": 718,
+      "label": "#5",
+      "vert": false
+    },
+    {
+      "type": "door",
+      "x": 500,
+      "y": 300,
+      "label": "#6",
+      "vert": true
+    },
+    {
+      "type": "door",
+      "x": 500,
+      "y": 120,
+      "label": "#7",
+      "vert": true
+    },
+    {
+      "type": "door",
+      "x": 2981,
+      "y": 1091,
+      "label": "#8",
+      "vert": false,
+      "rot": 107
+    },
+    {
+      "type": "door",
+      "x": 2944,
+      "y": 1254,
+      "label": "#9",
+      "vert": false,
+      "rot": 104
+    },
+    {
+      "type": "door",
+      "x": 2892,
+      "y": 1436,
+      "label": "#10",
+      "vert": false,
+      "rot": 104
+    },
+    {
+      "type": "circle",
+      "cx": 2710,
+      "cy": 744,
+      "r": 36
+    },
+    {
+      "type": "circle",
+      "cx": 2615,
+      "cy": 608,
+      "r": 36
+    },
+    {
+      "type": "circle",
+      "cx": 2615,
+      "cy": 704,
+      "r": 36
+    },
+    {
+      "type": "circle",
+      "cx": 2710,
+      "cy": 632,
+      "r": 36
+    },
+    {
+      "type": "rect",
+      "x": 2928,
+      "y": 1018,
+      "w": 180,
+      "h": 541,
+      "label": "",
+      "kind": "box",
+      "rot": 15
+    },
+    {
+      "type": "label",
+      "x": 3047,
+      "y": 691,
+      "text": "TANKS",
+      "size": 22
+    },
+    {
+      "type": "rect",
+      "kind": "flex",
+      "x": -1640,
+      "y": 1039,
+      "w": 1634,
+      "h": 135,
+      "label": "MTO — Especiales",
+      "skus": [
+        "2BLG10",
+        "2BLG12",
+        "2BLG14",
+        "2BLG16",
+        "2BLG18",
+        "2BLG20",
+        "2BLG4",
+        "2BLG6",
+        "2BLG8",
+        "2BLGCH10",
+        "2BLGCH12",
+        "2BLGCH14",
+        "2BLGCH16",
+        "2BLGCH18",
+        "2BLGCH20",
+        "2BLGCH4",
+        "2BLGCH6",
+        "2BLGCH8",
+        "2BRC10",
+        "2BRC12",
+        "2BRC14",
+        "2BRC16",
+        "2GC10",
+        "2GC12",
+        "2GC14",
+        "2GC16",
+        "2GC4",
+        "2GG10",
+        "2GG12",
+        "2GG14",
+        "2GG16",
+        "2GG18",
+        "2GG20",
+        "2GG4",
+        "2GG6",
+        "2GG8",
+        "2GGCH18",
+        "2GGCH20",
+        "2RC10",
+        "2RC12",
+        "2RC14",
+        "2RC16",
+        "2RG10",
+        "2RG12",
+        "2RG14",
+        "2RG16",
+        "2RG18",
+        "2RG20",
+        "2RG4",
+        "2RG6",
+        "2RG8",
+        "2RGCH18",
+        "2RGCH18CL",
+        "2RGCH20",
+        "2RGCH20CL",
+        "6EB10",
+        "6EB12",
+        "6EB14",
+        "6EB16",
+        "6EB18",
+        "6EB20",
+        "6EB4",
+        "6EB6",
+        "6EB8",
+        "6EBL18",
+        "6EBL20",
+        "6EBR18",
+        "6EBR20",
+        "6EG18",
+        "6EG20",
+        "6EGR18IFA",
+        "6EGR20IFA",
+        "6ER18",
+        "6ER20",
+        "6GG18",
+        "6MDBL10IFA",
+        "6MDBL12IFA",
+        "6MDBL14IFA",
+        "6MDBL16IFA",
+        "6MDBL4IFA",
+        "6MDBL6IFA",
+        "6MDBL8IFA",
+        "6MDG10IFA",
+        "6MDG12IFA",
+        "6MDG14IFA",
+        "6MDG16IFA",
+        "6MDG4IFA",
+        "6MDG6IFA",
+        "6MDG8IFA",
+        "ECB10",
+        "ECB10VC",
+        "ECB12",
+        "ECB12VC",
+        "ECB14",
+        "ECB16",
+        "ECB8",
+        "ECB8VC",
+        "ECBL10",
+        "ECBL14",
+        "ECBL16",
+        "ECBR10",
+        "ECBR14",
+        "ECBR16",
+        "ECBRSC10",
+        "ECBRSC12",
+        "ECG10T",
+        "ECG12A",
+        "ECG12TCL",
+        "ECG14T",
+        "ECG16A",
+        "ECG16T",
+        "ECG20A",
+        "ECG8T",
+        "ECR4",
+        "ECR6",
+        "ECR8",
+        "WFGB10",
+        "WFGB12",
+        "WFGB14",
+        "WFGB16",
+        "WFGB4",
+        "WFGB6",
+        "WFGB8",
+        "WFGBL10",
+        "WFGBL12",
+        "WFGBL14",
+        "WFGBL16",
+        "WFGBL4",
+        "WFGBL6",
+        "WFGBL8",
+        "WFGBLSC3",
+        "WFGGR10",
+        "WFGGR12",
+        "WFGGR14",
+        "WFGGR16",
+        "WFGGR4",
+        "WFGGR6",
+        "WFGGR8",
+        "WFGGRSC3",
+        "WFGGSC3",
+        "WFGGSC3CL",
+        "2BRGCH18",
+        "2BRGCH20",
+        "6GC10",
+        "6GC16",
+        "WG10",
+        "WG12",
+        "WG14",
+        "WG16",
+        "WG4",
+        "WG6",
+        "WG8",
+        "WGSC10",
+        "WGSC10CL",
+        "WGSC12",
+        "WGSC12CL",
+        "WGSC14",
+        "WGSC14CL",
+        "WGSC16",
+        "WGSC16CL",
+        "WGSC4",
+        "WGSC4CL",
+        "WGSC6",
+        "WGSC6CL",
+        "WGSC8",
+        "WGSC8CL",
+        "WFGBR12"
+      ]
+    },
+    {
+      "type": "rect",
+      "kind": "flex",
+      "x": -1638,
+      "y": 767,
+      "w": 508,
+      "h": 114,
+      "label": "MTO — Rodeo",
+      "skus": [
+        "2SCGBR10",
+        "2SCGBR12",
+        "2SCGBR14",
+        "2SCGBR16",
+        "2SCGBR18",
+        "2SCGBR20",
+        "2SCGBR4",
+        "2SCGBR8",
+        "AP510",
+        "AP512",
+        "AP512E",
+        "AP514",
+        "AP516",
+        "AP54",
+        "AP55",
+        "AP56",
+        "AP58",
+        "APHD510",
+        "APHD512",
+        "APHD514",
+        "APHD516",
+        "APHD54",
+        "APHD56",
+        "APHD58",
+        "APHD58MM",
+        "APHD610",
+        "APHD612",
+        "APHD614",
+        "APHD616",
+        "APHD64",
+        "APHD66",
+        "APHD68",
+        "HCP510",
+        "HCP512",
+        "HCP612",
+        "HCPBR510",
+        "HCPBR512",
+        "HCPBR512.8",
+        "HCPBR58",
+        "HCPBR612",
+        "SCGBR10",
+        "SCGBR12",
+        "SCGBR12WOH",
+        "SCGBR12X5",
+        "SCGBR14",
+        "SCGBR16",
+        "SCGBR4",
+        "SCGBR6",
+        "SCGBR8",
+        "SCGGR12",
+        "SCGGR6",
+        "SSP10",
+        "SSP12",
+        "SSP14",
+        "SSP16",
+        "SSP2.4",
+        "SSP3",
+        "SSP4",
+        "SSP5",
+        "SSP6",
+        "SSP7",
+        "SSP8",
+        "SSPA10",
+        "SSPA12",
+        "SSPA12FF",
+        "SSPA14",
+        "SSPA16",
+        "SSPA3",
+        "SSPA4",
+        "SSPA5",
+        "SSPA6",
+        "SSPA8"
+      ]
+    },
+    {
+      "type": "line",
+      "x1": 3236,
+      "y1": 1072,
+      "x2": 3230,
+      "y2": 59
+    },
+    {
+      "type": "line",
+      "x1": 3237,
+      "y1": 1071,
+      "x2": 3068,
+      "y2": 1697
+    },
+    {
+      "type": "line",
+      "x1": 3072,
+      "y1": 1690,
+      "x2": 2704,
+      "y2": 2068
+    },
+    {
+      "type": "line",
+      "x1": 2699,
+      "y1": 2073,
+      "x2": 304,
+      "y2": 2237
+    },
+    {
+      "type": "rect",
+      "shape": "rect",
+      "x": 40,
+      "y": -328,
+      "w": 180,
+      "h": 258,
+      "label": "",
+      "kind": "box",
+      "rx": 17
+    },
+    {
+      "type": "label",
+      "x": 130,
+      "y": -295,
+      "text": "sh",
+      "size": 22
+    }
+  ]
+}

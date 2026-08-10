@@ -1,0 +1,14 @@
+{
+  "name": "Tarter Yard Map",
+  "short_name": "Yard Map",
+  "description": "Tarter West yard product locator and issue reporting app",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#12151A",
+  "theme_color": "#161B22",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
