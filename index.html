@@ -118,6 +118,7 @@
   .alert-item:hover{background:var(--panel2);border-color:var(--line)}
   .alert-item .atitle{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--red)}
   .alert-item .atitle span{color:var(--ink)}
+  .alert-item .aname{font-size:12.5px;color:var(--ink);font-weight:600}
   .alert-item .amsg{font-size:12px;color:var(--muted)}
   .alert-item .aresolve{margin-top:6px;align-self:flex-start;background:var(--panel);border:1px solid var(--line);color:var(--ink);font-size:11px;padding:4px 10px;border-radius:6px}
   .alert-item .aresolve:hover{background:var(--green);color:#fff;border-color:var(--green)}
@@ -194,6 +195,8 @@
   .ritem .rsku{font-family:var(--mono);font-weight:600;font-size:14px;letter-spacing:.3px}
   .ritem .rsku mark{background:var(--amber);color:#221a02;border-radius:3px;padding:0 2px}
   .ritem .rloc{font-size:12px;color:var(--muted);margin-top:2px}
+  .ritem .rname{font-size:12.5px;color:var(--ink);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ritem .rname mark{background:var(--amber);color:#221a02;border-radius:3px;padding:0 2px}
   .ritem .arrow{color:var(--muted2)}
   .ritem .rimg{flex:none;width:32px;height:32px;border-radius:8px;font-size:15px;
     display:grid;place-items:center;background:var(--panel);border:1px solid var(--line2);color:var(--ink)}
@@ -448,7 +451,10 @@ body.viewer .editor-only{display:none}
 .lookup{border-radius:11px;padding:12px 13px;font-size:13px;line-height:1.5;border:1px solid var(--line)}
 .lookup.ok{background:rgba(55,200,113,.09);border-color:rgba(55,200,113,.4)}
 .lookup.warn{background:var(--amber-soft);border-color:rgba(255,192,46,.45)}
+.lookup .lname{display:block;font-family:var(--display);font-weight:800;font-size:16px;line-height:1.3;margin-bottom:2px}
 .lookup .lsku{font-family:var(--mono);font-weight:700;font-size:15px;letter-spacing:.4px;display:block;margin-bottom:3px}
+.lookup .lname+.lsku{font-size:12.5px;font-weight:600;color:var(--muted)}
+.lookup .lbrand{font-size:11.5px;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px}
 .lookup .lmsg{color:var(--muted)}
 .lookup .lact{margin-top:9px;display:flex;gap:6px;flex-wrap:wrap}
 .lookup .lact button{padding:8px 12px;font-size:12px;font-weight:700;border-radius:8px;
@@ -1404,6 +1410,8 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "found.step1": "1 · Which product is it?",
       "found.step2": "2 · Confirm the spot",
       "found.scanBtn": "📷 Scan barcode",
+      "found.unnamed": "No product name on file for this part number",
+      "found.offMap": "Known product — it has no spot on the map yet.",
       "found.manualLabel": "Or type the SKU",
       "found.manualPh": "e.g. WT214",
       "found.pickOnMap": "📍 Pick the spot on the map",
@@ -1460,6 +1468,9 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "scan.switch": "Flip camera",
       "scan.torch": "Torch",
       "scan.detected": "Code detected: {code}",
+      "scan.detectedProduct": "{name}",
+      "scan.detectedSku": "Barcode → {sku}",
+      "scan.noProduct": "Barcode {code} is not in the conversion list",
       "scan.searching": "Looking it up…",
       "scan.foundSku": "{sku} — {loc}",
       "scan.unknown": "Code {code} is not in the system",
@@ -1740,6 +1751,8 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "found.step1": "1 · ¿Qué producto es?",
       "found.step2": "2 · Confirma el lugar",
       "found.scanBtn": "📷 Escanear código de barras",
+      "found.unnamed": "Este número de parte todavía no tiene nombre de producto",
+      "found.offMap": "Producto conocido — todavía no tiene lugar en el mapa.",
       "found.manualLabel": "O escribe el SKU",
       "found.manualPh": "ej. WT214",
       "found.pickOnMap": "📍 Marcar el lugar en el mapa",
@@ -1796,6 +1809,9 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "scan.switch": "Cambiar cámara",
       "scan.torch": "Linterna",
       "scan.detected": "Código detectado: {code}",
+      "scan.detectedProduct": "{name}",
+      "scan.detectedSku": "Código de barras → {sku}",
+      "scan.noProduct": "El código {code} no está en la lista de conversión",
       "scan.searching": "Buscándolo…",
       "scan.foundSku": "{sku} — {loc}",
       "scan.unknown": "El código {code} no está en el sistema",
@@ -2651,6 +2667,13 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
 })(window);
 
 </script>
+
+<!-- Conversión de códigos de barras y nombres de producto que vienen con la app.
+     Se cargan antes del mapa para que el primer escaneo ya salga con el producto
+     escrito, sin depender de que alguien haya importado un archivo en el aparato. -->
+<script src="/barcodes.js"></script>
+<script src="/catalog.js"></script>
+
 <script>
 window.__SEED_MAP__ = {"version":5,"updated":"2026-08-03T15:30:34.081Z","groups":[{"id":"A","name":"General stock (Door 5/6/7)","color":"#C0473B"},{"id":"B","name":"Water troughs — main row","color":"#7e8681"},{"id":"C","name":"Troughs & round bale","color":"#3E9E6E"},{"id":"D","name":"Gates & panels","color":"#B5793C"},{"id":"E","name":"Gates & bow gates","color":"#7E6CC4"},{"id":"G","name":"Bow gates & sheeted","color":"#4FA3B5"},{"id":"H","name":"Economy gates — long row","color":"#A9973C"},{"id":"I","name":"Feeders / MTO","color":"#5B8DEF"},{"id":"J","name":"Gate MTO (feeders)","color":"#7A8794"},{"id":"K","name":"Gate MTO (KP / dividers)","color":"#6B7DB3"},{"id":"L","name":"3 point","color":"#C25A4B"},{"id":"M","name":"Water wagons","color":"#3D9BB0"},{"id":"N","name":"Rodeo MTO","color":"#9C6BB0"},{"id":"O","name":"Open field","color":"#6B8E4E"},{"id":"P","name":"Smoker shed","color":"#B08A3C"},{"id":"T","name":"Tank plant — new revision (Doors 8–10)","color":"#C98A2E"},{"id":"X","name":"Added products","color":"#5b6673"}],"tiles":[{"sku":"1001361","x":-300,"y":526,"g":"A"},{"sku":"1002682","x":-228,"y":526,"g":"A"},{"sku":"1001357","x":-156,"y":526,"g":"A"},{"sku":"1002625","x":-300,"y":566,"g":"A"},{"sku":"1001356","x":-228,"y":566,"g":"A"},{"sku":"1001359","x":-156,"y":566,"g":"A"},{"sku":"1001353","x":-300,"y":606,"g":"A"},{"sku":"1001358","x":-228,"y":606,"g":"A"},{"sku":"1002627","x":-156,"y":606,"g":"A"},{"sku":"1002623","x":-300,"y":646,"g":"A"},{"sku":"1001355","x":-228,"y":646,"g":"A"},{"sku":"1002621","x":-156,"y":646,"g":"A"},{"sku":"1002626","x":-300,"y":686,"g":"A"},{"sku":"ECR12","x":29,"y":777,"g":"A","w":66,"h":34},{"sku":"ECGR12","x":29,"y":817,"g":"A","w":66,"h":34},{"sku":"ECG12T","x":29,"y":857,"g":"A","w":66,"h":34},{"sku":"1002622","x":430,"y":600,"g":"P"},{"sku":"BBTHF","x":-385,"y":769,"g":"I"},{"sku":"FFCT","x":-745,"y":769,"g":"I"},{"sku":"RFM","x":-601,"y":769,"g":"I"},{"sku":"RHF","x":-889,"y":769,"g":"I"},{"sku":"RHFG","x":-673,"y":769,"g":"I"},{"sku":"MGF","x":-313,"y":769,"g":"I"},{"sku":"CHAS","x":-1781,"y":806,"g":"N"},{"sku":"CH9","x":-1781,"y":1437,"g":"N"},{"sku":"CHDE-3","x":-1788,"y":1129,"g":"N"},{"sku":"CHDE-2","x":-1788,"y":1083,"g":"N"},{"sku":"CHDE-1","x":-1781,"y":1036,"g":"N"},{"sku":"CHOS-1","x":-1782,"y":991,"g":"N"},{"sku":"CHBX1","x":-1787,"y":943,"g":"N"},{"sku":"CH8","x":-1787,"y":1395,"g":"N"},{"sku":"CH7-12","x":-1795,"y":1219,"g":"N"},{"sku":"CH7-10","x":-1802,"y":1265,"g":"N"},{"sku":"CH7-8","x":-1791,"y":1174,"g":"N"},{"sku":"CH5","x":-1787,"y":899,"g":"N"},{"sku":"CH3","x":-1785,"y":855,"g":"N"},{"sku":"CH2A","x":-1804,"y":1310,"g":"N"},{"sku":"CH1","x":-1795,"y":1352,"g":"N"},{"sku":"WT214","x":922,"y":727,"g":"B","w":55,"h":67},{"sku":"WT214CL","x":983,"y":727,"g":"B","w":55,"h":67},{"sku":"WT226","x":1044,"y":727,"g":"B","w":55,"h":67},{"sku":"WT226CL","x":1105,"y":727,"g":"B","w":55,"h":67},{"sku":"WT328","x":1166,"y":727,"g":"B","w":55,"h":67},{"sku":"WTR82","x":1227,"y":727,"g":"B","w":55,"h":67},{"sku":"WTR82CL","x":1288,"y":727,"g":"B","w":55,"h":67},{"sku":"WTR62","x":1349,"y":727,"g":"B","w":55,"h":67},{"sku":"WTR62CL","x":1410,"y":727,"g":"B","w":55,"h":67},{"sku":"RBGP318","x":1471,"y":727,"g":"B","w":55,"h":67},{"sku":"CHWW-1500","x":-1753,"y":1590,"g":"M"},{"sku":"CHWW-1000","x":-1755,"y":1638,"g":"M"},{"sku":"CHWW-500","x":-1754,"y":1688,"g":"M"},{"sku":"FR3CL","x":2944,"y":522,"g":"O"},{"sku":"WT224","x":740,"y":864,"g":"B"},{"sku":"WT224CL","x":738,"y":905,"g":"B"},{"sku":"WT216","x":812,"y":864,"g":"B"},{"sku":"WT216CL","x":810,"y":905,"g":"B"},{"sku":"WT223","x":884,"y":864,"g":"B"},{"sku":"GCT21","x":956,"y":864,"g":"B"},{"sku":"GCT21CL","x":1028,"y":864,"g":"B"},{"sku":"WT225","x":1100,"y":864,"g":"B"},{"sku":"WTR42","x":1172,"y":864,"g":"B"},{"sku":"WT228","x":1244,"y":864,"g":"B"},{"sku":"WT328CL","x":1316,"y":864,"g":"B"},{"sku":"GUT22","x":1676,"y":864,"g":"B"},{"sku":"GCT21S","x":1388,"y":864,"g":"B"},{"sku":"WTR32","x":1460,"y":864,"g":"B"},{"sku":"WT214S","x":1532,"y":864,"g":"B"},{"sku":"FR3","x":1604,"y":864,"g":"B"},{"sku":"RBGP216","x":2424,"y":854,"g":"B"},{"sku":"RBGP214","x":2504,"y":856,"g":"B"},{"sku":"ECGR10CL","x":882,"y":905,"g":"D"},{"sku":"EWGR4CL","x":1551,"y":905,"g":"D"},{"sku":"EWGR6CL","x":1623,"y":905,"g":"D"},{"sku":"EWGR64CL","x":1695,"y":905,"g":"D"},{"sku":"ECG10T","x":441,"y":1340,"g":"D"},{"sku":"ECG16T","x":369,"y":1340,"g":"D"},{"sku":"6EG4E","x":1017,"y":1340,"g":"D"},{"sku":"6EG8E","x":1161,"y":1340,"g":"D"},{"sku":"6EG6E","x":1089,"y":1340,"g":"D"},{"sku":"6EG12","x":801,"y":1340,"g":"D"},{"sku":"6EG10","x":729,"y":1340,"g":"D"},{"sku":"6EG4","x":513,"y":1340,"g":"D"},{"sku":"6EG16","x":945,"y":1340,"g":"D"},{"sku":"6EG8","x":657,"y":1340,"g":"D"},{"sku":"6EG14","x":873,"y":1340,"g":"D"},{"sku":"6EG6","x":585,"y":1340,"g":"D"},{"sku":"WFGGSC12CL","x":699,"y":1385,"g":"D","w":76,"h":35},{"sku":"WFGGSC4CL","x":371,"y":1385,"g":"D","w":76,"h":35},{"sku":"WFGGSC4","x":945,"y":1385,"g":"D"},{"sku":"WFGGSC10CL","x":617,"y":1385,"g":"D","w":76,"h":35},{"sku":"WFGGSC10","x":1161,"y":1385,"g":"D"},{"sku":"WFGGSC8","x":1089,"y":1385,"g":"D"},{"sku":"WFGGSC6","x":1017,"y":1385,"g":"D"},{"sku":"WFGGSC14CL","x":781,"y":1385,"g":"D","w":76,"h":35},{"sku":"WFGGSC8CL","x":535,"y":1385,"g":"D","w":76,"h":35},{"sku":"WFGGSC6CL","x":453,"y":1385,"g":"D","w":76,"h":35},{"sku":"WFGGSC16CL","x":863,"y":1385,"g":"D","w":76,"h":35},{"sku":"BSBL","x":-1037,"y":2391,"g":"L","w":69,"h":33,"img":"https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/tobkgjmjd55bd8j2dlta6rou1f/R-ZAwkNhP0Xp4139z-8aKtswTwY/m1200/1200"},{"sku":"CA20BL","x":-1282,"y":1859,"g":"L","w":71,"h":35,"img":"https://nrsworld.com/cdn/shop/files/177693-default-l.jpg?v=1759411499&width=800"},{"sku":"HDBPCL","x":-959,"y":2458,"g":"L","img":"https://tarterparts.com/cdn/shop/files/HDBP_5000x.png?v=1708722770"},{"sku":"MBSSSCCL","x":-1037,"y":2471,"g":"L","w":69,"h":33,"img":"https://media.tractorsupply.com/is/image/TractorSupplyCompany/2122476?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"},{"sku":"PFQA12","x":-1037,"y":1942,"g":"L","w":69,"h":33,"img":"https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/fmnm6emi1p0ht804gosu21ne4n/QfTqXA1iaDR9jkEyp7OaDavJdYc/m1200/1200"},{"sku":"HF30BL","x":-1037,"y":1901,"g":"L","w":69,"h":33,"img":"https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/5vond08vm57fn2pqg19baqbc6k/lj5iD3LVnJYmvBQjSVERKRR-Ru0/m800/800"},{"sku":"BPCL","x":-1282,"y":1899,"g":"L","w":71,"h":35,"img":"https://media.tractorsupply.com/is/image/TractorSupplyCompany/2128147?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"},{"sku":"CACL","x":-1037,"y":2106,"g":"L","w":69,"h":33,"img":"https://media.tractorsupply.com/is/image/TractorSupplyCompany/2089407?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"},{"sku":"QASS","x":-1037,"y":2065,"g":"L","w":69,"h":33,"img":"https://tarterparts.com/cdn/shop/collections/QASS__Front-AttachSuperBaleSpear_S-01_1200x.jpg?v=1664894129"},{"sku":"FC201BL","x":-1037,"y":2229,"g":"L","w":69,"h":33,"img":"https://tarterparts.com/cdn/shop/collections/FC201BL_1RowFieldCultivator200Series_S-01_1200x.jpg?v=1663271286"},{"sku":"PFQA","x":-1037,"y":2024,"g":"L","w":69,"h":33,"img":"https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/22kh3p9fhl6chcp9ocnloemc1q/8p4P87evDZ0T6kaUNXTtYeZfHmA/m1200/1200"},{"sku":"HF20BL","x":-1037,"y":1860,"g":"L","w":69,"h":33,"img":"https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/terml37tep3452occqi9fep75r/pOM9PswtpuTpwuuI1vAeoyCoW6Y/m800/800"},{"sku":"SSTCL","x":-1037,"y":2351,"g":"L","w":69,"h":33,"img":"https://media.tractorsupply.com/is/image/TractorSupplyCompany/2120288?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"},{"sku":"ATVCD","x":-959,"y":2139,"g":"L","img":"https://dam.generac.com/ImConvServlet/imconv/d727df186ab0d493a119194cd199e8a427fa6804/440Wx440H?hybrisId=Hybris&assetDescr=C00000000635"},{"sku":"DH105BL","x":-959,"y":2259,"g":"L","img":"https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/jbmfav7bsp7nj9sbnd92crip7f/WkgYsp1NgkXrnxbPm_IMHbXQwW4/m1200/1200"},{"sku":"DSC5CL","x":-1037,"y":2311,"g":"L","w":69,"h":33,"img":"https://media.tractorsupply.com/is/image/TractorSupplyCompany/2122492?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"},{"sku":"LRWK","x":-959,"y":2019,"g":"L","img":"https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/9ud6k19h316v1dvj49m9v76p77/wWR0aBEM_1s3XPh4uodR32US4kw/m800/800"},{"sku":"WFSCL","x":-959,"y":2099,"g":"L","img":"https://media.tractorsupply.com/is/image/TractorSupplyCompany/2130259?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"},{"sku":"WS20BL","x":-1282,"y":1979,"g":"L","w":71,"h":35,"img":"https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/ke04rl13od4m742mr6401r8117/6mOzJjO9qg81k7KFS2MW5-oAhfI/m800/800"},{"sku":"BP20BL","x":-959,"y":2179,"g":"L","img":"https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/7jq4afjkq15g5e7sge7ofr6p2n/eHPhh3ZQwTo36h2X8n9o0cLDwjg/m1200/1200"},{"sku":"BP30BL","x":-959,"y":2219,"g":"L","img":"https://nrsworld.com/cdn/shop/files/177687-default-l.jpg?v=1759411461&width=800"},{"sku":"TM20BL","x":-959,"y":1859,"g":"L","img":"https://nrsworld.com/cdn/shop/files/181538-default-l_1200x1200_crop_center.jpg?v=1759434584"},{"sku":"TMCL","x":-959,"y":1899,"g":"L","img":"https://media.tractorsupply.com/is/image/TractorSupplyCompany/2780703?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"},{"sku":"DH206BL","x":-959,"y":2299,"g":"L","img":"https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/dmgiqin7h56o15fskrqop6390m/OwC3E2SuLm5Zpl8_dWu1KGhaQxA/m1200/1200"},{"sku":"DH307BL","x":-959,"y":2378,"g":"L","img":"https://www.northerntool.com/products/602/images/6027431.jpg"},{"sku":"MDD6CL","x":-959,"y":2418,"g":"L","img":"https://media.tractorsupply.com/is/image/TractorSupplyCompany/2128260?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"},{"sku":"HDD7CL","x":-1037,"y":2188,"g":"L","w":69,"h":33,"img":"https://media.tractorsupply.com/is/image/TractorSupplyCompany/2128278?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"},{"sku":"SS20BL","x":-396,"y":1857,"g":"L","img":"https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/eoiajvcrc97ije64mnq1lpjr3f/vhxHit_GeobxtBqfCAhFem2ICFc/m1200/1200"},{"sku":"SUBCL","x":-959,"y":1939,"g":"L","img":"https://media.tractorsupply.com/is/image/TractorSupplyCompany/2089403?$456$"},{"sku":"BSCL","x":-959,"y":1979,"g":"L","img":"https://media.tractorsupply.com/is/image/TractorSupplyCompany/2120000?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"},{"sku":"CULCL","x":-1037,"y":2431,"g":"L","w":69,"h":33,"img":"https://media.tractorsupply.com/is/image/TractorSupplyCompany/2128139?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"},{"sku":"RT4LDCL","x":-787,"y":2451,"g":"L","w":71,"h":32,"img":"https://media.tractorsupply.com/is/image/TractorSupplyCompany/2127125?$456$"},{"sku":"RT104BL","x":-787,"y":2171,"g":"L","w":71,"h":32,"img":"https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/4ed5v9rhl96992psfn9kv6p530/vhfhh-GvuKQwo-_lDxO59TlQmNo/m800/800"},{"sku":"RT207BL","x":-787,"y":2291,"g":"L","w":71,"h":32,"img":"https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/8ctp6381bp5on9ar45jpfv0o2d/e_O2KSD6etHJupJXZZemyKeFdq4/m800/800"},{"sku":"RC205BL","x":-789,"y":2053,"g":"L","w":71,"h":32,"img":"https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/avhbo6s1eh2jt3rbvlal212c0g/aHPHCCR93haX3gwNkPe9945HplU/m1200/1200"},{"sku":"RC206BL","x":-789,"y":2092,"g":"L","w":71,"h":32,"img":"https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/q48odfpqg50ql4gpfp0bvca27c/bNdgaqLhk9bLbEjE2-lQ5F-HFpI/m1200/1200"},{"sku":"RC104BL","x":-789,"y":2014,"g":"L","w":71,"h":32,"img":"https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/ur4lvv67pt7tpf9sipkl79k26p/aFCpGl9dbRNwpeY0Run-c7SBYVE/m1200/1200"},{"sku":"FM206","x":-1198,"y":2219,"g":"L","img":"https://tarterparts.com/cdn/shop/collections/FM6_FinishMower_S-01_1200x.jpg?v=1663341006"},{"sku":"RTFK4CL","x":-787,"y":2331,"g":"L","w":71,"h":32,"img":"https://media.tractorsupply.com/is/image/TractorSupplyCompany/1725612?$456$"},{"sku":"RT205BL","x":-787,"y":2211,"g":"L","w":71,"h":32,"img":"https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/njiqjrrg3d5ldcabfj3ncfik3u/PKK0tDuV27Y-2yh6xdkLM2QH_FY/m800/800"},{"sku":"RT206BL","x":-787,"y":2251,"g":"L","w":71,"h":32,"img":"https://tarterparts.com/cdn/shop/collections/TSC_RT206BL_6_RotaryTiller200Series_S-01_1200x.jpg?v=1664304948"},{"sku":"RBRC205CL","x":-789,"y":1975,"g":"L","w":71,"h":32,"img":"https://media.tractorsupply.com/is/image/TractorSupplyCompany/1359331?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"},{"sku":"RBRC402CL","x":-789,"y":1858,"g":"L","w":71,"h":32,"img":"https://media.tractorsupply.com/is/image/TractorSupplyCompany/1359331?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"},{"sku":"RBRC602CL","x":-789,"y":1936,"g":"L","w":71,"h":32,"img":"https://media.tractorsupply.com/is/image/TractorSupplyCompany/1359332?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"},{"sku":"RTFK5CL","x":-787,"y":2371,"g":"L","w":71,"h":32,"img":"https://media.tractorsupply.com/is/image/TractorSupplyCompany/1725613?$256$"},{"sku":"RTFK6CL","x":-787,"y":2411,"g":"L","w":71,"h":32,"img":"https://media.tractorsupply.com/is/image/TractorSupplyCompany/1725614?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"},{"sku":"LR6CL","x":-616,"y":1898,"g":"L","img":"https://media.tractorsupply.com/is/image/TractorSupplyCompany/2122280?$456$"},{"sku":"LR5CL","x":-616,"y":1858,"g":"L","img":"https://media.tractorsupply.com/is/image/TractorSupplyCompany/2122280?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"},{"sku":"LR7CL","x":-616,"y":1938,"g":"L","img":"https://media.tractorsupply.com/is/image/TractorSupplyCompany/2188414?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"},{"sku":"LRSC4CL","x":-616,"y":2138,"g":"L","img":"https://media.tractorsupply.com/is/image/TractorSupplyCompany/1637224?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"},{"sku":"GB6CL","x":-616,"y":2380,"g":"L","img":"https://media.tractorsupply.com/is/image/TractorSupplyCompany/2130047?$456$"},{"sku":"GB5CL","x":-616,"y":2340,"g":"L","img":"https://media.tractorsupply.com/is/image/TractorSupplyCompany/2130005?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"},{"sku":"GB7CL","x":-616,"y":2420,"g":"L","img":"https://media.tractorsupply.com/is/image/TractorSupplyCompany/2130047?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"},{"sku":"RBSC4CL","x":-789,"y":2131,"g":"L","w":71,"h":32,"img":"https://media.tractorsupply.com/is/image/TractorSupplyCompany/1359330?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"},{"sku":"LR206BL","x":-616,"y":2018,"g":"L","img":"https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/3ej88i6roh4tr9bp30q072a20g/VSm4rrgG889awHcn2qns9-E67HY/m800/800"},{"sku":"LR205BL","x":-616,"y":1978,"g":"L","img":"https://tarterparts.com/cdn/shop/collections/LR205BL_5_LandscapeRake200Series_S-01_1200x.jpg?v=1663942290"},{"sku":"LR207BL","x":-616,"y":2058,"g":"L","img":"https://tarterparts.com/cdn/shop/collections/LR207BL_7_LandscapeRake200Series_S-01_1200x.jpg?v=1663942507"},{"sku":"LR104BL","x":-616,"y":2098,"g":"L","img":"https://tarterparts.com/cdn/shop/collections/TSC_LR104BL_LandscapeRake100Series_S-01_1200x.jpg?v=1665431788"},{"sku":"GB206BL","x":-616,"y":2260,"g":"L","img":"https://tarterparts.com/cdn/shop/collections/GB206BL_6_GraderBlade200Series_S-01_1200x.jpg?v=1664473169"},{"sku":"GB207BL","x":-616,"y":2300,"g":"L","img":"https://tarterparts.com/cdn/shop/collections/TSC_GB207BL_7_GraderBlade200Series_S-01_1200x.jpg?v=1664474540"},{"sku":"GB205BL","x":-616,"y":2220,"g":"L","img":"https://tarterparts.com/cdn/shop/collections/GB205BL_5_GraderBlade200Series_S-01-2_2000x.jpg?v=1662753673"},{"sku":"GB104BL","x":-616,"y":2460,"g":"L","img":"https://tarterparts.com/cdn/shop/collections/GB104BL_GradeBlade100Series_S-01_1600x.jpg?v=1641303260"},{"sku":"BB6CL","x":-469,"y":1898,"g":"L","img":"https://media.tractorsupply.com/is/image/TractorSupplyCompany/2131645?$456$"},{"sku":"BB206BL","x":-469,"y":1978,"g":"L","img":"https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/jef9304v210jv5ltlmqhvesf08/wK3CQA8UXnHHCymNlSa9udoWVIg/m800/800"},{"sku":"BB5CL","x":-469,"y":1858,"g":"L","img":"https://media.tractorsupply.com/is/image/TractorSupplyCompany/2131653?$456$"},{"sku":"BB205BL","x":-469,"y":1938,"g":"L","img":"https://webimages.theisens.com/m/e06c1a343cb7aad/Base-BB205_FR.jpg"},{"sku":"BB104BL","x":-469,"y":2018,"g":"L","img":"https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/j5e20ng6n51c12ibqe7hnj654l/9FUPMv66YiFY4TVRLn1aCPFiS80/m1200/1200"},{"sku":"BBSC4CL","x":-469,"y":2058,"g":"L","img":"https://media.tractorsupply.com/is/image/TractorSupplyCompany/2415099?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"},{"sku":"MBCL","x":-396,"y":1899,"g":"L","img":"https://media.tractorsupply.com/is/image/TractorSupplyCompany/2128228?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"},{"sku":"MB20BL","x":-396,"y":1939,"g":"L","img":"https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/14flt36nj14j75fa1ifo4iqf4b/plPcuTV5VdjKwjn_cEYMwAJy3aY/m1200/1200"},{"sku":"ATVH44","x":-396,"y":2099,"g":"L","img":"https://www.ruralking.com/_next/image?url=https%3A%2F%2Fd2dz5gposoi2o6.cloudfront.net%2Fecom%2Fprod%2Fitem_images%2Fb%2F9%2F4%2Fa%2Fb94a3c47c84a74f29f6173017bfaf2d684fd2497_2206014_TAR_ATVH44_IN_0001.jpg&w=1080&q=75"},{"sku":"2RWU","x":-959,"y":2059,"g":"L","img":"https://d2dz5gposoi2o6.cloudfront.net/ecom/prod/item_images/f/9/e/a/f9ea810a85fc72319dec0f9a71562eb1b7dbb3d1_130713244_130713244_image_2rwu.jpg"},{"sku":"ATVS","x":-396,"y":1979,"g":"L","img":"https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/5d4v7inu2h2ar17lf5bgoemf6g/bNUSM_3saRyrSMljJO-iTpCn2oE/m1200/1200"},{"sku":"FS20","x":-396,"y":2059,"g":"L","img":"https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/kgcvbal55d77738igpj383qv2m/fpcXdkrRdO-czeUXInc986MlXSQ/m800/800"},{"sku":"PFS20","x":-396,"y":2019,"g":"L","img":"https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/4k79gv68852j58et0hg1on0b3m/qLx8r7PCptVQorJw5Zmqmlo1jRI/m800/800"},{"sku":"CCA","x":-1394,"y":1380,"g":"J"},{"sku":"CMSCA6","x":-1322,"y":1380,"g":"J"},{"sku":"MP1","x":-1250,"y":1380,"g":"J"},{"sku":"SCG","x":-1178,"y":1380,"g":"J"},{"sku":"SBMF","x":-1106,"y":1380,"g":"J"},{"sku":"SPGF","x":-1034,"y":1380,"g":"J"},{"sku":"PGF","x":-962,"y":1380,"g":"J"},{"sku":"WMHF","x":-890,"y":1380,"g":"J"},{"sku":"GLMF","x":-818,"y":1380,"g":"J"},{"sku":"BMF","x":-746,"y":1380,"g":"J"},{"sku":"EHB","x":-674,"y":1380,"g":"J"},{"sku":"HHGF","x":-602,"y":1380,"g":"J"},{"sku":"14G20","x":-1394,"y":1420,"g":"J"},{"sku":"HDBHF","x":-1322,"y":1420,"g":"J"},{"sku":"GFP","x":-1250,"y":1420,"g":"J"},{"sku":"TBFBR","x":-529,"y":769,"g":"I"},{"sku":"CBFG","x":-1106,"y":1420,"g":"J"},{"sku":"1PB5","x":-1034,"y":1420,"g":"J"},{"sku":"1PGB5","x":-962,"y":1420,"g":"J"},{"sku":"1PB10","x":-890,"y":1420,"g":"J"},{"sku":"1PEB10","x":-818,"y":1420,"g":"J"},{"sku":"AFBF","x":-746,"y":1420,"g":"J"},{"sku":"LSBF","x":-674,"y":1420,"g":"J"},{"sku":"KPW5","x":-1394,"y":1540,"g":"K"},{"sku":"KP5","x":-1322,"y":1540,"g":"K"},{"sku":"KP10","x":-1250,"y":1540,"g":"K"},{"sku":"10WKE","x":-1178,"y":1540,"g":"K"},{"sku":"10WK","x":-1106,"y":1540,"g":"K"},{"sku":"DKSMDB10/DKF2DHDG","x":-1034,"y":1540,"g":"K"},{"sku":"DKSMDB5/DKFMDB5","x":-962,"y":1540,"g":"K"},{"sku":"DKMDB","x":-890,"y":1540,"g":"K"},{"sku":"DKSHDG","x":-818,"y":1540,"g":"K"},{"sku":"DKHDG","x":-746,"y":1540,"g":"K"},{"sku":"AHGF","x":-674,"y":1540,"g":"K"},{"sku":"DTSAF","x":-602,"y":1540,"g":"K"},{"sku":"HP8","x":-1394,"y":1580,"g":"K"},{"sku":"CPH","x":-1322,"y":1580,"g":"K"},{"sku":"WPG16","x":-1250,"y":1580,"g":"K"},{"sku":"CPCT","x":-1178,"y":1580,"g":"K"},{"sku":"WP4466416","x":-1106,"y":1580,"g":"K"},{"sku":"CPS10","x":-1034,"y":1580,"g":"K"},{"sku":"WTDT214G","x":1623,"y":731,"g":"B","w":63,"h":25},{"sku":"WTDT216G","x":1623,"y":762,"g":"B","w":63,"h":25},{"sku":"WTDT224G","x":1623,"y":793,"g":"B","w":63,"h":25},{"sku":"WTDT226G","x":1692,"y":731,"g":"B","w":63,"h":25},{"sku":"WTDT328G","x":1692,"y":762,"g":"B","w":63,"h":25},{"sku":"WTDT62G","x":1692,"y":793,"g":"B","w":63,"h":25},{"sku":"WTDT102G","x":2588,"y":589,"g":"T"},{"sku":"TW323","x":1748,"y":864,"g":"B"},{"sku":"SWT323","x":1820,"y":864,"g":"B"},{"sku":"TRBGP312","x":1892,"y":864,"g":"B"},{"sku":"SRBGP313","x":1964,"y":864,"g":"B"},{"sku":"OVERFLOW","x":2509,"y":902,"g":"T"},{"sku":"WFGGRSC4","x":1026,"y":905,"g":"D","w":69,"h":34},{"sku":"WFGGRSC6","x":1101,"y":905,"g":"D","w":69,"h":34},{"sku":"WFGGRSC8","x":1176,"y":905,"g":"D","w":69,"h":34},{"sku":"WFGGRSC10","x":1251,"y":905,"g":"D","w":69,"h":34},{"sku":"WFGGRSC12","x":1326,"y":905,"g":"D","w":69,"h":34},{"sku":"WFGGRSC14","x":1401,"y":905,"g":"D","w":69,"h":34},{"sku":"WFGGRSC16","x":1476,"y":905,"g":"D","w":69,"h":34},{"sku":"EWGR4CL","x":1767,"y":905,"g":"D"},{"sku":"EWGR6CL","x":1839,"y":905,"g":"D"},{"sku":"EWGR66CL","x":1911,"y":905,"g":"D"},{"sku":"6MDG4IFA","x":1983,"y":905,"g":"D"},{"sku":"6MDG6IFA","x":2055,"y":905,"g":"D"},{"sku":"6MDG8IFA","x":2127,"y":905,"g":"D"},{"sku":"6MDG10IFA","x":2199,"y":905,"g":"D","w":72,"h":34},{"sku":"6MDG12IFA","x":2277,"y":905,"g":"D","w":72,"h":34},{"sku":"6MDG14IFA","x":2355,"y":905,"g":"D","w":72,"h":34},{"sku":"6MDG16IFA","x":2433,"y":905,"g":"D","w":72,"h":34},{"sku":"ECGR10","x":954,"y":905,"g":"D"},{"sku":"6GG4","x":739,"y":1012,"g":"D"},{"sku":"6GG6","x":811,"y":1012,"g":"D"},{"sku":"6GG8","x":883,"y":1012,"g":"D"},{"sku":"6GG10","x":955,"y":1012,"g":"D"},{"sku":"6GG12","x":1027,"y":1012,"g":"D"},{"sku":"6GG14","x":1099,"y":1012,"g":"D"},{"sku":"6GG16","x":1171,"y":1012,"g":"D"},{"sku":"6EGR4CL","x":1243,"y":1012,"g":"D"},{"sku":"6EGR6CL","x":1315,"y":1012,"g":"D"},{"sku":"6EGR8CL","x":1387,"y":1012,"g":"D"},{"sku":"6EGR10CL","x":1459,"y":1012,"g":"D"},{"sku":"6EGR12CL","x":1531,"y":1012,"g":"D"},{"sku":"6EGR14CL","x":1603,"y":1012,"g":"D"},{"sku":"6EGR16CL","x":1675,"y":1012,"g":"D"},{"sku":"WGSC4","x":1747,"y":1012,"g":"D"},{"sku":"WGSC6","x":1819,"y":1012,"g":"D"},{"sku":"WGSC8","x":1891,"y":1012,"g":"D"},{"sku":"WGSC10","x":1963,"y":1012,"g":"D"},{"sku":"WGSC12","x":2035,"y":1012,"g":"D"},{"sku":"WGSC14","x":2107,"y":1012,"g":"D"},{"sku":"WGSC16","x":2179,"y":1012,"g":"D"},{"sku":"6GC12","x":2251,"y":1012,"g":"D"},{"sku":"6EGR4IFA","x":741,"y":1051,"g":"D","w":69,"h":33},{"sku":"6EGR6IFA","x":816,"y":1051,"g":"D","w":69,"h":33},{"sku":"6EGR8IFA","x":891,"y":1051,"g":"D","w":69,"h":33},{"sku":"6EGR10IFA","x":966,"y":1051,"g":"D","w":69,"h":33},{"sku":"6EGR12IFA","x":1041,"y":1051,"g":"D","w":69,"h":33},{"sku":"6EGR14IFA","x":1116,"y":1051,"g":"D","w":69,"h":33},{"sku":"6EGR16IFA","x":1191,"y":1051,"g":"D","w":69,"h":33},{"sku":"ECR8","x":1266,"y":1051,"g":"D"},{"sku":"ECR10","x":1338,"y":1051,"g":"D"},{"sku":"ECR16","x":1410,"y":1051,"g":"D"},{"sku":"ECBR10","x":1482,"y":1051,"g":"D"},{"sku":"ECBR14","x":1554,"y":1051,"g":"D"},{"sku":"ECBR16","x":1626,"y":1051,"g":"D"},{"sku":"WGSC4CL","x":1720,"y":1052,"g":"D"},{"sku":"WGSC6CL","x":1792,"y":1052,"g":"D"},{"sku":"WGSC8CL","x":1864,"y":1052,"g":"D"},{"sku":"WGSC10CL","x":1936,"y":1052,"g":"D"},{"sku":"WGSC12CL","x":2008,"y":1052,"g":"D"},{"sku":"WGSC14CL","x":2080,"y":1052,"g":"D"},{"sku":"WGSC16CL","x":2152,"y":1052,"g":"D"},{"sku":"6ER4","x":733,"y":1137,"g":"D"},{"sku":"6ER6","x":805,"y":1137,"g":"D"},{"sku":"6ER8","x":877,"y":1137,"g":"D"},{"sku":"6ER10","x":949,"y":1137,"g":"D"},{"sku":"6ER12","x":1021,"y":1137,"g":"D"},{"sku":"6ER14","x":1093,"y":1137,"g":"D"},{"sku":"6ER16","x":1165,"y":1137,"g":"D"},{"sku":"6ER4CL","x":1237,"y":1137,"g":"D"},{"sku":"6ER6CL","x":1309,"y":1137,"g":"D"},{"sku":"6ER8CL","x":1381,"y":1137,"g":"D"},{"sku":"6ER10CL","x":1453,"y":1137,"g":"D"},{"sku":"6ER12CL","x":1525,"y":1137,"g":"D"},{"sku":"6ER14CL","x":1597,"y":1137,"g":"D"},{"sku":"6ER16CL","x":1669,"y":1137,"g":"D"},{"sku":"2RGCH4","x":1741,"y":1137,"g":"D"},{"sku":"2RGCH6","x":1813,"y":1137,"g":"D"},{"sku":"2RGCH8","x":1885,"y":1137,"g":"D"},{"sku":"2RGCH10","x":1957,"y":1137,"g":"D"},{"sku":"2RGCH12","x":2029,"y":1137,"g":"D"},{"sku":"2RGCH14","x":2101,"y":1137,"g":"D"},{"sku":"2RGCH16","x":2173,"y":1137,"g":"D"},{"sku":"2RGCH4CL","x":2245,"y":1137,"g":"D"},{"sku":"2RGCH6CL","x":2317,"y":1137,"g":"D"},{"sku":"2RGCH8CL","x":2389,"y":1137,"g":"D"},{"sku":"2RGCH10CL","x":2461,"y":1137,"g":"D","w":69,"h":34},{"sku":"2RGCH12CL","x":2536,"y":1137,"g":"D","w":69,"h":34},{"sku":"2RGCH14CL","x":2611,"y":1137,"g":"D","w":69,"h":34},{"sku":"2RGCH16CL","x":2686,"y":1137,"g":"D","w":69,"h":34},{"sku":"6EBR4","x":733,"y":1185,"g":"D"},{"sku":"6EBR6","x":805,"y":1185,"g":"D"},{"sku":"6EBR8","x":877,"y":1185,"g":"D"},{"sku":"6EBR10","x":949,"y":1185,"g":"D"},{"sku":"6EBR12","x":1021,"y":1185,"g":"D"},{"sku":"6EBR14","x":1093,"y":1185,"g":"D"},{"sku":"6EBR16","x":1165,"y":1185,"g":"D"},{"sku":"WFGBRSC4","x":1237,"y":1185,"g":"D"},{"sku":"WFGBRSC6","x":1309,"y":1185,"g":"D"},{"sku":"WFGBRSC8","x":1381,"y":1185,"g":"D"},{"sku":"WFGBRSC10","x":1453,"y":1185,"g":"D"},{"sku":"WFGBRSC12","x":1525,"y":1185,"g":"D"},{"sku":"WFGBRSC14","x":1597,"y":1185,"g":"D"},{"sku":"WFGBRSC16","x":1669,"y":1185,"g":"D"},{"sku":"2BRGCH4","x":1741,"y":1185,"g":"D"},{"sku":"2BRGCH6","x":1813,"y":1185,"g":"D"},{"sku":"2BRGCH8","x":1885,"y":1185,"g":"D"},{"sku":"2BRGCH10","x":1957,"y":1185,"g":"D"},{"sku":"2BRGCH12","x":2029,"y":1185,"g":"D"},{"sku":"2BRGCH14","x":2101,"y":1185,"g":"D"},{"sku":"2BRGCH16","x":2173,"y":1185,"g":"D"},{"sku":"6EG10E","x":1233,"y":1340,"g":"D"},{"sku":"6EG12E","x":1305,"y":1340,"g":"D"},{"sku":"6EG14E","x":1377,"y":1340,"g":"D"},{"sku":"6EG16E","x":1449,"y":1340,"g":"D"},{"sku":"2GGCH4","x":1521,"y":1340,"g":"D"},{"sku":"2GGCH6","x":1593,"y":1340,"g":"D"},{"sku":"2GGCH8","x":1665,"y":1340,"g":"D"},{"sku":"2GGCH10","x":1737,"y":1340,"g":"D"},{"sku":"2GGCH12","x":1809,"y":1340,"g":"D"},{"sku":"2GGCH14","x":1881,"y":1340,"g":"D"},{"sku":"2GGCH16","x":1953,"y":1340,"g":"D"},{"sku":"EWG66","x":2025,"y":1340,"g":"D"},{"sku":"EWG6","x":2097,"y":1340,"g":"D"},{"sku":"EWG4","x":2169,"y":1340,"g":"D"},{"sku":"WFGGSC14","x":1305,"y":1385,"g":"D"},{"sku":"WFGGSC16","x":1377,"y":1385,"g":"D"},{"sku":"WFGBLSC4","x":1449,"y":1385,"g":"D"},{"sku":"WFGBLSC6","x":1521,"y":1385,"g":"D","w":69,"h":35},{"sku":"WFGBLSC8","x":1596,"y":1385,"g":"D","w":69,"h":35},{"sku":"WFGBLSC10","x":1671,"y":1385,"g":"D","w":69,"h":35},{"sku":"WFGBLSC12","x":1746,"y":1385,"g":"D","w":69,"h":35},{"sku":"WFGBLSC14","x":1821,"y":1385,"g":"D","w":69,"h":35},{"sku":"WFGBLSC16","x":1896,"y":1385,"g":"D","w":69,"h":35},{"sku":"6EGBL4","x":1971,"y":1385,"g":"D"},{"sku":"6EBL6","x":2043,"y":1385,"g":"D"},{"sku":"6EGBL8","x":2115,"y":1385,"g":"D"},{"sku":"6EGBL10","x":2187,"y":1385,"g":"D"},{"sku":"6EGBL12","x":2259,"y":1385,"g":"D"},{"sku":"6EGBL14","x":2331,"y":1385,"g":"D"},{"sku":"6EGBL16","x":2403,"y":1385,"g":"D"},{"sku":"WTP82","x":1538,"y":727,"g":"X","w":72,"h":84,"c":"#0b6fea"},{"sku":"WFGGSC12","x":1233,"y":1385,"g":"D"},{"sku":"TBF","x":-457,"y":769,"g":"I"},{"sku":"FF","x":-817,"y":769,"g":"I"},{"sku":"GHF","x":-961,"y":769,"g":"I"},{"sku":"GFOE","x":-1033,"y":769,"g":"I"},{"sku":"GFM","x":-1105,"y":769,"g":"I"},{"sku":"ECBR12","x":102,"y":776,"g":"X","w":66,"h":34},{"sku":"DTPBL512","x":102,"y":816,"g":"X","w":66,"h":34},{"sku":"ECGR12CL","x":102,"y":856,"g":"X","w":66,"h":34},{"sku":"LR307BL","x":-616,"y":2178,"g":"L"},{"sku":"RBRC502CL","x":-789,"y":1897,"g":"L","w":71,"h":32},{"sku":"PFQA12WDL","x":-1037,"y":1983,"g":"L","w":69,"h":33},{"sku":"2BPCL","x":-1037,"y":2147,"g":"L","w":69,"h":33,"img":"https://media.tractorsupply.com/is/image/TractorSupplyCompany/2128066_A4?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"},{"sku":"QASP8","x":-1198,"y":1859,"g":"L"},{"sku":"QASP7","x":-1198,"y":1899,"g":"L"},{"sku":"ATVFD","x":-1198,"y":1939,"g":"L","img":"https://tarterparts.com/cdn/shop/collections/ATVFD_FlipDisc_S-02_2000x.jpg?v=1664889938"},{"sku":"ATVCPDC","x":-1198,"y":1979,"g":"L","img":"https://tarterparts.com/cdn/shop/collections/ATVCPDC_DiscCulitPackerCombo_S-01_2_1200x.jpg?v=1664889442"},{"sku":"ATVTD8","x":-1198,"y":2019,"g":"L","img":"https://tarterparts.com/cdn/shop/collections/ATVTD8_8-BladeDiscHarrow_S-01_1200x.jpg?v=1664889535"},{"sku":"QASP6","x":-1198,"y":2059,"g":"L"},{"sku":"SP6BDK","x":-1198,"y":2099,"g":"L"},{"sku":"SP7BDK","x":-1198,"y":2139,"g":"L"},{"sku":"BSQA-2BL","x":-1198,"y":2179,"g":"L","img":"https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/mobile/optimized/rev-ee97c48/tarter.canto.com/direct/image/trp6gdbo652d13u2tthdekmr2f/Z9oOCYU9tNkAClZlyTygQtEBmLA/m800/800"},{"sku":"LG114.5BL","x":-1198,"y":2259,"g":"L","w":69,"h":34},{"sku":"LG215BL","x":-1198,"y":2299,"g":"L","w":69,"h":34},{"sku":"LG216BL","x":-1198,"y":2339,"g":"L","w":69,"h":34},{"sku":"TGQA54-2BL","x":-1198,"y":2379,"g":"L","w":69,"h":34},{"sku":"1BPCL","x":-1282,"y":1939,"g":"L","w":71,"h":35,"img":"https://media.tractorsupply.com/is/image/TractorSupplyCompany/2128058?wid=554&hei=554&qlt=90&fmt=jpeg&resMode=sharp2&op_usm=0.9,1.0,8,0"},{"sku":"QH201BL","x":-1037,"y":2270,"g":"L","w":69,"h":33},{"sku":"DH207CL","x":-959,"y":2339,"g":"L","w":69,"h":33},{"sku":"MBSS10CL","x":-396,"y":2142,"g":"X","img":"https://tarterusa.com/nitropack_static/APKNOhVNYFYsogUfvaUwmsoSyHtCTHyZ/assets/desktop/optimized/rev-ee97c48/tarter.canto.com/direct/image/u527lp1b9d5j7821ttf5qr5932/abzXfHrTDzzGfui3N0hlzXF0-k8/m1200/1200"},{"sku":"1234","x":-383,"y":2199,"g":"X"}],"bg":[{"type":"poly","pts":[[-1782,-70],[-1758,70],[-1788,210],[-1762,370],[-1786,530],[-1764,710],[-1784,890],[-1766,1070],[-1782,1250],[-1768,1410]],"closed":false,"kind":"creek"},{"type":"rect","x":2368,"y":73,"w":700,"h":360,"label":"SECONDS","kind":"zone"},{"type":"rect","x":1951,"y":427,"w":270,"h":361,"label":"CUSTOMER PICKUP","kind":"zone"},{"type":"rect","x":-208,"y":1559,"w":1210,"h":618,"label":"TRAILER PARKING","kind":"zone"},{"type":"rect","x":500,"y":60,"w":1200,"h":660,"label":"TARTER — MAIN BUILDING","kind":"buildingbig"},{"type":"rect","x":332,"y":912,"w":326,"h":340,"label":"LOADING","kind":"building"},{"type":"rect","x":385,"y":970,"w":210,"h":95,"label":"PIT #1","kind":"pit"},{"type":"rect","x":394,"y":1117,"w":210,"h":95,"label":"PIT #2","kind":"pit"},{"type":"rect","x":400,"y":70,"w":96,"h":66,"label":"Dust coll.","kind":"box"},{"type":"rect","x":372,"y":384,"w":120,"h":86,"label":"Smoker shed","kind":"box"},{"type":"rect","x":443,"y":723,"w":53,"h":48,"label":"Diesel","kind":"box"},{"type":"rect","x":507,"y":727,"w":108,"h":134,"label":"Break room","kind":"box"},{"type":"rect","x":744,"y":728,"w":83,"h":44,"label":"AIR LIQUIDE","kind":"box"},{"type":"rect","x":846,"y":730,"w":57,"h":43,"label":"CO2","kind":"box"},{"type":"rect","x":1740,"y":520,"w":120,"h":44,"label":"Propane","kind":"box"},{"type":"rect","x":1740,"y":596,"w":120,"h":60,"label":"Burner-Off","kind":"box"},{"type":"rect","x":2540,"y":326,"w":150,"h":110,"label":"","kind":"grid"},{"type":"rect","x":2210,"y":110,"w":120,"h":44,"label":"GARBAGE","kind":"box"},{"type":"rect","x":2210,"y":178,"w":120,"h":44,"label":"GARBAGE","kind":"box"},{"type":"rect","x":2210,"y":246,"w":120,"h":44,"label":"GARBAGE","kind":"box"},{"type":"door","x":1600,"y":60,"label":"#1","vert":false},{"type":"door","x":1700,"y":150,"label":"#2","vert":true},{"type":"door","x":1700,"y":330,"label":"#3","vert":true},{"type":"door","x":1700,"y":510,"label":"#4","vert":true},{"type":"door","x":700,"y":718,"label":"#5","vert":false},{"type":"door","x":500,"y":300,"label":"#6","vert":true},{"type":"door","x":500,"y":120,"label":"#7","vert":true},{"type":"door","x":2981,"y":1091,"label":"#8","vert":false,"rot":107},{"type":"door","x":2944,"y":1254,"label":"#9","vert":false,"rot":104},{"type":"door","x":2892,"y":1436,"label":"#10","vert":false,"rot":104},{"type":"circle","cx":2710,"cy":744,"r":36},{"type":"circle","cx":2615,"cy":608,"r":36},{"type":"circle","cx":2615,"cy":704,"r":36},{"type":"circle","cx":2710,"cy":632,"r":36},{"type":"rect","x":2928,"y":1018,"w":180,"h":541,"label":"","kind":"box","rot":15},{"type":"label","x":3047,"y":691,"text":"TANKS","size":22},{"type":"rect","kind":"flex","x":-1640,"y":1039,"w":1634,"h":135,"label":"MTO — Especiales","skus":["2BLG10","2BLG12","2BLG14","2BLG16","2BLG18","2BLG20","2BLG4","2BLG6","2BLG8","2BLGCH10","2BLGCH12","2BLGCH14","2BLGCH16","2BLGCH18","2BLGCH20","2BLGCH4","2BLGCH6","2BLGCH8","2BRC10","2BRC12","2BRC14","2BRC16","2GC10","2GC12","2GC14","2GC16","2GC4","2GG10","2GG12","2GG14","2GG16","2GG18","2GG20","2GG4","2GG6","2GG8","2GGCH18","2GGCH20","2RC10","2RC12","2RC14","2RC16","2RG10","2RG12","2RG14","2RG16","2RG18","2RG20","2RG4","2RG6","2RG8","2RGCH18","2RGCH18CL","2RGCH20","2RGCH20CL","6EB10","6EB12","6EB14","6EB16","6EB18","6EB20","6EB4","6EB6","6EB8","6EBL18","6EBL20","6EBR18","6EBR20","6EG18","6EG20","6EGR18IFA","6EGR20IFA","6ER18","6ER20","6GG18","6MDBL10IFA","6MDBL12IFA","6MDBL14IFA","6MDBL16IFA","6MDBL4IFA","6MDBL6IFA","6MDBL8IFA","6MDG10IFA","6MDG12IFA","6MDG14IFA","6MDG16IFA","6MDG4IFA","6MDG6IFA","6MDG8IFA","ECB10","ECB10VC","ECB12","ECB12VC","ECB14","ECB16","ECB8","ECB8VC","ECBL10","ECBL14","ECBL16","ECBR10","ECBR14","ECBR16","ECBRSC10","ECBRSC12","ECG10T","ECG12A","ECG12TCL","ECG14T","ECG16A","ECG16T","ECG20A","ECG8T","ECR4","ECR6","ECR8","WFGB10","WFGB12","WFGB14","WFGB16","WFGB4","WFGB6","WFGB8","WFGBL10","WFGBL12","WFGBL14","WFGBL16","WFGBL4","WFGBL6","WFGBL8","WFGBLSC3","WFGGR10","WFGGR12","WFGGR14","WFGGR16","WFGGR4","WFGGR6","WFGGR8","WFGGRSC3","WFGGSC3","WFGGSC3CL","2BRGCH18","2BRGCH20","6GC10","6GC16","WG10","WG12","WG14","WG16","WG4","WG6","WG8","WGSC10","WGSC10CL","WGSC12","WGSC12CL","WGSC14","WGSC14CL","WGSC16","WGSC16CL","WGSC4","WGSC4CL","WGSC6","WGSC6CL","WGSC8","WGSC8CL","WFGBR12"]},{"type":"rect","kind":"flex","x":-1638,"y":767,"w":508,"h":114,"label":"MTO — Rodeo","skus":["2SCGBR10","2SCGBR12","2SCGBR14","2SCGBR16","2SCGBR18","2SCGBR20","2SCGBR4","2SCGBR8","AP510","AP512","AP512E","AP514","AP516","AP54","AP55","AP56","AP58","APHD510","APHD512","APHD514","APHD516","APHD54","APHD56","APHD58","APHD58MM","APHD610","APHD612","APHD614","APHD616","APHD64","APHD66","APHD68","HCP510","HCP512","HCP612","HCPBR510","HCPBR512","HCPBR512.8","HCPBR58","HCPBR612","SCGBR10","SCGBR12","SCGBR12WOH","SCGBR12X5","SCGBR14","SCGBR16","SCGBR4","SCGBR6","SCGBR8","SCGGR12","SCGGR6","SSP10","SSP12","SSP14","SSP16","SSP2.4","SSP3","SSP4","SSP5","SSP6","SSP7","SSP8","SSPA10","SSPA12","SSPA12FF","SSPA14","SSPA16","SSPA3","SSPA4","SSPA5","SSPA6","SSPA8"]},{"type":"line","x1":3236,"y1":1072,"x2":3230,"y2":59},{"type":"line","x1":3237,"y1":1071,"x2":3068,"y2":1697},{"type":"line","x1":3072,"y1":1690,"x2":2704,"y2":2068},{"type":"line","x1":2699,"y1":2073,"x2":304,"y2":2237},{"type":"rect","shape":"rect","x":40,"y":-328,"w":180,"h":258,"label":"","kind":"box","rx":17},{"type":"label","x":130,"y":-295,"text":"sh","size":22}]};
 /* ============================================================
@@ -2947,7 +2970,8 @@ function renderTiles(){
     d.className="tile"; d.dataset.i=i;
     const tc=t.c||color(t.g);
     d.style.cssText=`left:${t.x}px;top:${t.y}px;width:${t.w||TW}px;height:${t.h||TH}px;background:${tc}`;
-    d.title=t.sku+"  ·  "+groupName(t.g);
+    const nm=productName(t.sku);
+    d.title=(nm? nm+"\n" : "")+t.sku+"  ·  "+groupName(t.g);
     d.innerHTML=`<span>${hl(t.sku,q)}</span>`+
       `<div class="abadge"></div>`+
       `<input type="color" class="colorchip" value="${tc}" title="${LBL.color}" />`+
@@ -3483,9 +3507,19 @@ function onSearch(){
   const q=qInput.value.trim(); clrBtn.style.display=q?"block":"none"; highlightSearch();
   if(!q){ closeResults(); return; }
   const Q=q.toUpperCase(); const m=[];
-  data.tiles.forEach((t,i)=>{ if(t.sku&&t.sku.toUpperCase().includes(Q)) m.push({sku:t.sku,i,g:t.g}); });
+  /* Typing a barcode has to land on the product too — a phone keyboard and a
+     wedge scanner reach this box the same way. */
+  const scanned=/^\d{6,14}$/.test(Q) ? skuForBarcode(Q) : "";
+  const hits=(sku)=>{
+    if(!sku) return false;
+    const S=sku.toUpperCase();
+    if(S.includes(Q)) return true;
+    if(scanned && normCode(sku)===scanned) return true;
+    return productName(sku).toUpperCase().includes(Q);
+  };
+  data.tiles.forEach((t,i)=>{ if(hits(t.sku)) m.push({sku:t.sku,i,g:t.g}); });
   // also scan flexible (MTO) zones — a match points to the AREA, not a tile
-  flexZones().forEach(z=>{ (z.it.skus||[]).forEach(sku=>{ if(sku&&sku.toUpperCase().includes(Q))
+  flexZones().forEach(z=>{ (z.it.skus||[]).forEach(sku=>{ if(hits(sku))
     m.push({sku, flex:true, bi:z.idx, zone:z.it.label||"MTO"}); }); });
   m.sort((x,y)=>{ const xi=x.sku.toUpperCase().startsWith(Q)?0:1, yi=y.sku.toUpperCase().startsWith(Q)?0:1;
     if(xi!==yi) return xi-yi; return x.sku.localeCompare(y.sku,undefined,{numeric:true}); });
@@ -3500,14 +3534,16 @@ function paintResults(total){
   const q=qInput.value.trim();
   resultsBox.innerHTML=`<div class="rhint">${esc(I18N.tn("search.matches",total))}</div>`+
     currentResults.map((r,i)=>{
+      const nm=productName(r.sku);
+      const nameRow=nm?`<div class="rname">${hl(nm,q)}</div>`:"";
       if(r.flex) return `<div class="ritem ${i===activeIdx?"active":""}" data-i="${i}">
         <div class="rb" style="background:#C98A2E">★</div>
-        <div class="rtext"><div class="rsku">${hl(r.sku,q)}</div><div class="rloc">${esc(t("search.mtoLoc",{zone:r.zone}))}</div></div>
+        <div class="rtext"><div class="rsku">${hl(r.sku,q)}</div>${nameRow}<div class="rloc">${esc(t("search.mtoLoc",{zone:r.zone}))}</div></div>
         <div class="arrow">→</div></div>`;
       const tile=data.tiles[r.i];
       return `<div class="ritem ${i===activeIdx?"active":""}" data-i="${i}">
         <div class="rb" style="background:${color(r.g)}">${esc(r.g)}</div>
-        <div class="rtext"><div class="rsku">${hl(r.sku,q)}</div><div class="rloc">${esc(groupName(r.g))}</div></div>
+        <div class="rtext"><div class="rsku">${hl(r.sku,q)}</div>${nameRow}<div class="rloc">${esc(groupName(r.g))}</div></div>
         <button class="rimg" data-img-i="${i}" title="${esc(t("tile.viewImage"))}">${tile&&tile.img?"🖼️":"📷"}</button>
         <div class="arrow">→</div></div>`;
     }).join("");
@@ -3966,31 +4002,168 @@ function rebuildSkuList(){
     .map(s => `<option value="${esc(s)}"></option>`).join("");
 }
 
+/* ------------------------------------------ barcode → part number ---- */
+/* The label on a product carries a UPC/EAN, which says nothing to anybody in
+   the yard. seed/Part_Conversion.xlsx ships with the build as barcodes.js, so
+   a scan turns into a real part number on every device without importing
+   anything first; an admin can still load a newer list, which wins over it. */
+
+const BARCODE_LS_KEY = "tarter_yard_barcodes_v1";
+
+/* A UPC-A read as an EAN-13 only differs by a leading zero, and the same
+   product may be labelled either way, so codes are keyed without them. */
+function barcodeKey(code){
+  const k = normCode(code);
+  return k.replace(/^0+/, "") || k;
+}
+
+let BARCODE_OVERRIDES = null;          // list loaded by an admin on this device
+function barcodeOverrides(){
+  if(BARCODE_OVERRIDES) return BARCODE_OVERRIDES;
+  BARCODE_OVERRIDES = new Map();
+  try {
+    const st = JSON.parse(localStorage.getItem(BARCODE_LS_KEY) || "null");
+    const items = st && st.items;
+    if(items) Object.keys(items).forEach(code => {
+      const k = barcodeKey(code);
+      if(k) BARCODE_OVERRIDES.set(k, items[code]);
+    });
+  } catch(e){ /* a corrupt list just leaves the shipped table in charge */ }
+  return BARCODE_OVERRIDES;
+}
+document.addEventListener("yard:barcodes-changed", () => { BARCODE_OVERRIDES = null; PART_INDEX = null; });
+
+/** Every part number a scanned code could stand for, best guess first. */
+function barcodeCandidates(code){
+  const k = barcodeKey(code);
+  if(!k) return [];
+  const list = [];
+  const push = v => (Array.isArray(v) ? v : [v]).forEach(x => {
+    const n = normCode(x);
+    if(n && !list.includes(n)) list.push(n);
+  });
+  const own = barcodeOverrides().get(k);
+  if(own) push(own);
+  const seed = (window.__BARCODE_MAP__ || {})[k];
+  if(seed) push(seed);
+  return list;
+}
+
+let PART_INDEX = null;
+/** True when the conversion table knows this part number, tile or no tile. */
+function isKnownPart(sku){
+  const k = normCode(sku);
+  if(!k) return false;
+  if(!PART_INDEX){
+    PART_INDEX = new Set();
+    const add = v => (Array.isArray(v) ? v : [v]).forEach(x => { const n = normCode(x); if(n) PART_INDEX.add(n); });
+    Object.values(window.__BARCODE_MAP__ || {}).forEach(add);
+    barcodeOverrides().forEach(add);
+  }
+  return PART_INDEX.has(k);
+}
+
+/** The part number a barcode converts to, or "" when no list knows it. */
+function skuForBarcode(code){
+  const list = barcodeCandidates(code);
+  if(!list.length) return "";
+  if(!SKU_INDEX) SKU_INDEX = buildSkuIndex();
+  // A few codes are shared by two variants (16GC10 / 16GC10T) — the one that
+  // actually has a spot in the yard is the one worth showing.
+  const onMap = list.find(sku => SKU_INDEX.has(sku));
+  return onMap || list[0];
+}
+
+/* ---------------------------------------------------- product names ---- */
+/* A part number means nothing to the person holding the scanner, so wherever
+   a SKU is shown the product is spelled out next to it. Names come from the
+   imported inventory report first — it covers the whole plant — and fall back
+   to the list shipped in catalog.js. */
+
+let SEED_NAME_INDEX = null;
+function seedProduct(sku){
+  if(!SEED_NAME_INDEX){
+    SEED_NAME_INDEX = new Map();
+    const src = window.__SEED_CATALOG__ || {};
+    Object.keys(src).forEach(k => { const n = normCode(k); if(n) SEED_NAME_INDEX.set(n, src[k]); });
+  }
+  const k = normCode(sku);
+  return k ? (SEED_NAME_INDEX.get(k) || null) : null;
+}
+
+/** What the product is, written out. Empty when nothing knows this SKU. */
+function productName(sku){
+  if(!sku) return "";
+  try {
+    const item = window.YardInventory && YardInventory.get ? YardInventory.get(sku) : null;
+    if(item && item.description) return String(item.description).trim();
+  } catch(e){}
+  const seed = seedProduct(sku);
+  return seed && seed.n ? seed.n : "";
+}
+
+function productBrand(sku){
+  if(!sku) return "";
+  try {
+    const item = window.YardInventory && YardInventory.get ? YardInventory.get(sku) : null;
+    if(item && item.branding) return String(item.branding).trim();
+  } catch(e){}
+  const seed = seedProduct(sku);
+  return seed && seed.b ? seed.b : "";
+}
+
+/** The product written out when we know it, the bare part number when we do not. */
+function productLabel(sku){ return productName(sku) || String(sku == null ? "" : sku); }
+
 /**
  * Map a scanned or typed code onto a known SKU.
- * Barcodes often carry the SKU with extra packaging digits (a leading
- * country/company digit, a trailing check digit, padded zeros), so we try a
- * few sensible variants before giving up.
+ * The conversion table answers most scans outright; failing that, barcodes
+ * often carry the SKU with extra packaging digits (a leading country/company
+ * digit, a trailing check digit, padded zeros), so a few sensible variants
+ * are tried before giving up.
  */
 function resolveSku(code){
   const raw = String(code == null ? "" : code).trim();
   if(!SKU_INDEX) SKU_INDEX = buildSkuIndex();
   const n = normCode(raw);
+  const onMap = k => { const key = normCode(k); return key && SKU_INDEX.has(key) ? SKU_INDEX.get(key) : null; };
+
+  // 1. Somebody typed the part number itself.
+  const typed = onMap(n) || onMap(n.replace(/^0+/, ""));
+  if(typed) return named({ raw, found: true, ...typed });
+
+  // 2. It is a barcode the conversion table knows.
+  const mapped = skuForBarcode(n);
+  if(mapped){
+    const placed = onMap(mapped);
+    return named(placed
+      ? { raw, found: true, barcode: n, officialBarcode: true, ...placed }
+      : { raw, found: true, sku: mapped, barcode: n, officialBarcode: true, offMap: true, knownPart: true });
+  }
+
+  // 3. Last resort: strip the packaging digits and try again.
   const cands = [n, n.replace(/^0+/, "")];
   if(/^\d{8,14}$/.test(n)){
     cands.push(n.slice(1), n.slice(0, -1), n.slice(1, -1), n.replace(/^0+/, "").slice(0, -1));
   }
   for(const c of cands){
-    const k = normCode(c);
-    if(k && SKU_INDEX.has(k)) return Object.assign({ raw, found: true }, SKU_INDEX.get(k));
+    const hit = onMap(c);
+    if(hit) return named({ raw, found: true, ...hit });
   }
   /* Nothing on the map answers to this code. The catalog may still know it —
-     either as a product with no tile yet, or (once the barcode list arrives)
-     through the numeric code printed on the label. */
+     either as a product with no tile yet, or through a barcode column in the
+     inventory report. */
   const fromCatalog = catalogMatch(cands);
-  if(fromCatalog) return { raw, found: true, sku: fromCatalog, offMap: true };
-  return { raw, found: false, sku: raw.toUpperCase() };
+  if(fromCatalog) return named({ raw, found: true, sku: fromCatalog, offMap: true, knownPart: true });
+  /* Not on the map, but the conversion table may still recognise the part —
+     worth saying, because "unknown code" and "known product with no spot yet"
+     call for very different reactions in the yard. */
+  const sku = raw.toUpperCase();
+  return named({ raw, found: false, sku, knownPart: isKnownPart(n) });
 }
+
+/** Attaches the written-out product name to a lookup result. */
+function named(r){ r.name = productName(r.sku); return r; }
 
 /** Looks a scanned code up in the imported catalog, by SKU or by barcode. */
 function catalogMatch(cands){
@@ -4112,6 +4285,7 @@ function renderAlerts(){
     const canGo = !!(a.foundAt && a.foundAt.x != null) || !!findTileBySku(a.sku);
     return `<div class="alert-item ${done ? "done" : ""}" data-aid="${esc(a.id)}">
       <div class="atitle"><span class="atype ${esc(a.type)}">${esc(alertTypeLabel(a.type))}</span><span>${esc(a.sku || a.rawCode || "?")}</span></div>
+      ${productName(a.sku) ? `<div class="aname">${esc(productName(a.sku))}</div>` : ""}
       <div class="amsg">${esc(alertMessage(a))}${a.note ? " · " + esc(a.note) : ""}</div>
       <div class="ameta">${esc(meta)}</div>
       <div class="aacts">
@@ -4262,7 +4436,7 @@ function openTileReport(i){
   const tile = data.tiles[i];
   if(!tile) return;
   reportCtx = { i, sku: tile.sku, at: tileCentre(tile), g: tile.g };
-  $("#reportHead").textContent = t("report.forSku", { sku: tile.sku });
+  $("#reportHead").textContent = t("report.forSku", { sku: productLabel(tile.sku) });
   $("#reportNote").value = "";
   updateReportImage(tile);
   $("#reportModal").classList.add("show");
@@ -4297,7 +4471,7 @@ function setTileImage(tile){
 
 function openImageViewer(i){
   const tile = data.tiles[i]; if(!tile) return;
-  $("#imageModalHead").textContent = tile.sku;
+  $("#imageModalHead").textContent = productName(tile.sku) ? `${tile.sku} — ${productName(tile.sku)}` : tile.sku;
   const wrap = $("#imageModalImgWrap");
   wrap.classList.remove("empty");
   /* A tile carries its own photo only when someone set one by hand; otherwise
@@ -4413,7 +4587,7 @@ function updateFoundUi(){
     box.innerHTML =
       // A photo that fails to load just hides itself; the SKU and location still stand.
       (tile.img ? `<img class="lookup-img" src="${esc(tile.img)}" alt="" onerror="this.remove()" />` : "") +
-      `<span class="lsku">${esc(r.sku)}</span>` +
+      lookupHead(r) +
       `<span class="lmsg">${esc(t("found.expected", { loc: groupName(tile.g) || "—" }))}</span>` +
       `<div class="lact"><button data-act="show">${esc(t("alerts.goto"))}</button></div>`;
     box.querySelector('[data-act="show"]').onclick = () => { closeFoundModal(); flyTo(r.tileIdx); };
@@ -4423,18 +4597,43 @@ function updateFoundUi(){
   if(r.found && r.flexIdx != null){
     box.className = "lookup ok";
     box.innerHTML =
-      `<span class="lsku">${esc(r.sku)}</span>` +
+      lookupHead(r) +
       `<span class="lmsg">${esc(t("search.mtoLoc", { zone: r.zone }))}</span>`;
+    return;
+  }
+
+  // A barcode the conversion table knows, for a product with no tile yet.
+  if(r.found && r.offMap){
+    box.className = "lookup warn";
+    box.innerHTML =
+      lookupHead(r) +
+      `<span class="lmsg">${esc(t("found.offMap"))}</span>` +
+      (canEdit() ? `<div class="lact"><button data-act="create">${esc(t("found.createHere"))}</button></div>` : "");
+    const add = box.querySelector('[data-act="create"]');
+    if(add) add.onclick = () => createProductHere(r.sku);
     return;
   }
 
   box.className = "lookup warn";
   box.innerHTML =
-    `<span class="lsku">${esc(r.sku)}</span>` +
-    `<span class="lmsg"><b>${esc(t("found.notInSystem"))}</b><br>${esc(t("found.notInSystemDesc"))}</span>` +
+    lookupHead(r) +
+    (r.knownPart
+      ? `<span class="lmsg">${esc(t("found.offMap"))}</span>`
+      : `<span class="lmsg"><b>${esc(t("found.notInSystem"))}</b><br>${esc(t("found.notInSystemDesc"))}</span>`) +
     (canEdit() ? `<div class="lact"><button data-act="create">${esc(t("found.createHere"))}</button></div>` : "");
   const create = box.querySelector('[data-act="create"]');
   if(create) create.onclick = () => createProductHere(r.sku);
+}
+
+/* The product first, the part number under it: whoever scanned the label needs
+   to know what they are holding, not to read a number back. */
+function lookupHead(r){
+  const name = r.name || productName(r.sku);
+  const brand = productBrand(r.sku);
+  const sku = `<span class="lsku">${esc(r.sku)}</span>`;
+  if(!name) return sku + `<span class="lbrand">${esc(t("found.unnamed"))}</span>`;
+  return `<span class="lname">${esc(name)}</span>` + sku +
+    (brand ? `<span class="lbrand">${esc(brand)}</span>` : "");
 }
 
 function createProductHere(sku){
@@ -4470,9 +4669,12 @@ $("#foundScanBtn").onclick = () => {
   Scanner.open({
     onResult: code => {
       $("#foundModal").classList.add("show");
-      $("#foundSku").value = code;
+      // The part number is what the rest of the app works with, so the raw
+      // barcode is converted before it ever reaches the field.
+      const r = resolveSku(code);
+      $("#foundSku").value = r.found ? r.sku : code;
       updateFoundUi();
-      toast(t("scan.detected", { code }));
+      toast(scanToast(code, r));
     },
     onCancel: opt => {
       $("#foundModal").classList.add("show");
@@ -4555,8 +4757,24 @@ $("#selReport").onclick = () => {
 $("#reportBtn").onclick = () => openFoundModal(null);
 $("#drReport").onclick = () => { closeDrawer(); openFoundModal(null); };
 
+/** What to say out loud after a scan: the product, not the number. */
+function scanToast(code, r){
+  const res = r || resolveSku(code);
+  const name = res.name || productName(res.sku);
+  if(name) return t("scan.detectedProduct", { name });
+  if(res.found) return t("scan.detectedSku", { sku: res.sku });
+  return t("scan.noProduct", { code });
+}
+
 function startScanFlow(){
   openFoundModal(null);
+  /* The operational report takes over this modal when its module is installed,
+     so the camera has to be opened from whichever one actually came up. */
+  const ops = document.getElementById("opsReportModal");
+  if(ops && ops.classList.contains("show")){
+    const scan = document.getElementById("opsScanBtn");
+    if(scan){ scan.click(); return; }
+  }
   $("#foundScanBtn").click();
 }
 $("#scanBtn").onclick = startScanFlow;
@@ -5602,47 +5820,57 @@ boot();
   };
 
   /* ------------------------------ barcode registry */
+  /* Conversion itself lives in the core resolver, which already reads the
+     table shipped with the build (barcodes.js) and the list imported here.
+     This half only has to load a newer file and say so. */
   function normBarcode(v){ return String(v==null?"":v).trim().toUpperCase().replace(/[^A-Z0-9]/g,""); }
   function getBarcodeState(){ try{return JSON.parse(localStorage.getItem(BARCODE_KEY)||"null");}catch(e){return null;} }
-  function barcodeSku(code){ const s=getBarcodeState(); const k=normBarcode(code); return s&&s.items?s.items[k]||null:null; }
-  const baseResolveSkuV2 = (typeof resolveSku === "function") ? resolveSku : null;
-  if(baseResolveSkuV2){
-    resolveSku = function(code){
-      const mapped=barcodeSku(code);
-      if(mapped){
-        const r=baseResolveSkuV2(mapped);
-        if(r.found) return Object.assign({},r,{raw:String(code),barcode:normBarcode(code),officialBarcode:true});
-        return {raw:String(code),barcode:normBarcode(code),found:true,sku:mapped,officialBarcode:true};
-      }
-      return baseResolveSkuV2(code);
-    };
-  }
+  function shippedBarcodeCount(){ try{return Object.keys(window.__BARCODE_MAP__||{}).length;}catch(e){return 0;} }
+
+  /* The conversion file is a two-column sheet, and which two words head those
+     columns depends on who exported it: "PartNum / BarCode" out of the ERP,
+     "FG / UPC" out of the inventory report. Anything that reads as a part
+     number next to anything that reads as a code is accepted, and a plain
+     two-column sheet with no header at all still loads. */
+  const SKU_HEADERS=["partnum","partnumber","part","partno","fg","fgsku","sku","productsku","item","itemnum","itemnumber","productnum","product","numerodeparte","parte","producto"];
+  const CODE_HEADERS=["barcode","barcodes","upc","upca","upccode","ean","ean13","gtin","productcode","scancode","codigodebarras","codigo"];
   async function importBarcodeFile(file){
     if(typeof XLSX==="undefined") throw new Error("xlsx_missing");
     const wb=XLSX.read(await file.arrayBuffer(),{type:"array"});
     const items={}; let rowsLoaded=0; const sheets=[];
     const normH=v=>String(v==null?"":v).toLowerCase().replace(/[^a-z0-9]/g,"");
+    const looksLikeCode=v=>/^\d{6,14}$/.test(normBarcode(v));
     for(const name of wb.SheetNames){
       const rows=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,raw:false,defval:""});
       let hi=-1,skuCol=-1,bcCol=-1;
       for(let r=0;r<Math.min(rows.length,30);r++){
         const hs=(rows[r]||[]).map(normH);
-        skuCol=hs.findIndex(h=>h==="fg"||h==="sku"||h==="productsku"||h==="fgsku");
-        bcCol=hs.findIndex(h=>h.includes("barcode")||h==="upc"||h.includes("upccode")||h==="ean"||h==="gtin"||h==="productcode");
-        if(skuCol>=0&&bcCol>=0){hi=r;break;}
+        const sc=hs.findIndex(h=>SKU_HEADERS.includes(h));
+        const bc=hs.findIndex(h=>CODE_HEADERS.includes(h)||h.includes("barcode")||h.includes("codigodebarras"));
+        if(sc>=0&&bc>=0&&sc!==bc){hi=r;skuCol=sc;bcCol=bc;break;}
       }
-      if(hi<0) continue;
+      if(hi<0){
+        /* No header we recognise: fall back to the shape of the data — one
+           column of codes, one column of part numbers. */
+        const probe=rows.slice(0,40).filter(row=>Array.isArray(row)&&row.length>=2);
+        const codeCol=[0,1].find(c=>probe.filter(row=>looksLikeCode(row[c])).length>=Math.max(3,probe.length*0.6));
+        if(codeCol==null) continue;
+        bcCol=codeCol; skuCol=codeCol===0?1:0; hi=-1;
+      }
       sheets.push(name);
       for(let r=hi+1;r<rows.length;r++){
         const sku=String((rows[r]||[])[skuCol]||"").trim().toUpperCase();
         const bc=normBarcode((rows[r]||[])[bcCol]);
-        if(!sku||!bc) continue;
+        if(!sku||!bc||!looksLikeCode(bc)) continue;
+        if(SKU_HEADERS.includes(normH(sku))) continue;   // a header row read as data
         items[bc]=sku; rowsLoaded++;
       }
     }
     if(!rowsLoaded) throw new Error("barcode_headers_missing");
-    const state={fileName:file.name,importedAt:new Date().toISOString(),count:Object.keys(items).length,sheets,items};
+    const state={fileName:file.name,importedAt:new Date().toISOString(),count:Object.keys(items).length,rowsLoaded,sheets,items};
     localStorage.setItem(BARCODE_KEY,JSON.stringify(state));
+    // Tells the resolver to pick the new list up on the very next scan.
+    try{ document.dispatchEvent(new CustomEvent("yard:barcodes-changed")); }catch(e){}
     renderControlCenter();
     return state;
   }
@@ -5775,7 +6003,7 @@ boot();
     document.getElementById("opsPhotoViewer").addEventListener("click",e=>{if(e.target.id==="opsPhotoViewer")closePhotoViewer();});
     document.getElementById("opsBarcodeFile").onchange=async e=>{
       const f=e.target.files&&e.target.files[0]; e.target.value=""; if(!f)return;
-      try{const s=await importBarcodeFile(f);toast(`Barcode list loaded: ${s.count}`);renderControlCenter();}catch(err){console.error(err);toast("Could not read barcode list. It needs SKU/FG + Barcode/UPC/EAN columns.");}
+      try{const s=await importBarcodeFile(f);toast(`Barcode list loaded: ${s.count}`);renderControlCenter();}catch(err){console.error(err);toast("Could not read barcode list. It needs a part-number column (PartNum / FG / SKU) next to a code column (BarCode / UPC / EAN).");}
     };
 
     // Replace the old generic Report button with the new operational flow.
@@ -5815,7 +6043,13 @@ boot();
     if(!reportCtxV2) return;
     document.getElementById("opsReportModal").classList.remove("show");
     Scanner.open({
-      onResult:code=>{document.getElementById("opsReportModal").classList.add("show");document.getElementById("opsSkuInput").value=code;refreshReportSku();toast(`Scanned: ${code}`);},
+      onResult:code=>{
+        document.getElementById("opsReportModal").classList.add("show");
+        const r=resolveSku(code);
+        document.getElementById("opsSkuInput").value=r.found?r.sku:code;
+        refreshReportSku();
+        toast(scanToast(code,r));
+      },
       onCancel:()=>{document.getElementById("opsReportModal").classList.add("show");}
     });
   }
@@ -5835,9 +6069,18 @@ boot();
     const info=mapInfoForSku(reportCtxV2.sku); reportCtxV2.homeAt=info.at; reportCtxV2.homeGroup=info.group;
     const inv=inventorySystemQty(reportCtxV2.sku); const invState=inventoryState(); const official=r.officialBarcode?" · ✓ Official barcode":"";
     const invSource=invState ? `<br>Inventory source: <strong>${escOps(invState.fileName||"Loaded report")}</strong>${invState.reportDate?` · ${escOps(invState.reportDate)}`:""}` : `<br><span style="color:var(--amber)">Inventory report not loaded on this device.</span>`;
-    box.innerHTML=r.found
-      ? `<strong>${escOps(reportCtxV2.sku)}</strong>${official}<br>Assigned location: <strong>${escOps(info.group)}</strong> · System On Hand: <strong>${fmtNum(inv)}</strong>${invSource}`
-      : `<strong>${escOps(reportCtxV2.sku)}</strong><br><span style="color:var(--amber)">SKU/barcode not found in the current map list.</span>`;
+    /* Whoever scanned the label needs to read the product, so the name leads
+       and the part number follows it. */
+    const name=productName(reportCtxV2.sku);
+    const head=name
+      ? `<strong>${escOps(name)}</strong><br><span class="muted">${escOps(reportCtxV2.sku)}</span>`
+      : `<strong>${escOps(reportCtxV2.sku)}</strong>`;
+    const noSpot = r.knownPart || name
+      ? "Known product — it has no spot on the map yet."
+      : "SKU/barcode not found in the current map list.";
+    box.innerHTML=r.found && !r.offMap
+      ? `${head}${official}<br>Assigned location: <strong>${escOps(info.group)}</strong> · System On Hand: <strong>${fmtNum(inv)}</strong>${invSource}`
+      : `${head}${official}<br><span style="color:var(--amber)">${escOps(noSpot)}</span>${r.found?invSource:""}`;
     renderInventoryPreview();
   }
   function renderDynamicFields(){
@@ -5977,7 +6220,7 @@ boot();
         ${r.type==="out_of_place"&&r.status!=="resolved"&&r.foundAt?`<button data-op="keep" data-id="${escOps(r.id)}">Keep original + resolve</button><button data-op="move" data-id="${escOps(r.id)}">Move primary here</button><button data-op="secondary" data-id="${escOps(r.id)}">Add secondary spot</button>`:""}
       </div>`;
     }
-    return `<div class="ops-report-card"><div><div class="top"><span class="ops-pill ${escOps(r.type)}">${escOps(meta.label)}</span><span class="sku">${escOps(r.sku||"?")}</span><span class="ops-pill ${r.status==="resolved"?"resolved":""}">${escOps(st)}</span></div><div class="desc">${escOps(cardSummary(r))}${r.note?` · ${escOps(r.note)}`:""}</div><div class="meta">${escOps(fmtDateTime(r.createdAt))} · ${escOps(r.by||"—")} · ${escOps(r.homeGroup||"No fixed location")}${r.hasPhoto?" · 📷":""}</div></div><div class="right">${v}</div>${actions}</div>`;
+    return `<div class="ops-report-card"><div><div class="top"><span class="ops-pill ${escOps(r.type)}">${escOps(meta.label)}</span><span class="sku">${escOps(r.sku||"?")}</span><span class="ops-pill ${r.status==="resolved"?"resolved":""}">${escOps(st)}</span></div>${productName(r.sku)?`<div class="desc"><b>${escOps(productName(r.sku))}</b></div>`:""}<div class="desc">${escOps(cardSummary(r))}${r.note?` · ${escOps(r.note)}`:""}</div><div class="meta">${escOps(fmtDateTime(r.createdAt))} · ${escOps(r.by||"—")} · ${escOps(r.homeGroup||"No fixed location")}${r.hasPhoto?" · 📷":""}</div></div><div class="right">${v}</div>${actions}</div>`;
   }
   function bindReportActions(root){
     root.querySelectorAll("[data-op]").forEach(b=>b.onclick=async()=>{
@@ -6032,7 +6275,7 @@ boot();
     const inv=inventoryState(),bc=getBarcodeState(); const sp=document.getElementById("opsPageSettings");
     sp.innerHTML=`<div class="ops-panel"><div class="ops-panel-head"><h3>Data Sources</h3></div><div class="ops-panel-body">
       <div class="ops-settings-row"><div class="info"><b>Inventory report</b>${inv?`${escOps(inv.fileName)} · ${inv.rowCount} SKUs<br>Loaded ${escOps(fmtDateTime(inv.importedAt))}`:"Not loaded on this device"}</div><button class="ops-action" id="opsLoadInvFromCenter">Load report</button></div>
-      <div class="ops-settings-row"><div class="info"><b>Official barcode list</b>${bc?`${escOps(bc.fileName)} · ${bc.count} barcodes<br>Loaded ${escOps(fmtDateTime(bc.importedAt))}`:"Not loaded yet. The report scanner still supports SKU/manual entry."}</div><button class="ops-action" id="opsLoadBarcodeBtn">Load barcode list</button></div>
+      <div class="ops-settings-row"><div class="info"><b>Barcode conversion</b>Shipped with the app: <strong>${fmtNum(shippedBarcodeCount())}</strong> barcodes → part numbers.<br>${bc?`Updated on this device: ${escOps(bc.fileName)} · ${bc.count} barcodes · ${escOps(fmtDateTime(bc.importedAt))}`:"No newer list loaded on this device — the shipped table is in use."}</div><button class="ops-action" id="opsLoadBarcodeBtn">Load barcode list</button></div>
       <div class="ops-settings-row"><div class="info"><b>Photo storage</b>Report photos are stored in IndexedDB on this browser/device, not inside localStorage.</div><span class="ops-pill">LOCAL</span></div>
       <div class="ops-settings-row"><div class="info"><b>Report persistence</b>Operational reports, timestamps, quantities and workflow are stored locally in this browser.</div><span class="ops-pill">LOCAL</span></div>
     </div></div>`;
@@ -6048,7 +6291,7 @@ boot();
 
   /* ------------------------------ Excel export */
   function exportRows(list){ return list.map(r=>({
-    "Report ID":r.id,"Date / Time":fmtDateTime(r.createdAt),"Type":TYPE_META[r.type]?.label||r.type,"Status":STATUS_LABEL[r.status]||r.status,"SKU":r.sku,
+    "Report ID":r.id,"Date / Time":fmtDateTime(r.createdAt),"Type":TYPE_META[r.type]?.label||r.type,"Status":STATUS_LABEL[r.status]||r.status,"SKU":r.sku,"Product":productName(r.sku),"Barcode":r.barcode||"",
     "System On Hand":r.systemInventory??"","Physical Qty":r.physicalQuantity??"","Variance":r.variance??"","Quantity Affected":r.quantity??"","Result":r.inventoryResult||"","Reason":r.reason||"","Location":r.homeGroup||"","Notes":r.note||"","Photo":r.hasPhoto?"Yes":"No","Reported By":r.by||"","Resolved At":r.resolvedAt?fmtDateTime(r.resolvedAt):"","Resolved By":r.resolvedBy||"","Inventory Report":r.inventoryReportFile||""
   })); }
   function exportReports(){

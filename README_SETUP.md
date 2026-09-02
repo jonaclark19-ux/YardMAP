@@ -1203,3 +1203,49 @@ Las ubicaciones exactas de algunos botones pueden cambiar ligeramente con actual
 - Vercel Environment Variables: https://vercel.com/docs/environment-variables
 - GitHub Upload Files: https://docs.github.com/en/repositories/working-with-files/managing-files/adding-a-file-to-a-repository
 
+---
+
+# CÓDIGOS DE BARRAS → PRODUCTO
+
+Al escanear una etiqueta, el lector devuelve un UPC/EAN (por ejemplo
+`704496065337`), que no le dice nada a nadie en la yarda. La app lo convierte
+al número de parte y muestra el producto escrito.
+
+## Archivos
+
+| Archivo | Qué tiene | De dónde sale |
+|---|---|---|
+| `barcodes.js` | 2 896 códigos de barras → número de parte | `seed/Part_Conversion.xlsx` |
+| `catalog.js` | 104 números de parte → nombre del producto | `fotos3point.xlsx` |
+
+Los dos se cargan solos con la página (`index.html` los llama antes del mapa),
+así que un teléfono nuevo ya escanea bien sin importar nada.
+
+## Regenerar los archivos
+
+Cuando cambie `seed/Part_Conversion.xlsx` o `fotos3point.xlsx`:
+
+```
+python3 tools/build-barcode-map.py
+```
+
+Reescribe `barcodes.js` y `catalog.js`. Después hay que subir el cambio a
+GitHub como cualquier otro archivo; Vercel vuelve a publicar solo.
+
+## Actualizar la lista sin tocar el código
+
+Menú → **Control Center** → pestaña **Settings** → *Barcode conversion* →
+**Load barcode list**. Acepta el Excel de conversión tal como sale del ERP
+(columnas `PartNum` y `BarCode`), y también `FG` + `UPC` del reporte de
+inventario. Esa lista se guarda solo en ese aparato y manda sobre la que viene
+con la app; la de la app sigue funcionando para todos los demás.
+
+## De dónde salen los nombres
+
+1. El **reporte de inventario TGU** que carga el administrador (columna
+   `Description`) — es el que cubre toda la planta.
+2. `catalog.js`, la lista que viene con la app (104 productos, los de 3 puntos).
+
+Si un número de parte no está en ninguno de los dos, la app muestra el número
+de parte solo y avisa que ese producto todavía no tiene nombre. Cargando el
+reporte de inventario del día se llenan los que faltan.

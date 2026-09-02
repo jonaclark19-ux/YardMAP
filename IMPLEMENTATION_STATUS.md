@@ -19,6 +19,10 @@
 - Deep links by SKU and Share action
 - Shift handoff
 - PWA manifest/service worker/icons
+- Barcode → part number conversion shipped with the build (`barcodes.js`, 2 896 codes from `seed/Part_Conversion.xlsx`)
+- Product names on every scan, search result, report and export (`catalog.js` + the `Description` column of the imported inventory report)
+- Search matches product names as well as part numbers
+- The Control Center accepts the ERP conversion file as it comes (`PartNum` / `BarCode`)
 
 ## Requires external setup before online features run
 - Create a Supabase project
