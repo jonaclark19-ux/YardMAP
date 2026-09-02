@@ -1203,3 +1203,79 @@ Las ubicaciones exactas de algunos botones pueden cambiar ligeramente con actual
 - Vercel Environment Variables: https://vercel.com/docs/environment-variables
 - GitHub Upload Files: https://docs.github.com/en/repositories/working-with-files/managing-files/adding-a-file-to-a-repository
 
+---
+
+# CÓDIGOS DE BARRAS → PRODUCTO
+
+Al escanear una etiqueta, el lector devuelve un UPC/EAN (por ejemplo
+`704496065337`), que no le dice nada a nadie en la yarda. La app lo convierte
+al número de parte y muestra el producto escrito.
+
+## Archivos
+
+| Archivo | Qué tiene | De dónde sale |
+|---|---|---|
+| `barcodes.js` | 2 896 códigos de barras → número de parte | `seed/Part_Conversion.xlsx` |
+| `catalog.js` | 104 números de parte → nombre del producto | `fotos3point.xlsx` |
+
+Los dos se cargan solos con la página (`index.html` los llama antes del mapa),
+así que un teléfono nuevo ya escanea bien sin importar nada.
+
+## Cuando llegue un Excel de códigos actualizado
+
+Dos caminos, el que le quede más a mano:
+
+- **Menú → 🏷 Load barcode list** (justo debajo de *Load inventory report*).
+- **Menú → Control Center → pestaña Data → Load barcode Excel.**
+
+Elija el Excel y ya está.
+
+Acepta el archivo del ERP tal como sale (columnas `PartNum` y `BarCode`) y
+también `FG` + `UPC` del reporte de inventario.
+
+Los códigos se guardan **dentro del mapa**, igual que las fichas: quien tenga
+la app se los lleva en la siguiente sincronización, sin volver a publicar el
+sitio ni reemplazar archivos. Lo mismo pasa con los nombres de producto del
+reporte de inventario: el administrador lo carga una vez y los demás
+teléfonos ya leen el producto escrito aunque nunca hayan cargado un reporte.
+
+En el mapa solo se guarda **lo que sea distinto** de la lista que trae la app,
+así que volver a cargar el mismo archivo no lo infla. Con la tabla completa
+sustituida, el mapa pesa unos 220 KB — el servidor admite 5 500 KB.
+
+> **Ojo:** "se lo llevan todos" vale cuando el sitio está publicado con
+> Supabase y las variables de Vercel puestas. Sin backend, la app trabaja en
+> modo local y el mapa (con sus códigos y nombres) se guarda solo en ese
+> navegador.
+
+## Meter los códigos dentro de la app (opcional)
+
+Sirve para que un teléfono recién instalado escane bien **antes** de
+sincronizar, o si todavía no hay backend. En la misma fila:
+
+1. **⬇ Download barcodes.js** → descarga el archivo ya armado, con lo que trae
+   la app más lo que se haya cargado encima.
+2. Reemplace el `barcodes.js` del sitio por ese y vuelva a publicar.
+
+## Regenerar los archivos desde los Excel de origen
+
+Solo hace falta si se quiere rehacer todo desde cero, o para actualizar los
+nombres de `catalog.js`. Con Python instalado:
+
+```
+python3 tools/build-barcode-map.py
+```
+
+Reescribe `barcodes.js` y `catalog.js` a partir de `seed/Part_Conversion.xlsx`
+y `fotos3point.xlsx`. Da exactamente el mismo `barcodes.js` que el botón de
+descarga de la app.
+
+## De dónde salen los nombres
+
+1. El **reporte de inventario TGU** que carga el administrador (columna
+   `Description`) — es el que cubre toda la planta.
+2. `catalog.js`, la lista que viene con la app (104 productos, los de 3 puntos).
+
+Si un número de parte no está en ninguno de los dos, la app muestra el número
+de parte solo y avisa que ese producto todavía no tiene nombre. Cargando el
+reporte de inventario del día se llenan los que faltan.
