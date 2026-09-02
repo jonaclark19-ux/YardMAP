@@ -10,6 +10,23 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <title>Tarter Yard Map — Local Operations V2.3.2</title>
+
+<!-- The three faces the stylesheet has always asked for by name and never
+     loaded, so every screen fell back to the system UI font. Barlow Semi
+     Condensed carries the headings the way an equipment plate would, Inter
+     runs the prose, and JetBrains Mono sets part numbers — they are stamped
+     identifiers, compared character by character against a label. `swap`
+     keeps the app readable on a bad yard signal; the system stack behind
+     each one is the fallback. -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<!-- Loaded without blocking the first paint: on a weak yard signal a
+     render-blocking stylesheet is a blank screen while the phone waits on
+     Google. The app draws immediately in the system stack and swaps the
+     faces in when they arrive, or never, and still works. -->
+<link rel="stylesheet" media="print" onload="this.media='all';this.onload=null"
+      href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" />
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" /></noscript>
 <!-- V2.3.2: offline-safe build; Control Center moved outside the embedded SheetJS library. -->
 <style>
   :root{
@@ -770,6 +787,172 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
 @media(max-width:900px){header.topbar{min-height:0;flex-wrap:wrap;padding:9px 10px;gap:8px}.brand{min-width:0}.brandtext .sub{display:none}.search{order:3;flex-basis:100%;max-width:none;margin:0}.search input{height:42px}.tools{margin-left:auto}.tools #alertBtn,.tools #scanBtn,.tools #reportBtn{display:none}.tools .langswitch{display:none}.tarter-navrail{display:none}.app>main{margin-left:0;margin-bottom:66px}.tarter-mobilebar{position:absolute;left:0;right:0;bottom:0;z-index:38;height:66px;display:grid;grid-template-columns:repeat(5,1fr);padding:5px 8px calc(5px + env(safe-area-inset-bottom));background:rgba(11,16,22,.97);border-top:1px solid #283441;box-shadow:0 -12px 30px rgba(0,0,0,.22);backdrop-filter:blur(18px)}.tmob{position:relative;border:0;background:transparent;color:#7f8d9e;border-radius:11px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-weight:700}.tmob span{font-size:18px;line-height:1}.tmob small{font-size:9px}.tmob.active{color:#ff4b43}.tmob.scan span{width:34px;height:34px;margin-top:-16px;border-radius:50%;display:grid;place-items:center;background:#151e28;border:1px solid #3b4856;box-shadow:0 8px 18px rgba(0,0,0,.28);color:#f4f6f8}.tmob.scan small{margin-top:-3px}.zoomctl{bottom:14px}.hint{display:none}#reportModal.show{place-items:end center;padding:0}#reportModal .report-box{max-width:none;width:100%;border-radius:21px 21px 0 0;max-height:84dvh}#reportModal .report-body{grid-template-columns:1fr 1fr;padding-bottom:calc(16px + env(safe-area-inset-bottom))}#opsReportModal.show{place-items:end center;padding:0}#opsReportModal .ops-v2-box{width:100%;max-height:88dvh;border-radius:22px 22px 0 0}#opsReportModal .ops-v2-head:before{content:"";position:absolute;top:7px;left:50%;transform:translateX(-50%);width:42px;height:4px;border-radius:999px;background:#44515f}#opsReportModal .ops-v2-head{position:relative;padding-top:18px}#opsReportModal .ops-v2-body{padding-bottom:14px}.ops-v2-foot{padding-bottom:calc(10px + env(safe-area-inset-bottom))}.drawer{width:min(310px,88vw)}}
 @media(max-width:560px){.brand .logo{width:35px;height:35px;border-radius:9px}.brandtext h1{font-size:15px!important}.iconbtn{width:36px;height:36px}.search input{font-size:14px}.compass{left:10px;top:10px;width:40px;height:40px}.zoomctl{right:10px}.zoomctl button{width:40px;height:40px}#opsReportModal .ops-type-grid{grid-template-columns:1fr 1fr}.ops-type{min-height:64px}.ops-type small{display:none}.ops-inventory-strip{grid-template-columns:repeat(3,minmax(0,1fr))}.ops-inventory-strip .ops-stat:last-child{grid-column:auto}#reportModal .report-btn{min-height:68px;padding:9px}.report-btn .rtxt i{display:none}}
 @media(max-width:390px){.brandtext{display:block}.brandtext h1{max-width:122px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ops-v2-head .sub{display:none}.ops-type b{font-size:11px}.tarter-mobilebar{padding-left:4px;padding-right:4px}.tmob small{font-size:8.5px}}
+</style>
+
+<style id="tarter-design-system">
+/* ============================================================
+   TARTER YARD MAP — GALVANIZED
+   ------------------------------------------------------------
+   One layer, loaded last, that gives the app a single vocabulary.
+
+   The yard is steel: zinc-grey tube, red paint, amber safety
+   markings. The interface dresses the same way, and spends its
+   one loud note on amber — the colour that already means "look
+   here" on a piece of equipment.
+
+   Three jobs:
+     1. Semantic tokens. The file carries ~318 literal hex values
+        written eight different ways for the same grey, which is
+        why Field mode cannot become a real sunlight theme. Every
+        surface below is named, so a palette swap is one block.
+     2. A type scale on the three faces now actually loading.
+     3. The product identity block — the product's name leading,
+        its part number stamped underneath — used identically
+        wherever a product is named. That pairing is what this
+        app is for, so it is the thing it is built around.
+   ============================================================ */
+
+:root{
+  /* --- steel: five steps, from the ground up --- */
+  --steel-950:#080C10;      /* the ground behind everything */
+  --steel-900:#0F151C;      /* the app surface */
+  --steel-850:#141C25;      /* panels sitting on it */
+  --steel-800:#1B2531;      /* raised: inputs, cards, rows */
+  --steel-700:#243040;      /* hairlines */
+  --steel-600:#35455780;    /* edges that must be seen in sun */
+
+  /* --- zinc: ink on steel --- */
+  --zinc-000:#FFFFFF;
+  --zinc-100:#F2F5F8;
+  --zinc-400:#96A4B4;
+  --zinc-600:#6C7B8C;
+
+  /* --- the two signals, and nothing else --- */
+  --tarter-red:#E6322B;     /* the brand, and what is wrong */
+  --signal:#FFBD24;         /* attention: a match, a caution */
+  --signal-ink:#241A02;     /* type that sits on the signal */
+  --go:#39C875;
+  --info:#4D8DF7;
+
+  /* --- rhythm: one 4px scale, so spacing stops being a guess --- */
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px;
+  --r-sm:8px; --r-md:12px; --r-lg:16px; --r-pill:999px;
+
+  /* --- the existing names keep working, now pointing at the above --- */
+  --bg:var(--steel-900);
+  --bg2:var(--steel-850);
+  --panel:var(--steel-850);
+  --panel2:var(--steel-800);
+  --line:var(--steel-700);
+  --line2:var(--steel-600);
+  --ink:var(--zinc-100);
+  --muted:var(--zinc-400);
+  --muted2:var(--zinc-600);
+  --red:var(--tarter-red);
+  --amber:var(--signal);
+  --amber-soft:rgba(255,189,36,.13);
+  --green:var(--go);
+  --blue:var(--info);
+}
+
+/* ---------------------------------------------- type scale ---- */
+/* Barlow is narrow, so headings can hold their size on a phone
+   without wrapping; Inter runs 14px for prose because that is the
+   size a person reads at arm's length in daylight. */
+body{ font-family:var(--body); font-size:14px; -webkit-font-smoothing:antialiased; }
+h1,h2,h3,h4,.brandtext h1,.dr-name,.report-head,.ops-v2-head h2{
+  font-family:var(--display); font-weight:700; letter-spacing:.1px;
+}
+.brandtext h1{ font-size:19px!important; letter-spacing:.2px; }
+.brandtext .sub{ font-family:var(--body); font-weight:600; }
+
+/* A part number is an identifier to compare against a printed
+   label, so it is always mono and always tracked out a little. */
+.rsku,.lsku,.alert-item .atitle,.tile span,.ops-report-card .sku,
+.lookup .lsku,.ritem .rsku{
+  font-family:var(--mono); font-variant-ligatures:none; letter-spacing:.4px;
+}
+
+/* ------------------------------- the product identity block ---- */
+/* The name leads and the part number is stamped under it. Every
+   place a product is named uses this pair, so people learn one
+   shape and read it the same way on the map, in a report and in a
+   search result. */
+/* On a phone the name is the thing being looked for, so it wraps to a
+   second line instead of being cut off mid-word. */
+.ritem .rname{
+  font-family:var(--display); font-weight:600; font-size:15px; line-height:1.2;
+  color:var(--zinc-100); margin:0 0 2px;
+  white-space:normal; overflow:hidden; text-overflow:clip;
+  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2;
+}
+.ritem .rname mark{ background:var(--signal); color:var(--signal-ink); border-radius:3px; padding:0 3px; }
+.ritem .rsku{
+  font-size:11.5px; font-weight:500; color:var(--zinc-400); margin-top:1px;
+  display:inline-flex; align-items:center; gap:6px;
+}
+/* The tick is the stamp: it marks the number as machine data, not prose. */
+.ritem .rsku:before{
+  content:""; width:9px; height:1px; background:var(--steel-600); flex:none;
+}
+.ritem .rsku mark{ background:transparent; color:var(--signal); padding:0; }
+.ritem .rloc{ font-size:11.5px; color:var(--zinc-600); margin-top:3px; }
+.ritem{ gap:var(--s3); padding:var(--s3) var(--s3); border-radius:var(--r-md); }
+.ritem:hover,.ritem.active{ background:var(--steel-800); }
+.ritem .rb{
+  width:32px; height:32px; border-radius:var(--r-sm);
+  font-family:var(--display); font-weight:700; font-size:14px;
+}
+.rhint{
+  font-family:var(--display); font-weight:600; font-size:11px;
+  letter-spacing:.8px; color:var(--zinc-600); padding:var(--s3) var(--s3) var(--s2);
+}
+
+/* Same pair, in the scan/found lookup box. */
+.lookup .lname{ font-family:var(--display); font-weight:700; font-size:17px; line-height:1.2; }
+.lookup .lname+.lsku{ font-size:12px; color:var(--zinc-400); }
+.lookup .lbrand{ font-family:var(--body); }
+
+/* ---------------------------------------------- the map ---- */
+/* The tile IS the product, and it was being desaturated into the
+   background it sits on. */
+.tile{
+  font-family:var(--mono)!important; font-weight:700!important;
+  font-size:11px!important; letter-spacing:.2px;
+  filter:saturate(.92) brightness(1.02);
+}
+.tile:hover{ filter:saturate(1.05) brightness(1.12); }
+.tile.match{
+  filter:saturate(1.1) brightness(1.18);
+  box-shadow:0 0 0 2px var(--signal),0 0 22px rgba(255,189,36,.35)!important;
+}
+
+/* ---------------------------------------------- chrome ---- */
+header.topbar{
+  background:linear-gradient(180deg,var(--steel-850),var(--steel-900));
+  border-bottom:1px solid var(--steel-700);
+}
+.search input{
+  background:var(--steel-800); border-color:var(--steel-700);
+  font-family:var(--body); font-size:14.5px;
+}
+.search input:focus{ border-color:var(--steel-600); box-shadow:0 0 0 3px rgba(255,189,36,.12); }
+.results{ background:var(--steel-850); border-color:var(--steel-700); border-radius:var(--r-lg); padding:var(--s1); }
+.btn,.iconbtn{ background:var(--steel-800); border-color:var(--steel-700); }
+.iconbtn:hover{ background:var(--steel-700); border-color:var(--steel-600); }
+.tnav,.tmob{ font-family:var(--display); font-weight:600; }
+.tnav.active{ color:var(--tarter-red); box-shadow:inset 2px 0 0 var(--tarter-red); }
+.dr-item{ font-family:var(--body); font-weight:500; }
+.dr-label{ font-family:var(--display); font-weight:600; letter-spacing:.8px; }
+
+/* A control you cannot see focus on is a control a keyboard cannot
+   reach, and this app is used with gloves and a stylus too. */
+:where(button,input,select,textarea,[tabindex]):focus-visible{
+  outline:2px solid var(--signal); outline-offset:2px; border-radius:var(--r-sm);
+}
+@media(prefers-reduced-motion:reduce){
+  *,*:before,*:after{ animation-duration:.01ms!important; transition-duration:.01ms!important; }
+}
 </style>
 </head>
 <body class="booting">
@@ -3534,16 +3717,20 @@ function paintResults(total){
   const q=qInput.value.trim();
   resultsBox.innerHTML=`<div class="rhint">${esc(I18N.tn("search.matches",total))}</div>`+
     currentResults.map((r,i)=>{
+      /* The product leads and the part number is stamped under it: somebody
+         scanning a shelf reads the thing, then checks the number against the
+         label. A product with no name on file falls back to the number. */
       const nm=productName(r.sku);
-      const nameRow=nm?`<div class="rname">${hl(nm,q)}</div>`:"";
+      const head=nm?`<div class="rname">${hl(nm,q)}</div><div class="rsku">${hl(r.sku,q)}</div>`
+                   :`<div class="rname">${hl(r.sku,q)}</div>`;
       if(r.flex) return `<div class="ritem ${i===activeIdx?"active":""}" data-i="${i}">
         <div class="rb" style="background:#C98A2E">★</div>
-        <div class="rtext"><div class="rsku">${hl(r.sku,q)}</div>${nameRow}<div class="rloc">${esc(t("search.mtoLoc",{zone:r.zone}))}</div></div>
+        <div class="rtext">${head}<div class="rloc">${esc(t("search.mtoLoc",{zone:r.zone}))}</div></div>
         <div class="arrow">→</div></div>`;
       const tile=data.tiles[r.i];
       return `<div class="ritem ${i===activeIdx?"active":""}" data-i="${i}">
         <div class="rb" style="background:${color(r.g)}">${esc(r.g)}</div>
-        <div class="rtext"><div class="rsku">${hl(r.sku,q)}</div>${nameRow}<div class="rloc">${esc(groupName(r.g))}</div></div>
+        <div class="rtext">${head}<div class="rloc">${esc(groupName(r.g))}</div></div>
         <button class="rimg" data-img-i="${i}" title="${esc(t("tile.viewImage"))}">${tile&&tile.img?"🖼️":"📷"}</button>
         <div class="arrow">→</div></div>`;
     }).join("");
