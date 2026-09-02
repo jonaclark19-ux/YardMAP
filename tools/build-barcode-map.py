@@ -39,6 +39,11 @@ def norm(s):
     return re.sub(r"[^A-Z0-9]", "", str(s or "").upper())
 
 
+def part_number(s):
+    """Tal como lo escribe el ERP: P-P1811 no es PP1811 en una etiqueta."""
+    return str(s or "").strip().upper()
+
+
 def barcode_key(code):
     """Los ceros a la izquierda distinguen UPC-A de EAN-13 del mismo producto."""
     k = norm(code)
@@ -56,7 +61,7 @@ def build_barcodes():
         # Filas de relleno: códigos en ceros o demasiado cortos para ser una etiqueta.
         if len(key) < 6 or set(key) == {"0"}:
             continue
-        pairs.append((norm(part), key))
+        pairs.append((part_number(part), key))
     by_code = defaultdict(set)
     for part, code in pairs:
         by_code[code].add(part)

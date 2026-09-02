@@ -1221,24 +1221,35 @@ al número de parte y muestra el producto escrito.
 Los dos se cargan solos con la página (`index.html` los llama antes del mapa),
 así que un teléfono nuevo ya escanea bien sin importar nada.
 
-## Regenerar los archivos
+## Cuando llegue un Excel de códigos actualizado
 
-Cuando cambie `seed/Part_Conversion.xlsx` o `fotos3point.xlsx`:
+Todo se hace desde la app, sin instalar nada. Menú → **Control Center** →
+pestaña **Settings** → fila *Barcode conversion*:
+
+1. **Load barcode list** → elija el Excel nuevo.
+   Acepta el archivo del ERP tal como sale (columnas `PartNum` y `BarCode`) y
+   también `FG` + `UPC` del reporte de inventario.
+   Desde ese momento **ese aparato** ya escanea con los códigos nuevos.
+2. **⬇ Download barcodes.js** → descarga el archivo `barcodes.js` ya armado,
+   con lo que traía la app más lo que acaba de cargar.
+3. Reemplace el `barcodes.js` del sitio por el que descargó y vuelva a
+   publicar. Ahí **todos los teléfonos** quedan con los códigos nuevos.
+
+El paso 1 sirve para salir del paso hoy mismo; los pasos 2 y 3 son los que
+dejan el cambio para toda la yarda.
+
+## Regenerar los archivos desde los Excel de origen
+
+Solo hace falta si se quiere rehacer todo desde cero, o para actualizar los
+nombres de `catalog.js`. Con Python instalado:
 
 ```
 python3 tools/build-barcode-map.py
 ```
 
-Reescribe `barcodes.js` y `catalog.js`. Después hay que subir el cambio a
-GitHub como cualquier otro archivo; Vercel vuelve a publicar solo.
-
-## Actualizar la lista sin tocar el código
-
-Menú → **Control Center** → pestaña **Settings** → *Barcode conversion* →
-**Load barcode list**. Acepta el Excel de conversión tal como sale del ERP
-(columnas `PartNum` y `BarCode`), y también `FG` + `UPC` del reporte de
-inventario. Esa lista se guarda solo en ese aparato y manda sobre la que viene
-con la app; la de la app sigue funcionando para todos los demás.
+Reescribe `barcodes.js` y `catalog.js` a partir de `seed/Part_Conversion.xlsx`
+y `fotos3point.xlsx`. Da exactamente el mismo `barcodes.js` que el botón de
+descarga de la app.
 
 ## De dónde salen los nombres
 

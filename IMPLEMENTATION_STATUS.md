@@ -23,6 +23,7 @@
 - Product names on every scan, search result, report and export (`catalog.js` + the `Description` column of the imported inventory report)
 - Search matches product names as well as part numbers
 - The Control Center accepts the ERP conversion file as it comes (`PartNum` / `BarCode`)
+- The Control Center writes the updated `barcodes.js` back out, so a new conversion file reaches every device without running any tooling
 
 ## Requires external setup before online features run
 - Create a Supabase project

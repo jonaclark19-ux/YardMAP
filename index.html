@@ -4037,10 +4037,14 @@ document.addEventListener("yard:barcodes-changed", () => { BARCODE_OVERRIDES = n
 function barcodeCandidates(code){
   const k = barcodeKey(code);
   if(!k) return [];
+  /* Kept as the ERP writes them — a label reads P-P1811, not PP1811 — and
+     deduplicated on the normalised form, which is what lookups compare. */
   const list = [];
+  const seen = new Set();
   const push = v => (Array.isArray(v) ? v : [v]).forEach(x => {
-    const n = normCode(x);
-    if(n && !list.includes(n)) list.push(n);
+    const raw = String(x == null ? "" : x).trim().toUpperCase();
+    const n = normCode(raw);
+    if(n && !seen.has(n)){ seen.add(n); list.push(raw); }
   });
   const own = barcodeOverrides().get(k);
   if(own) push(own);
@@ -4070,7 +4074,7 @@ function skuForBarcode(code){
   if(!SKU_INDEX) SKU_INDEX = buildSkuIndex();
   // A few codes are shared by two variants (16GC10 / 16GC10T) — the one that
   // actually has a spot in the yard is the one worth showing.
-  const onMap = list.find(sku => SKU_INDEX.has(sku));
+  const onMap = list.find(sku => SKU_INDEX.has(normCode(sku)));
   return onMap || list[0];
 }
 
@@ -5863,7 +5867,14 @@ boot();
         const bc=normBarcode((rows[r]||[])[bcCol]);
         if(!sku||!bc||!looksLikeCode(bc)) continue;
         if(SKU_HEADERS.includes(normH(sku))) continue;   // a header row read as data
-        items[bc]=sku; rowsLoaded++;
+        /* A handful of codes are printed on two variants of the same product
+           (16GC10 / 16GC10T). Both are kept so the resolver can pick the one
+           that actually has a spot in the yard. */
+        const seen=items[bc];
+        if(seen===undefined) items[bc]=sku;
+        else if(Array.isArray(seen)){ if(!seen.includes(sku)) seen.push(sku); }
+        else if(seen!==sku) items[bc]=[seen,sku];
+        rowsLoaded++;
       }
     }
     if(!rowsLoaded) throw new Error("barcode_headers_missing");
@@ -5873,6 +5884,55 @@ boot();
     try{ document.dispatchEvent(new CustomEvent("yard:barcodes-changed")); }catch(e){}
     renderControlCenter();
     return state;
+  }
+
+  /* Turns whatever this device knows — the table shipped with the build plus
+     any list loaded on top of it — back into the barcodes.js file the build
+     carries. Dropping that file next to index.html is what makes an updated
+     conversion reach every phone instead of just this one. */
+  function exportBarcodeModule(){
+    const merged = new Map();
+    const put = (code, sku) => {
+      const k = String(code).toUpperCase().replace(/[^A-Z0-9]/g,"").replace(/^0+/,"");
+      if(k && sku) merged.set(k, sku);
+    };
+    Object.keys(window.__BARCODE_MAP__||{}).forEach(k => put(k, window.__BARCODE_MAP__[k]));
+    const st = getBarcodeState();
+    // The imported list is the newer truth, so it is applied second.
+    if(st && st.items) Object.keys(st.items).forEach(k => put(k, st.items[k]));
+    if(!merged.size){ toast("There is no barcode list to export yet."); return; }
+
+    const skus = new Set();
+    const rows = [...merged.keys()].sort().map(code => {
+      const v = merged.get(code);
+      (Array.isArray(v) ? v : [v]).forEach(x => skus.add(x));
+      return `  ${JSON.stringify(code)}: ${JSON.stringify(v)}`;
+    });
+    const source = st ? st.fileName : "seed/Part_Conversion.xlsx";
+    const text = `/* ============================================================
+   TARTER YARD MAP — conversión de códigos de barras
+   ------------------------------------------------------------
+   Código de barras (UPC/EAN) → número de parte.
+
+   Generado desde la app el ${new Date().toISOString().slice(0,10)}
+   a partir de: ${source}
+   ${merged.size} códigos · ${skus.size} números de parte
+
+   Este archivo va junto a index.html. Para actualizarlo: Control
+   Center → Settings → Load barcode list, y después Download
+   barcodes.js — no se edita a mano.
+   ============================================================ */
+window.__BARCODE_MAP__ = {
+${rows.join(",\n")}
+};
+`;
+    const blob = new Blob([text], {type:"text/javascript;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "barcodes.js";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast(`barcodes.js downloaded · ${merged.size} barcodes`);
   }
 
   /* ------------------------------ inventory helpers */
@@ -6275,12 +6335,13 @@ boot();
     const inv=inventoryState(),bc=getBarcodeState(); const sp=document.getElementById("opsPageSettings");
     sp.innerHTML=`<div class="ops-panel"><div class="ops-panel-head"><h3>Data Sources</h3></div><div class="ops-panel-body">
       <div class="ops-settings-row"><div class="info"><b>Inventory report</b>${inv?`${escOps(inv.fileName)} · ${inv.rowCount} SKUs<br>Loaded ${escOps(fmtDateTime(inv.importedAt))}`:"Not loaded on this device"}</div><button class="ops-action" id="opsLoadInvFromCenter">Load report</button></div>
-      <div class="ops-settings-row"><div class="info"><b>Barcode conversion</b>Shipped with the app: <strong>${fmtNum(shippedBarcodeCount())}</strong> barcodes → part numbers.<br>${bc?`Updated on this device: ${escOps(bc.fileName)} · ${bc.count} barcodes · ${escOps(fmtDateTime(bc.importedAt))}`:"No newer list loaded on this device — the shipped table is in use."}</div><button class="ops-action" id="opsLoadBarcodeBtn">Load barcode list</button></div>
+      <div class="ops-settings-row"><div class="info"><b>Barcode conversion</b>Shipped with the app: <strong>${fmtNum(shippedBarcodeCount())}</strong> barcodes → part numbers.<br>${bc?`Updated on this device: ${escOps(bc.fileName)} · ${bc.count} barcodes · ${escOps(fmtDateTime(bc.importedAt))}`:"No newer list loaded on this device — the shipped table is in use."}</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="ops-action" id="opsLoadBarcodeBtn">Load barcode list</button><button class="ops-action" id="opsExportBarcodeBtn">⬇ Download barcodes.js</button></div></div>
       <div class="ops-settings-row"><div class="info"><b>Photo storage</b>Report photos are stored in IndexedDB on this browser/device, not inside localStorage.</div><span class="ops-pill">LOCAL</span></div>
       <div class="ops-settings-row"><div class="info"><b>Report persistence</b>Operational reports, timestamps, quantities and workflow are stored locally in this browser.</div><span class="ops-pill">LOCAL</span></div>
     </div></div>`;
     const li=document.getElementById("opsLoadInvFromCenter"); if(li)li.onclick=()=>document.getElementById("inventoryFile")?.click();
     const lb=document.getElementById("opsLoadBarcodeBtn"); if(lb)lb.onclick=()=>document.getElementById("opsBarcodeFile")?.click();
+    const eb=document.getElementById("opsExportBarcodeBtn"); if(eb)eb.onclick=exportBarcodeModule;
   }
 
   /* ------------------------------ photos */
@@ -6349,7 +6410,7 @@ boot();
   try{ Sync.onAlerts(()=>{if(document.getElementById("opsCenter")?.classList.contains("show"))renderControlCenter();}); }catch(e){}
 
   createUi();
-  window.YardOpsV2={openReport:openOpsReport,openControlCenter,exportReports,importBarcodeFile,PhotoStore,classifyInventory};
+  window.YardOpsV2={openReport:openOpsReport,openControlCenter,exportReports,importBarcodeFile,exportBarcodeModule,PhotoStore,classifyInventory};
 })();
 
 </script>
