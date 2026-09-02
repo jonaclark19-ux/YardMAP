@@ -12,7 +12,7 @@
    la que exista en el mapa.
 
    Generado por tools/build-barcode-map.py — no editar a mano.
-   5819 filas · 2896 códigos · 2903 SKUs
+   5818 filas · 2895 códigos · 2903 SKUs
    ============================================================ */
 window.__BARCODE_MAP__ = {
   "30755567005647": "CPCT",
@@ -2909,6 +2909,5 @@ window.__BARCODE_MAP__ = {
   "704496999908": "CGW722",
   "704496999991": "EC",
   "749394017644": "CLDC",
-  "749394245856": "RC6MDCL",
-  "TART8ROUNDTANK": "WTP82"
+  "749394245856": "RC6MDCL"
 };

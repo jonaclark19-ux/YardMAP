@@ -45,9 +45,9 @@ def part_number(s):
 
 
 def barcode_key(code):
-    """Los ceros a la izquierda distinguen UPC-A de EAN-13 del mismo producto."""
-    k = norm(code)
-    return k.lstrip("0") or k
+    """Los ceros a la izquierda distinguen UPC-A de EAN-13 del mismo producto.
+    Una fila de puros ceros queda en cadena vacía: no es un código."""
+    return norm(code).lstrip("0")
 
 
 def build_barcodes():
@@ -58,8 +58,10 @@ def build_barcodes():
         if not part or not code or part.lower() == "partnum":
             continue
         key = barcode_key(code)
-        # Filas de relleno: códigos en ceros o demasiado cortos para ser una etiqueta.
-        if len(key) < 6 or set(key) == {"0"}:
+        # Mismo criterio que el importador de la app: 6 a 14 dígitos ya sin los
+        # ceros de la izquierda. Deja fuera las filas de relleno y las notas de
+        # texto que alguien escribió en la columna del código.
+        if not re.fullmatch(r"\d{6,14}", key):
             continue
         pairs.append((part_number(part), key))
     by_code = defaultdict(set)

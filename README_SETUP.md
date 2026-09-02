@@ -1223,8 +1223,12 @@ así que un teléfono nuevo ya escanea bien sin importar nada.
 
 ## Cuando llegue un Excel de códigos actualizado
 
-Menú → **Control Center** → pestaña **Settings** → fila *Barcode conversion* →
-**Load barcode list**, y elija el Excel. Nada más.
+Dos caminos, el que le quede más a mano:
+
+- **Menú → 🏷 Load barcode list** (justo debajo de *Load inventory report*).
+- **Menú → Control Center → pestaña Data → Load barcode Excel.**
+
+Elija el Excel y ya está.
 
 Acepta el archivo del ERP tal como sale (columnas `PartNum` y `BarCode`) y
 también `FG` + `UPC` del reporte de inventario.
