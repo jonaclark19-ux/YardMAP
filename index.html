@@ -945,6 +945,163 @@ header.topbar{
 .dr-item{ font-family:var(--body); font-weight:500; }
 .dr-label{ font-family:var(--display); font-weight:600; letter-spacing:.8px; }
 
+
+/* ============================================================
+   PART 2 — THE PHONE IN YOUR HAND
+   ------------------------------------------------------------
+   Scanning happens at arm's length, outdoors, often one-handed
+   on a moving forklift. The desk build put the camera in a 4:3
+   card inside a modal, which shrinks the target and forces the
+   person to walk closer to the label. Here the camera is the
+   screen, the controls sit in the thumb's arc, and the reticle
+   answers the only question being asked: is it reading it?
+   ============================================================ */
+
+/* -------------------------------------------------- the frame */
+@media(max-width:900px){
+  .scan-modal{ padding:0; }
+  .scan-modal.show{ place-items:stretch; }
+  .scan-box{
+    max-width:none; width:100%; height:100dvh; max-height:none;
+    border:0; border-radius:0; background:#000;
+  }
+  .scan-head{
+    position:absolute; z-index:2; left:0; right:0; top:0;
+    padding:calc(env(safe-area-inset-top) + var(--s3)) var(--s4) var(--s4);
+    border-bottom:0; color:var(--zinc-000);
+    background:linear-gradient(180deg,rgba(0,0,0,.72),transparent);
+  }
+  .scan-view{ aspect-ratio:auto; flex:1; }
+  .scan-foot{
+    position:absolute; z-index:2; left:0; right:0; bottom:0;
+    padding:var(--s4) var(--s4) calc(env(safe-area-inset-bottom) + var(--s4));
+    background:linear-gradient(0deg,rgba(0,0,0,.8),transparent);
+  }
+}
+
+/* A close control a gloved thumb can actually hit. */
+.scan-x{ width:44px; height:44px; border-radius:var(--r-pill); font-size:20px; }
+.scan-head{ font-family:var(--display); font-size:18px; letter-spacing:.2px; }
+
+/* -------------------------------------------------- the reticle */
+/* Wide and short, the shape of the thing being read. */
+.scan-reticle span{
+  position:relative; width:84%; max-width:420px; height:30%; max-height:220px;
+  border:0; border-radius:var(--r-md);
+  box-shadow:0 0 0 100vmax rgba(0,0,0,.46);
+}
+.scan-reticle i{
+  position:absolute; width:26px; height:26px;
+  border:3px solid var(--signal); border-radius:3px;
+}
+.scan-reticle i:nth-child(1){ top:-3px; left:-3px; border-right:0; border-bottom:0; }
+.scan-reticle i:nth-child(2){ top:-3px; right:-3px; border-left:0; border-bottom:0; }
+.scan-reticle i:nth-child(3){ bottom:-3px; left:-3px; border-right:0; border-top:0; }
+.scan-reticle i:nth-child(4){ bottom:-3px; right:-3px; border-left:0; border-top:0; }
+
+/* The one piece of motion in the app, and it earns its place: it is the
+   only evidence that the camera is live rather than frozen. */
+.scan-reticle span:after{
+  content:""; position:absolute; left:6%; right:6%; top:50%; height:2px;
+  background:linear-gradient(90deg,transparent,var(--signal),transparent);
+  opacity:.85; animation:scanSweep 2.4s ease-in-out infinite;
+}
+@keyframes scanSweep{
+  0%,100%{ transform:translateY(-46px); opacity:.25 }
+  50%    { transform:translateY(46px);  opacity:.9 }
+}
+@media(prefers-reduced-motion:reduce){ .scan-reticle span:after{ animation:none; opacity:.5 } }
+
+/* Caught a code once and waiting for the confirming read: the brackets go
+   green so the answer is visible without reading a word. */
+.scan-modal.reading .scan-reticle i{ border-color:var(--go); }
+.scan-modal.reading .scan-reticle span:after{ background:linear-gradient(90deg,transparent,var(--go),transparent); }
+
+/* -------------------------------------------------- the readout */
+.scan-status{
+  position:static; flex:1 1 100%; order:-1; left:auto; right:auto; bottom:auto;
+  background:rgba(8,12,16,.92); border-color:var(--steel-600);
+  border-radius:var(--r-md); padding:var(--s3) var(--s4);
+  font-family:var(--body); font-size:13.5px; text-align:center;
+}
+.scan-status.bad{ border-color:var(--tarter-red); color:#FFB3AD; }
+
+/* -------------------------------------------------- the controls */
+.scan-foot{ gap:var(--s2); padding:var(--s3); flex-wrap:wrap; align-items:stretch; }
+.scan-btn{
+  min-height:52px; border-radius:var(--r-md); font-family:var(--display);
+  font-weight:600; font-size:15px; background:rgba(20,28,37,.92);
+  border-color:var(--steel-600); color:var(--zinc-100);
+}
+.scan-btn:hover{ background:var(--steel-800); border-color:var(--signal); }
+/* Torch is the control that matters inside a shed, so it leads and it is
+   unmistakable when it is on. */
+.scan-btn[data-act="torch"]{ flex:1.4 1 120px; }
+.scan-btn.on{ background:var(--signal); color:var(--signal-ink); border-color:var(--signal); }
+/* There is no primary button in a scanner — the camera is the action — so
+   typing it by hand steps back to a quiet third option. */
+.scan-btn.ghost{
+  flex:1 1 100%; min-height:44px; background:transparent; border-color:transparent;
+  color:var(--zinc-400); font-weight:500; text-decoration:underline; text-underline-offset:3px;
+}
+.scan-btn.ghost:hover{ background:transparent; color:var(--zinc-100); border-color:transparent; }
+
+
+/* -------------------------------------------------- the report */
+/* Amber means one thing per screen: the action that finishes the job. It
+   was being spent three times over — on the selected type, on the scan
+   button and on submit — so nothing led. */
+.ops-type{
+  min-height:60px; border-radius:var(--r-md); background:var(--steel-800);
+  border-color:var(--steel-700); align-items:center;
+}
+.ops-type .ico{ font-size:19px; color:var(--zinc-600); line-height:1; }
+.ops-type b{ font-family:var(--display); font-weight:600; font-size:13px; color:var(--zinc-400); }
+.ops-type.on{
+  background:var(--steel-800); border-color:var(--signal);
+  box-shadow:inset 0 0 0 1px var(--signal);
+}
+.ops-type.on .ico{ color:var(--signal); }
+.ops-type.on b{ color:var(--zinc-100); }
+
+/* Scanning is how you got here, not the thing that finishes the report.
+   Scoped to the modal because a later module paints this button amber, and
+   two amber buttons on one screen means neither one leads. */
+#opsReportModal .ops-scan-btn{
+  min-height:48px; height:auto; border-radius:var(--r-md);
+  background:var(--steel-800); border:1px solid var(--steel-600); color:var(--zinc-100);
+  font-family:var(--display); font-weight:600; font-size:15px;
+}
+#opsReportModal .ops-scan-btn:hover{ border-color:var(--signal); color:var(--signal); }
+
+/* The product, in the same shape it takes everywhere else. */
+#opsReportModal .ops-sku-status{
+  background:var(--steel-850); border-color:var(--steel-700);
+  border-radius:var(--r-md); padding:var(--s3) var(--s4); font-size:12.5px; line-height:1.5;
+}
+#opsReportModal .ops-sku-status strong:first-child{
+  font-family:var(--display); font-weight:700; font-size:16px; color:var(--zinc-100);
+}
+#opsReportModal .ops-sku-status .muted{ font-family:var(--mono); font-size:12px; letter-spacing:.3px; }
+
+/* Fields a gloved thumb can hit, and a select that is not clipped by the
+   footer sitting on top of it. */
+.ops-field input,.ops-field select,.ops-field textarea{
+  min-height:48px; border-radius:var(--r-md);
+  background:var(--steel-800); border-color:var(--steel-700); font-size:15px;
+}
+.ops-field label{ font-family:var(--display); font-weight:600; color:var(--zinc-400); }
+.ops-section-title{ font-family:var(--display); font-weight:600; letter-spacing:.8px; color:var(--zinc-600); }
+/* The footer floats over the body, so the last control was being cut in half
+   by the button telling you to submit it. */
+#opsReportModal .ops-v2-body{ padding-bottom:var(--s6); }
+.ops-v2-foot button{ min-height:48px; border-radius:var(--r-md); font-family:var(--display); font-weight:600; }
+.ops-v2-foot .primary{ background:var(--signal); color:var(--signal-ink); font-weight:700; }
+
+/* A secondary control should not read as a call to action. */
+.pro-product-toggle{ color:var(--zinc-400)!important; font-weight:500!important; }
+.pro-product-toggle:hover{ color:var(--zinc-100)!important; }
+
 /* A control you cannot see focus on is a control a keyboard cannot
    reach, and this app is used with gloves and a stylus too. */
 :where(button,input,select,textarea,[tabindex]):focus-visible{
@@ -1654,6 +1811,9 @@ header.topbar{
       "scan.detectedProduct": "{name}",
       "scan.detectedSku": "Barcode → {sku}",
       "scan.noProduct": "Barcode {code} is not in the conversion list",
+      "scan.busy": "Another app is using the camera. Close it and try again.",
+      "scan.readerOffline": "The barcode reader could not load — this phone needs a signal the first time. Type the SKU meanwhile.",
+      "scan.failed": "The camera could not start. Try again, or type the SKU.",
       "scan.searching": "Looking it up…",
       "scan.foundSku": "{sku} — {loc}",
       "scan.unknown": "Code {code} is not in the system",
@@ -1995,6 +2155,9 @@ header.topbar{
       "scan.detectedProduct": "{name}",
       "scan.detectedSku": "Código de barras → {sku}",
       "scan.noProduct": "El código {code} no está en la lista de conversión",
+      "scan.busy": "Otra aplicación está usando la cámara. Ciérrala y vuelve a intentar.",
+      "scan.readerOffline": "No se pudo cargar el lector de códigos — este teléfono necesita señal la primera vez. Mientras tanto, escribe el SKU.",
+      "scan.failed": "No se pudo abrir la cámara. Intenta de nuevo, o escribe el SKU.",
       "scan.searching": "Buscándolo…",
       "scan.foundSku": "{sku} — {loc}",
       "scan.unknown": "El código {code} no está en el sistema",
@@ -2651,13 +2814,18 @@ header.topbar{
         </div>
         <div class="scan-view">
           <video id="scanVideo" playsinline muted autoplay></video>
-          <div class="scan-reticle"><span></span></div>
-          <div class="scan-status" id="scanStatus"></div>
+          <!-- Four brackets, not a closed box: they read as "aim here" from
+               arm's length and leave the label itself unobstructed. -->
+          <div class="scan-reticle"><span><i></i><i></i><i></i><i></i></span></div>
         </div>
+        <!-- The readout lives with the controls, not floating over the video:
+             a two-line message used to land on top of the buttons it was
+             telling you to press. -->
         <div class="scan-foot">
-          <button class="scan-btn" data-act="flip" data-i18n="scan.switch">Flip camera</button>
+          <div class="scan-status" id="scanStatus"></div>
           <button class="scan-btn" data-act="torch" data-i18n="scan.torch" hidden>Torch</button>
-          <button class="scan-btn primary" data-act="manual" data-i18n="scan.manual">Type it manually</button>
+          <button class="scan-btn" data-act="flip" data-i18n="scan.switch">Flip camera</button>
+          <button class="scan-btn ghost" data-act="manual" data-i18n="scan.manual">Type it manually</button>
         </div>
       </div>`;
     document.body.appendChild(el);
@@ -2747,6 +2915,9 @@ header.topbar{
     } else {
       lastCode = c; lastCount = 1;
     }
+    // One read is a maybe; the brackets turn green so the person can see the
+    // camera caught something without stopping to read a message.
+    if (el) el.classList.add("reading");
     if (lastCount < 2) { status(t("scan.searching")); return; }
     if (navigator.vibrate) { try { navigator.vibrate(40); } catch (e) {} }
     const handler = cbResult;
@@ -2828,15 +2999,23 @@ header.topbar{
       }
       await startZxing();
     } catch (err) {
+      /* "Camera access was denied" used to answer every failure, including the
+         ones where the camera is fine — a reader that could not be downloaded
+         reads as a permissions problem and sends people into settings for
+         nothing. Each case now says what actually happened. */
       const name = err && err.name;
+      const why = String((err && err.message) || "");
       if (name === "NotAllowedError" || name === "SecurityError") status(t("scan.denied"), "bad");
       else if (name === "NotFoundError" || name === "OverconstrainedError") status(t("scan.noCamera"), "bad");
-      else status(t("scan.denied"), "bad");
+      else if (name === "NotReadableError" || name === "AbortError") status(t("scan.busy"), "bad");
+      else if (why.indexOf("zxing") >= 0 || !global.ZXing) status(t("scan.readerOffline"), "bad");
+      else status(t("scan.failed"), "bad");
       running = false;
     }
   }
 
   function close() {
+    if (el) el.classList.remove("reading");
     running = false;
     if (rafId) cancelAnimationFrame(rafId);
     rafId = 0;
@@ -2846,7 +3025,26 @@ header.topbar{
     if (el) el.classList.remove("show");
   }
 
-  global.Scanner = { open, close, isSupported, secureContextOk, hasCameraApi };
+  /**
+   * Safari has no BarcodeDetector, so those phones fetch the reader from a
+   * CDN — and they were doing it at the worst possible moment: standing at a
+   * rack, camera open, on whatever signal the yard has. Fetching it while the
+   * app is starting, usually still on shop wifi, moves the download to the
+   * one time there is bandwidth to spare. It is cached from then on.
+   *
+   * Best effort by design: a failure here changes nothing, the first scan
+   * just falls back to fetching it the old way.
+   */
+  function warmUpReader() {
+    if ("BarcodeDetector" in global) return;
+    if (!isSupported()) return;
+    if (navigator.onLine === false) return;
+    const start = () => loadScript(ZXING_CDN).catch(() => {});
+    if ("requestIdleCallback" in global) global.requestIdleCallback(start, { timeout: 6000 });
+    else setTimeout(start, 3000);
+  }
+
+  global.Scanner = { open, close, isSupported, secureContextOk, hasCameraApi, warmUpReader };
 })(window);
 
 </script>
@@ -5233,6 +5431,8 @@ async function startApp(){
 async function boot(){
   I18N.applyI18n(document);
   paintLangPills();
+  // Pull the barcode reader down now, while there is probably still wifi.
+  try { Scanner.warmUpReader(); } catch(e){}
 
   // The yard layout that ships with the build, used to seed an empty server
   // and as the offline fallback.
@@ -6036,10 +6236,12 @@ boot();
   let activePhotoUrl = null;
 
   const TYPE_META = {
-    quality: {icon:"🟠", label:"Quality Report", desc:"Report a quality problem on a product."},
-    seconds: {icon:"🔴", label:"Report Seconds", desc:"Report product being sent to Seconds."},
-    inventory: {icon:"🔵", label:"Inventory Check", desc:"Compare physical quantity against system On Hand."},
-    out_of_place: {icon:"🟡", label:"Found Out of Place", desc:"Report product found away from its assigned location."}
+    /* Same glyph, same meaning, here and in the Control Center nav — a
+       coloured dot said nothing and clashed with the selected state. */
+    quality: {icon:"◇", label:"Quality Report", desc:"Report a quality problem on a product."},
+    seconds: {icon:"⊘", label:"Report Seconds", desc:"Report product being sent to Seconds."},
+    inventory: {icon:"▦", label:"Inventory Check", desc:"Compare physical quantity against system On Hand."},
+    out_of_place: {icon:"⌖", label:"Found Out of Place", desc:"Report product found away from its assigned location."}
   };
   const STATUS_LABEL = {
     new:"New", open:"New", acknowledged:"Acknowledged", in_progress:"In Progress", resolved:"Resolved"

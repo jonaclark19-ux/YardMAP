@@ -117,9 +117,48 @@ Nombre del producto arriba en condensada, número de parte estampado debajo en
 mono con una marquita. Es lo que esta app es, así que todo se construye
 alrededor: misma forma en la búsqueda, en el escaneo y en el reporte.
 
+## Parte 2 — escaneo y reporte  ✅ hecha
+
+El escáner era una tarjeta 4:3 dentro de una ventana: achicaba el blanco y
+obligaba a acercarse a la etiqueta. En el teléfono ahora la cámara **es** la
+pantalla, los controles caen en el arco del pulgar (52 px) y la mira son
+cuatro esquinas con una línea de barrido — la única animación de la app, y
+está porque es la única prueba de que la cámara está viva y no congelada.
+Cuando el lector engancha un código, las esquinas se ponen verdes: la
+respuesta se ve sin leer.
+
+El mensaje de error decía **"cámara denegada" para cualquier falla**, incluso
+cuando la cámara estaba bien y lo que no cargó fue el decodificador — mandaba
+a la gente a los ajustes del teléfono para nada. Ahora cada caso dice lo que
+pasó: permiso, cámara ocupada por otra app, lector sin descargar, o falla
+genérica.
+
+En el reporte, el ámbar se gastaba tres veces (tipo elegido, botón de
+escanear, enviar), así que nada mandaba. Ahora es uno: **Submit**. Los cuatro
+tipos usaban círculos de colores que no decían nada y encima peleaban con el
+color de selección; ahora usan los mismos glifos que la navegación del
+Control Center, así un símbolo significa lo mismo en toda la app.
+
+**Ojo con esto:** varios módulos inyectan sus estilos en tiempo de ejecución,
+después de la capa de diseño, así que ganan los empates de especificidad.
+Cuando una regla "no agarra", hay que apuntarla con el id del contenedor
+(`#opsReportModal .ops-scan-btn`), no subir a `!important`.
+
+### Pendiente técnico que salió aquí
+
+En iPhone no existe `BarcodeDetector`, así que el lector (ZXing) **se baja de
+un CDN**. Se estaba bajando en el peor momento: parado frente al rack, con la
+cámara abierta y la señal de la yarda. Ahora se precarga al abrir la app,
+normalmente todavía con wifi.
+
+Lo correcto sería **traer ZXing dentro del repositorio**, como ya está XLSX,
+para que no dependa de señal nunca. No se pudo hacer desde esta sesión porque
+el proxy bloquea el CDN. Es un archivo (`umd/index.min.js` de
+`@zxing/library@0.21.3`), guardarlo junto a `barcodes.js` y apuntar `ZXING_CDN`
+al archivo local, dejando el CDN de respaldo.
+
 ## Lo que falta
 
-2. **Escaneo y reporte** — el camino con el celular en la mano.
 3. **Control Center** — la pantalla más cargada.
 4. **Consolidar las tres generaciones de interfaz** (ver §4). Es lo que
    destraba un modo de sol de verdad.
