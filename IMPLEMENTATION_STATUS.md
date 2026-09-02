@@ -1,5 +1,9 @@
 # Implementation status
 
+> Para retomar el trabajo desde otra sesión, empezar por
+> [`NOTAS-DE-AVANCE.md`](NOTAS-DE-AVANCE.md): dónde quedó todo, qué sigue,
+> y cómo está armado el `index.html` por dentro.
+
 ## Implemented in code
 - Vercel Functions backend using the existing `/api/*` frontend contract
 - Admin/Viewer authentication with hashed access codes and HttpOnly signed session cookie
