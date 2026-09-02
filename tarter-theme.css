@@ -1,0 +1,358 @@
+/* ============================================================================
+   Tarter Yard Map — visual theme
+   ----------------------------------------------------------------------------
+   Loaded after the inline <style> block and enhancements.css, so it re-tunes the
+   existing design tokens and refines the components without touching behaviour.
+
+   Colour roles (keep these apart when adding UI):
+     brand red  -> identity, primary/commit actions, selected settings
+     amber      -> editing + selection state (map handles, edit mode, matches)
+     green      -> resolved / success        blue -> informational
+   ========================================================================== */
+
+:root{
+  /* ---- Tarter brand ------------------------------------------------------ */
+  --brand:#D8232A;              /* Tarter red */
+  --brand-hover:#EE3742;
+  --brand-deep:#9E1219;
+  --brand-ink:#FFFFFF;
+  --brand-soft:rgba(216,35,42,.14);
+  --brand-softer:rgba(216,35,42,.07);
+  --brand-ring:rgba(216,35,42,.30);
+  --brand-grad:linear-gradient(135deg,#E8303A 0%,#D8232A 46%,#A5151C 100%);
+
+  /* ---- Surfaces (neutral graphite, less blue than before) ---------------- */
+  --bg:#0F1216;
+  --bg2:#14181E;
+  --bg3:#1A1F26;
+  --panel:rgba(255,255,255,.045);
+  --panel2:rgba(255,255,255,.085);
+  --glass:rgba(20,24,30,.88);
+  --line:rgba(255,255,255,.09);
+  --line2:rgba(255,255,255,.16);
+
+  /* ---- Ink --------------------------------------------------------------- */
+  --ink:#F2F5F8;
+  --muted:#9AA6B4;
+  --muted2:#7C8896;
+
+  /* ---- Status ------------------------------------------------------------ */
+  --red:#E23A2E;                /* alerts / destructive (kept distinct from brand) */
+  --amber:#F5B32B;
+  --amber-soft:rgba(245,179,43,.15);
+  --green:#31C06D;
+  --blue:#5B8DEF;
+
+  /* ---- Elevation & shape -------------------------------------------------- */
+  --shadow:0 18px 44px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.4);
+  --shadow-sm:0 6px 18px rgba(0,0,0,.38);
+  --shadow-brand:0 6px 18px rgba(216,35,42,.22);
+  --inset-hi:inset 0 1px 0 rgba(255,255,255,.07);
+  --r-sm:8px; --r-md:11px; --r-lg:14px; --r-xl:18px;
+
+  /* ---- Motion ------------------------------------------------------------- */
+  --ease:cubic-bezier(.16,1,.3,1);
+  --t-fast:.14s var(--ease);
+  --t:.22s var(--ease);
+}
+
+/* ============================================================ base ======== */
+body{background:
+  radial-gradient(120% 90% at 50% -10%, #191E26 0%, transparent 55%),
+  var(--bg);}
+
+::selection{background:var(--brand-soft);color:var(--ink)}
+
+/* Quiet scrollbars inside panels, drawers and modals. */
+.alerts-body,.results,.legend,.insp .ibody,.report-body,.drawer,.ops-content,#mtoBody{
+  scrollbar-width:thin;scrollbar-color:var(--line2) transparent}
+.alerts-body::-webkit-scrollbar,.results::-webkit-scrollbar,.legend::-webkit-scrollbar,
+.insp .ibody::-webkit-scrollbar,.report-body::-webkit-scrollbar,.drawer::-webkit-scrollbar,
+.ops-content::-webkit-scrollbar,#mtoBody::-webkit-scrollbar{width:9px;height:9px}
+.alerts-body::-webkit-scrollbar-thumb,.results::-webkit-scrollbar-thumb,.legend::-webkit-scrollbar-thumb,
+.insp .ibody::-webkit-scrollbar-thumb,.report-body::-webkit-scrollbar-thumb,.drawer::-webkit-scrollbar-thumb,
+.ops-content::-webkit-scrollbar-thumb,#mtoBody::-webkit-scrollbar-thumb{
+  background:var(--line2);border-radius:99px;border:2px solid transparent;background-clip:content-box}
+
+/* One consistent keyboard focus ring across the whole app. */
+button:focus-visible,a:focus-visible,[tabindex]:focus-visible,
+input[type=color]:focus-visible,input[type=range]:focus-visible,input[type=file]:focus-visible{
+  outline:2px solid var(--brand-hover);outline-offset:2px;border-radius:var(--r-sm)}
+input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none}
+
+/* ===================================================== brand & topbar ==== */
+header.topbar{
+  position:relative;gap:12px;
+  background:linear-gradient(180deg,#1C222B 0%,#14181E 100%);
+  border-bottom:1px solid var(--line);
+  box-shadow:0 1px 0 rgba(255,255,255,.03), 0 8px 24px rgba(0,0,0,.35)}
+/* Brand signature: a thin Tarter-red rule across the top of the app. */
+header.topbar::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;
+  background:linear-gradient(90deg,var(--brand-deep),var(--brand) 22%,var(--brand-hover) 50%,var(--brand) 78%,var(--brand-deep));
+  opacity:.9;pointer-events:none}
+
+.logo,.login-brand .logo{
+  background:var(--brand-grad);
+  border-radius:12px;
+  box-shadow:var(--inset-hi), 0 0 0 1px rgba(255,255,255,.14), 0 4px 14px rgba(216,35,42,.28);
+  letter-spacing:.5px}
+.brand .logo{width:40px;height:40px;font-size:23px}
+.login-brand .logo{width:52px;height:52px;border-radius:14px;font-size:29px}
+
+.brandtext h1,.brand h1{font-weight:800;letter-spacing:.2px}
+.brandtext .sub,.brand .sub{color:var(--muted2);font-weight:700;font-size:11px;letter-spacing:.9px}
+
+/* ============================================================ buttons ==== */
+.btn{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-md);
+  transition:background var(--t-fast),border-color var(--t-fast),transform var(--t-fast),box-shadow var(--t-fast)}
+.btn:hover{background:var(--panel2);border-color:var(--line2)}
+.btn:active{transform:translateY(1px)}
+/* "on" = an editor mode is engaged, so it stays amber. */
+.btn.on{background:var(--amber);color:#1E1703;border-color:var(--amber);box-shadow:0 6px 16px rgba(245,179,43,.28)}
+.btn.on:hover{background:#ffc44f;border-color:#ffc44f}
+.iconbtn{border-radius:12px}
+.iconbtn svg{transition:transform var(--t-fast)}
+.iconbtn:hover svg{transform:scale(1.06)}
+
+.badge{background:var(--brand);box-shadow:0 0 0 2px var(--bg2);font-weight:800;letter-spacing:.2px}
+
+/* Selected setting (language, filters) = brand red. */
+.langswitch{background:var(--panel);border-color:var(--line);border-radius:10px}
+.langpill{transition:background var(--t-fast),color var(--t-fast)}
+.langpill.on{background:var(--brand);color:var(--brand-ink);box-shadow:var(--inset-hi)}
+.langpill:not(.on):hover{background:var(--panel2)}
+
+/* ============================================================= search ==== */
+.search input{background:rgba(0,0,0,.28);border:1px solid var(--line);border-radius:12px;
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.35);transition:border-color var(--t-fast),box-shadow var(--t-fast)}
+.search input:hover{border-color:var(--line2)}
+.search input:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-ring), inset 0 1px 2px rgba(0,0,0,.35)}
+.search input:focus + .clr,.search svg{transition:color var(--t-fast)}
+.search input:focus ~ svg{color:var(--brand-hover)}
+
+.results{background:var(--glass);border:1px solid var(--line2);border-radius:var(--r-lg);
+  box-shadow:var(--shadow);padding:7px;backdrop-filter:blur(14px)}
+.rhint{color:var(--muted2);font-size:10.5px;letter-spacing:.8px}
+.ritem{border-radius:10px;transition:background var(--t-fast)}
+.ritem:hover,.ritem.active{background:var(--panel2)}
+.ritem .rb{border-radius:9px;box-shadow:var(--inset-hi), 0 2px 6px rgba(0,0,0,.35)}
+.ritem .rsku mark{background:var(--amber);color:#1E1703}
+.ritem .rimg{border-radius:9px;background:var(--panel);border-color:var(--line)}
+.ritem .rimg:hover{border-color:var(--brand);color:var(--brand-hover)}
+
+/* ====================================================== map furniture ==== */
+.stage{background:
+  linear-gradient(0deg, rgba(255,255,255,.016) 1px, transparent 1px) 0 0/30px 30px,
+  linear-gradient(90deg, rgba(255,255,255,.016) 1px, transparent 1px) 0 0/30px 30px,
+  radial-gradient(120% 90% at 50% 0%, #191E26 0%, var(--bg2) 60%)}
+
+.compass,.legend,.zoomctl button,.hint,.bgbar,.insp,.seltool,.alerts-panel,.pickbar{
+  background:var(--glass);border-color:var(--line2);backdrop-filter:blur(14px)}
+.compass{border-radius:12px;box-shadow:var(--shadow-sm);color:var(--muted)}
+.compass svg{color:var(--brand-hover)}
+
+.zoomctl{gap:7px}
+.zoomctl button{border-radius:12px;box-shadow:var(--shadow-sm);transition:background var(--t-fast),border-color var(--t-fast),transform var(--t-fast)}
+.zoomctl button:hover{background:var(--panel2);border-color:var(--line2)}
+.zoomctl button:active{transform:scale(.94)}
+.zoomctl .fit{letter-spacing:.6px;color:var(--muted)}
+.zoomctl .fit:hover{color:var(--ink)}
+
+.hint{border-radius:10px;box-shadow:var(--shadow-sm)}
+.editbadge{box-shadow:0 10px 26px rgba(245,179,43,.3)}
+
+.legend{border-radius:var(--r-lg);box-shadow:var(--shadow)}
+.legend h4{background:linear-gradient(180deg,rgba(20,24,30,.98),rgba(20,24,30,.86));
+  letter-spacing:.9px;font-size:11.5px;padding:12px 14px 9px}
+.legend h4 #addGroupBtn{border-radius:8px;transition:background var(--t-fast),border-color var(--t-fast)}
+.legend h4 #addGroupBtn:hover{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+.legend .lrow{padding:7px 14px;transition:background var(--t-fast)}
+.legend .sw{border-radius:5px}
+
+.bgbar,.seltool{border-radius:var(--r-lg);box-shadow:var(--shadow);padding:8px 10px}
+.bgbar button,.seltool button{border-radius:9px;transition:background var(--t-fast),border-color var(--t-fast),transform var(--t-fast)}
+.bgbar button:active,.seltool button:active{transform:translateY(1px)}
+.bgbar button.on{background:var(--amber);color:#1E1703;border-color:var(--amber)}
+.seltool button:hover{border-color:var(--line2);background:var(--panel2)}
+.seltool .cnt b{color:var(--amber)}
+
+.insp{border-radius:var(--r-xl);box-shadow:var(--shadow)}
+.insp .ihead{background:rgba(255,255,255,.03)}
+.insp .chips button.on{background:var(--amber);color:#1E1703;border-color:var(--amber)}
+.insp input:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-ring)}
+.insp .acts button{border-radius:9px;transition:background var(--t-fast),border-color var(--t-fast)}
+.insp .acts button:hover{border-color:var(--line2)}
+.insp .acts button.danger:hover{background:var(--red);border-color:var(--red);color:#fff}
+
+.pickbar{border-color:var(--brand);border-radius:var(--r-lg);box-shadow:var(--shadow),0 0 0 1px var(--brand-soft)}
+.pickbar .pb-ok{background:var(--brand);color:var(--brand-ink);box-shadow:var(--shadow-brand)}
+.pickbar .pb-ok:hover:not(:disabled){background:var(--brand-hover)}
+
+/* =========================================================== overlays ==== */
+.report-modal{background:rgba(6,8,11,.7);backdrop-filter:blur(3px)}
+.report-box{background:linear-gradient(180deg,#1A1F26 0%,#14181E 40%);
+  border:1px solid var(--line2);border-radius:var(--r-xl);box-shadow:var(--shadow)}
+.report-head{position:relative;padding:17px 20px 15px;font-size:17.5px;letter-spacing:.2px;
+  background:rgba(255,255,255,.025)}
+/* Brand rule under every modal title. */
+.report-head::after{content:"";position:absolute;left:20px;bottom:-1px;width:44px;height:2px;
+  background:linear-gradient(90deg,var(--brand),transparent);border-radius:2px}
+.report-body{padding:18px 20px}
+.report-q,.step-label{font-size:11px;letter-spacing:.9px}
+.step-label{color:var(--brand-hover)}
+
+/* Choice cards: icon sits in its own tinted tile, card lifts on hover. */
+.report-btn{border-radius:12px;padding:13px 14px;transition:background var(--t-fast),border-color var(--t-fast),transform var(--t-fast)}
+.report-btn:hover{background:var(--panel2);border-color:var(--brand);transform:translateY(-1px)}
+.report-btn:active{transform:translateY(0)}
+.report-btn .ico{flex:none;width:38px;height:38px;border-radius:10px;display:grid;place-items:center;
+  font-size:19px;background:var(--brand-softer);border:1px solid var(--line);box-shadow:var(--inset-hi)}
+.report-btn:hover .ico{background:var(--brand-soft);border-color:var(--brand-ring)}
+.report-btn.accent{border-color:var(--brand-ring);background:var(--brand-softer)}
+.report-btn.accent .ico{background:var(--brand-soft)}
+
+.report-foot{padding:14px 20px;background:rgba(0,0,0,.18)}
+.report-foot button{border-radius:9px;transition:background var(--t-fast),color var(--t-fast)}
+.report-foot button.primary{background:var(--brand);color:var(--brand-ink);border-radius:10px;
+  box-shadow:var(--shadow-brand);transition:background var(--t-fast),transform var(--t-fast)}
+.report-foot button.primary:hover:not(:disabled){background:var(--brand-hover)}
+.report-foot button.primary:active:not(:disabled){transform:translateY(1px)}
+
+.fld input,.fld textarea{background:rgba(0,0,0,.24);border-radius:10px;
+  transition:border-color var(--t-fast),box-shadow var(--t-fast)}
+.fld input:hover,.fld textarea:hover{border-color:var(--line2)}
+.fld input:focus,.fld textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-ring)}
+.fld>span{color:var(--muted2);letter-spacing:.9px}
+
+.lookup{border-radius:12px}
+.lookup .lact button{border-radius:9px;transition:border-color var(--t-fast),background var(--t-fast)}
+.lookup .lact button:hover{border-color:var(--brand);background:var(--brand-softer)}
+.report-img,.lookup .lookup-img{border-radius:12px}
+.img-edit-btn{background:rgba(10,13,17,.82);backdrop-filter:blur(6px);transition:border-color var(--t-fast),background var(--t-fast)}
+.img-edit-btn:hover{border-color:var(--brand);background:var(--brand-soft)}
+
+/* MTO zone cards */
+.mtozone{border-radius:var(--r-lg);background:var(--panel);border-color:var(--line)}
+.mtozone .mztop input.mzname:focus,.mtozone textarea.mzskus:focus{
+  border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-ring);outline:none}
+.mtozone .mztop .mzcount{color:var(--brand-hover);font-weight:700}
+.mtozone .mzacts button{border-radius:9px;transition:background var(--t-fast),border-color var(--t-fast)}
+
+/* ============================================================= drawer ==== */
+.drawer{background:linear-gradient(180deg,#1A1F26 0%,#14181E 30%);
+  border-left:1px solid var(--line2);box-shadow:-20px 0 60px rgba(0,0,0,.6)}
+.dr-head{padding:18px 16px 14px}
+.dr-name{font-size:18px;font-weight:800}
+.dr-role{color:var(--brand-hover)}
+.dr-x{border-radius:10px;transition:background var(--t-fast),color var(--t-fast)}
+.dr-item{border-radius:11px;transition:background var(--t-fast),border-color var(--t-fast),transform var(--t-fast)}
+.dr-item:hover{background:var(--panel);border-color:var(--line2)}
+.dr-item:active{transform:translateX(2px)}
+.dr-item.on{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+.dr-item.on .di{opacity:1}
+.dr-item.danger:hover{background:rgba(226,58,46,.14);border-color:rgba(226,58,46,.5);color:#FFB3AD}
+.dr-item .di{width:26px;height:26px;display:grid;place-items:center;border-radius:8px;
+  background:var(--panel);font-size:14px;opacity:1;transition:background var(--t-fast)}
+.dr-item:hover .di{background:var(--panel2)}
+.dr-item.on .di{background:rgba(255,255,255,.18)}
+.dr-label{color:var(--muted2);letter-spacing:1px}
+.dr-sync b{font-weight:800}
+
+/* ============================================================= alerts ==== */
+.alerts-panel{border-radius:var(--r-lg);box-shadow:var(--shadow)}
+.alerts-head{background:rgba(255,255,255,.03);padding:13px 14px}
+.alert-item{border-radius:10px;padding:11px;transition:background var(--t-fast),border-color var(--t-fast)}
+.alert-item:hover{background:var(--panel);border-color:var(--line)}
+.alert-item .atitle{color:var(--ink)}
+.alert-item .atitle .atype{background:var(--red);border-radius:999px;letter-spacing:.6px}
+.alert-item .atitle .atype.found{background:var(--amber);color:#1E1703}
+.alert-item .aacts button,.alert-item .aresolve{border-radius:8px;transition:background var(--t-fast),border-color var(--t-fast),color var(--t-fast)}
+.alert-item .aacts button:hover{border-color:var(--brand);background:var(--brand-softer)}
+.alert-item .aacts button.ok:hover,.alert-item .aresolve:hover{background:var(--green);border-color:var(--green);color:#08130C}
+.afilter{background:var(--panel);border-color:var(--line);border-radius:9px}
+.afilter button{border-radius:7px;transition:background var(--t-fast),color var(--t-fast)}
+.afilter button.on{background:var(--brand);color:var(--brand-ink)}
+
+/* ============================================================== login ==== */
+.login-screen{background:
+  radial-gradient(90% 70% at 50% -10%, rgba(216,35,42,.16) 0%, transparent 58%),
+  radial-gradient(120% 100% at 50% 0%, #1B212A 0%, var(--bg) 62%)}
+.login-box{background:linear-gradient(180deg,#1A1F26 0%,#14181E 45%);
+  border:1px solid var(--line2);border-radius:20px;padding:28px 26px 22px;
+  box-shadow:var(--shadow), var(--inset-hi)}
+.login-brand{gap:15px;margin-bottom:6px}
+.login-brand h1{font-size:23px}
+.login-submit{background:var(--brand);color:var(--brand-ink);border-radius:12px;height:52px;
+  box-shadow:var(--shadow-brand);transition:background var(--t-fast),transform var(--t-fast)}
+.login-submit:hover:not(:disabled){background:var(--brand-hover)}
+.login-submit:active:not(:disabled){transform:translateY(1px)}
+.login-err{background:rgba(226,58,46,.12);border-color:rgba(226,58,46,.45);border-radius:11px}
+.login-ghost{border-radius:11px;transition:background var(--t-fast),border-color var(--t-fast)}
+.login-ghost:hover{background:var(--panel);border-color:var(--line2)}
+.login-screen::after{border-top-color:var(--brand)}
+
+/* ============================================================ scanner ==== */
+.scan-box{background:linear-gradient(180deg,#1A1F26 0%,#14181E 40%);border-radius:var(--r-xl);box-shadow:var(--shadow)}
+.scan-head{background:rgba(255,255,255,.025)}
+.scan-x{border-radius:9px}
+.scan-btn{border-radius:11px;transition:background var(--t-fast),border-color var(--t-fast)}
+.scan-btn:hover{background:var(--panel2);border-color:var(--line2)}
+.scan-btn.on{background:var(--amber);color:#1E1703;border-color:var(--amber)}
+.scan-btn.primary{background:var(--brand);color:var(--brand-ink);border-color:var(--brand);box-shadow:var(--shadow-brand)}
+.scan-btn.primary:hover{background:var(--brand-hover);border-color:var(--brand-hover)}
+.scan-status{border-radius:10px;background:rgba(10,13,17,.92);backdrop-filter:blur(6px)}
+
+/* ====================================================== toast / banner === */
+.toast{background:var(--glass);border:1px solid var(--line2);border-radius:12px;
+  box-shadow:var(--shadow);backdrop-filter:blur(14px);padding:12px 18px}
+.syncbar{background:var(--amber);color:#1E1703;font-weight:800;letter-spacing:.2px}
+
+/* ================================================ ops enhancements ======= */
+.ops-banner{background:rgba(245,179,43,.10)}
+.ops-banner .ops-badge{color:var(--amber)}
+.ops-banner.urgent{background:rgba(226,58,46,.14)}
+.ops-field select,.ops-field input,.ops-field textarea{background:rgba(0,0,0,.24);border-radius:10px;
+  transition:border-color var(--t-fast),box-shadow var(--t-fast)}
+.ops-field select:focus,.ops-field input:focus,.ops-field textarea:focus{
+  outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-ring)}
+.ops-photo-btn{border-radius:10px;transition:background var(--t-fast),border-color var(--t-fast)}
+.ops-photo-btn:hover{background:var(--panel2);border-color:var(--brand)}
+.ops-tabs button{border-radius:9px;transition:background var(--t-fast),border-color var(--t-fast),color var(--t-fast)}
+.ops-tabs button:hover{color:var(--ink);border-color:var(--line2)}
+.ops-tabs button.on{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+.ops-row{border-radius:11px;background:var(--panel);transition:border-color var(--t-fast)}
+.ops-row:hover{border-color:var(--line2)}
+.ops-row button{border-radius:8px}
+.ops-form button{background:var(--brand);color:var(--brand-ink);border-radius:10px;
+  box-shadow:var(--shadow-brand);transition:background var(--t-fast)}
+.ops-form button:hover{background:var(--brand-hover)}
+.ops-pill{border-radius:999px}
+.ops-pill.new{color:var(--amber)}
+.ops-verify{border-radius:11px;background:var(--panel)}
+.ops-verify button{border-radius:9px;transition:border-color var(--t-fast)}
+.ops-verify button:hover{border-color:var(--brand)}
+
+/* ========================================================== responsive === */
+@media (max-width:900px){
+  .report-btn .ico{width:36px;height:36px}
+}
+@media (pointer:coarse){
+  /* Gloved hands in the yard: give the main controls more room. */
+  .btn{padding:11px 14px}
+  .iconbtn{width:46px;height:46px}
+  .dr-item{padding:14px 12px}
+  .report-btn{padding:15px 14px}
+  .zoomctl button{width:44px;height:44px}
+}
+@media (max-width:560px){
+  .report-box{border-radius:20px 20px 0 0}
+  .report-head{padding:16px 18px 14px}
+  .report-body{padding:16px 18px}
+  .login-box{padding:24px 20px 18px}
+  .iconbtn{width:42px;height:42px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;
+    transition-duration:.001ms !important}
+}
