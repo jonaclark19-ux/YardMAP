@@ -1223,20 +1223,35 @@ así que un teléfono nuevo ya escanea bien sin importar nada.
 
 ## Cuando llegue un Excel de códigos actualizado
 
-Todo se hace desde la app, sin instalar nada. Menú → **Control Center** →
-pestaña **Settings** → fila *Barcode conversion*:
+Menú → **Control Center** → pestaña **Settings** → fila *Barcode conversion* →
+**Load barcode list**, y elija el Excel. Nada más.
 
-1. **Load barcode list** → elija el Excel nuevo.
-   Acepta el archivo del ERP tal como sale (columnas `PartNum` y `BarCode`) y
-   también `FG` + `UPC` del reporte de inventario.
-   Desde ese momento **ese aparato** ya escanea con los códigos nuevos.
-2. **⬇ Download barcodes.js** → descarga el archivo `barcodes.js` ya armado,
-   con lo que traía la app más lo que acaba de cargar.
-3. Reemplace el `barcodes.js` del sitio por el que descargó y vuelva a
-   publicar. Ahí **todos los teléfonos** quedan con los códigos nuevos.
+Acepta el archivo del ERP tal como sale (columnas `PartNum` y `BarCode`) y
+también `FG` + `UPC` del reporte de inventario.
 
-El paso 1 sirve para salir del paso hoy mismo; los pasos 2 y 3 son los que
-dejan el cambio para toda la yarda.
+Los códigos se guardan **dentro del mapa**, igual que las fichas: quien tenga
+la app se los lleva en la siguiente sincronización, sin volver a publicar el
+sitio ni reemplazar archivos. Lo mismo pasa con los nombres de producto del
+reporte de inventario: el administrador lo carga una vez y los demás
+teléfonos ya leen el producto escrito aunque nunca hayan cargado un reporte.
+
+En el mapa solo se guarda **lo que sea distinto** de la lista que trae la app,
+así que volver a cargar el mismo archivo no lo infla. Con la tabla completa
+sustituida, el mapa pesa unos 220 KB — el servidor admite 5 500 KB.
+
+> **Ojo:** "se lo llevan todos" vale cuando el sitio está publicado con
+> Supabase y las variables de Vercel puestas. Sin backend, la app trabaja en
+> modo local y el mapa (con sus códigos y nombres) se guarda solo en ese
+> navegador.
+
+## Meter los códigos dentro de la app (opcional)
+
+Sirve para que un teléfono recién instalado escane bien **antes** de
+sincronizar, o si todavía no hay backend. En la misma fila:
+
+1. **⬇ Download barcodes.js** → descarga el archivo ya armado, con lo que trae
+   la app más lo que se haya cargado encima.
+2. Reemplace el `barcodes.js` del sitio por ese y vuelva a publicar.
 
 ## Regenerar los archivos desde los Excel de origen
 

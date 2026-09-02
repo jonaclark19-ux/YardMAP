@@ -3972,7 +3972,28 @@ let BARCODE_INDEX = null;
 document.addEventListener("yard:catalog-changed", () => {
   BARCODE_INDEX = null;
   try { rebuildSkuList(); } catch(e){}
+  try { syncInventoryNamesToMap(); } catch(e){}
 });
+
+/**
+ * Copies the product names out of the inventory report and into the map, so
+ * the phone that never loads a report still reads the product and not a
+ * number. Only an editor writes; everybody else just receives them.
+ */
+function syncInventoryNamesToMap(){
+  if(!canEdit()) return 0;
+  let st = null;
+  try { st = window.YardInventory && YardInventory.getState ? YardInventory.getState() : null; } catch(e){ return 0; }
+  if(!st || !st.items) return 0;
+  const pairs = {};
+  Object.keys(st.items).forEach(sku => {
+    const d = st.items[sku] && st.items[sku].description;
+    if(d) pairs[sku] = d;
+  });
+  const n = mergeMapNames(pairs);
+  if(n) save();
+  return n;
+}
 
 function buildSkuIndex(){
   const idx = new Map();
@@ -3986,6 +4007,7 @@ function buildSkuIndex(){
 /** Refresh the lookup table and the <datalist> that backs manual SKU entry. */
 function rebuildSkuList(){
   SKU_INDEX = buildSkuIndex();
+  PART_INDEX = null;          // the incoming map may carry a newer conversion
   const dl = $("#skuList");
   if(!dl) return;
   const all = [];
@@ -4009,6 +4031,61 @@ function rebuildSkuList(){
    anything first; an admin can still load a newer list, which wins over it. */
 
 const BARCODE_LS_KEY = "tarter_yard_barcodes_v1";
+
+/* The conversion and the product names ride inside the map, the same way the
+   tiles do: an admin loads the Excel once and every phone gets it on the next
+   sync, with no file to replace and nothing to publish. barcodes.js stays as
+   the floor the build ships with, for a device that has never synced. */
+function mapBarcodes(){
+  if(!data.barcodes || typeof data.barcodes !== "object" || Array.isArray(data.barcodes)) data.barcodes = {};
+  return data.barcodes;
+}
+function mapNames(){
+  if(!data.names || typeof data.names !== "object" || Array.isArray(data.names)) data.names = {};
+  return data.names;
+}
+
+/**
+ * Folds a fresh code→part table into the map, keeping only what differs from
+ * the table the build already ships. A row that matches barcodes.js is
+ * dropped rather than stored twice, so the map carries the corrections and
+ * not a second copy of the whole list. Returns how many rows changed.
+ */
+function mergeMapBarcodes(items){
+  const into = mapBarcodes();
+  const shipped = window.__BARCODE_MAP__ || {};
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  let changed = 0;
+  Object.keys(items || {}).forEach(code => {
+    const k = barcodeKey(code);
+    const v = items[code];
+    if(!k || !v) return;
+    if(same(shipped[k], v)){
+      if(k in into){ delete into[k]; changed++; }
+      return;
+    }
+    if(!same(into[k], v)){ into[k] = v; changed++; }
+  });
+  return changed;
+}
+
+/** Same for the product names the inventory report brings along. */
+function mergeMapNames(pairs){
+  const into = mapNames();
+  let changed = 0;
+  Object.keys(pairs || {}).forEach(sku => {
+    const k = normCode(sku);
+    const name = String(pairs[sku] || "").trim();
+    if(!k || !name) return;
+    const seed = seedProduct(k);
+    if(seed && seed.n === name){
+      if(k in into){ delete into[k]; changed++; }
+      return;
+    }
+    if(into[k] !== name){ into[k] = name; changed++; }
+  });
+  return changed;
+}
 
 /* A UPC-A read as an EAN-13 only differs by a leading zero, and the same
    product may be labelled either way, so codes are keyed without them. */
@@ -4047,9 +4124,11 @@ function barcodeCandidates(code){
     if(n && !seen.has(n)){ seen.add(n); list.push(raw); }
   });
   const own = barcodeOverrides().get(k);
-  if(own) push(own);
+  if(own) push(own);                       // loaded on this device just now
+  const shared = mapBarcodes()[k];
+  if(shared) push(shared);                 // saved in the map, same for everybody
   const seed = (window.__BARCODE_MAP__ || {})[k];
-  if(seed) push(seed);
+  if(seed) push(seed);                     // the table the build ships with
   return list;
 }
 
@@ -4062,6 +4141,7 @@ function isKnownPart(sku){
     PART_INDEX = new Set();
     const add = v => (Array.isArray(v) ? v : [v]).forEach(x => { const n = normCode(x); if(n) PART_INDEX.add(n); });
     Object.values(window.__BARCODE_MAP__ || {}).forEach(add);
+    Object.values(mapBarcodes()).forEach(add);
     barcodeOverrides().forEach(add);
   }
   return PART_INDEX.has(k);
@@ -4102,6 +4182,8 @@ function productName(sku){
     const item = window.YardInventory && YardInventory.get ? YardInventory.get(sku) : null;
     if(item && item.description) return String(item.description).trim();
   } catch(e){}
+  const shared = mapNames()[normCode(sku)];
+  if(shared) return shared;
   const seed = seedProduct(sku);
   return seed && seed.n ? seed.n : "";
 }
@@ -5830,6 +5912,7 @@ boot();
   function normBarcode(v){ return String(v==null?"":v).trim().toUpperCase().replace(/[^A-Z0-9]/g,""); }
   function getBarcodeState(){ try{return JSON.parse(localStorage.getItem(BARCODE_KEY)||"null");}catch(e){return null;} }
   function shippedBarcodeCount(){ try{return Object.keys(window.__BARCODE_MAP__||{}).length;}catch(e){return 0;} }
+  function mapBarcodeCount(){ try{return Object.keys(mapBarcodes()).length;}catch(e){return 0;} }
 
   /* The conversion file is a two-column sheet, and which two words head those
      columns depends on who exported it: "PartNum / BarCode" out of the ERP,
@@ -5843,7 +5926,9 @@ boot();
     const wb=XLSX.read(await file.arrayBuffer(),{type:"array"});
     const items={}; let rowsLoaded=0; const sheets=[];
     const normH=v=>String(v==null?"":v).toLowerCase().replace(/[^a-z0-9]/g,"");
-    const looksLikeCode=v=>/^\d{6,14}$/.test(normBarcode(v));
+    /* Filler rows come through as a run of zeros; treating one as a barcode
+       would make a blank scan resolve to whatever part it sat next to. */
+    const looksLikeCode=v=>{ const c=normBarcode(v); return /^\d{6,14}$/.test(c) && !/^0+$/.test(c); };
     for(const name of wb.SheetNames){
       const rows=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,raw:false,defval:""});
       let hi=-1,skuCol=-1,bcCol=-1;
@@ -5879,6 +5964,14 @@ boot();
     }
     if(!rowsLoaded) throw new Error("barcode_headers_missing");
     const state={fileName:file.name,importedAt:new Date().toISOString(),count:Object.keys(items).length,rowsLoaded,sheets,items};
+    /* Saved into the map as well, so loading the Excel once reaches every
+       phone on the next sync instead of stopping at this device. */
+    try{
+      if(typeof canEdit==="function" && canEdit() && typeof mergeMapBarcodes==="function"){
+        state.savedToMap=mergeMapBarcodes(items);
+        if(state.savedToMap) save();
+      }
+    }catch(e){ console.warn("Could not save the barcode list into the map", e); }
     localStorage.setItem(BARCODE_KEY,JSON.stringify(state));
     // Tells the resolver to pick the new list up on the very next scan.
     try{ document.dispatchEvent(new CustomEvent("yard:barcodes-changed")); }catch(e){}
@@ -5897,6 +5990,7 @@ boot();
       if(k && sku) merged.set(k, sku);
     };
     Object.keys(window.__BARCODE_MAP__||{}).forEach(k => put(k, window.__BARCODE_MAP__[k]));
+    try{ const shared=mapBarcodes(); Object.keys(shared).forEach(k => put(k, shared[k])); }catch(e){}
     const st = getBarcodeState();
     // The imported list is the newer truth, so it is applied second.
     if(st && st.items) Object.keys(st.items).forEach(k => put(k, st.items[k]));
@@ -6063,7 +6157,11 @@ ${rows.join(",\n")}
     document.getElementById("opsPhotoViewer").addEventListener("click",e=>{if(e.target.id==="opsPhotoViewer")closePhotoViewer();});
     document.getElementById("opsBarcodeFile").onchange=async e=>{
       const f=e.target.files&&e.target.files[0]; e.target.value=""; if(!f)return;
-      try{const s=await importBarcodeFile(f);toast(`Barcode list loaded: ${s.count}`);renderControlCenter();}catch(err){console.error(err);toast("Could not read barcode list. It needs a part-number column (PartNum / FG / SKU) next to a code column (BarCode / UPC / EAN).");}
+      try{
+        const s=await importBarcodeFile(f);
+        toast(s.savedToMap ? `${s.count} barcodes loaded — saved in the map for every device` : `Barcode list loaded on this device: ${s.count}`);
+        renderControlCenter();
+      }catch(err){console.error(err);toast("Could not read barcode list. It needs a part-number column (PartNum / FG / SKU) next to a code column (BarCode / UPC / EAN).");}
     };
 
     // Replace the old generic Report button with the new operational flow.
@@ -6335,7 +6433,7 @@ ${rows.join(",\n")}
     const inv=inventoryState(),bc=getBarcodeState(); const sp=document.getElementById("opsPageSettings");
     sp.innerHTML=`<div class="ops-panel"><div class="ops-panel-head"><h3>Data Sources</h3></div><div class="ops-panel-body">
       <div class="ops-settings-row"><div class="info"><b>Inventory report</b>${inv?`${escOps(inv.fileName)} · ${inv.rowCount} SKUs<br>Loaded ${escOps(fmtDateTime(inv.importedAt))}`:"Not loaded on this device"}</div><button class="ops-action" id="opsLoadInvFromCenter">Load report</button></div>
-      <div class="ops-settings-row"><div class="info"><b>Barcode conversion</b>Shipped with the app: <strong>${fmtNum(shippedBarcodeCount())}</strong> barcodes → part numbers.<br>${bc?`Updated on this device: ${escOps(bc.fileName)} · ${bc.count} barcodes · ${escOps(fmtDateTime(bc.importedAt))}`:"No newer list loaded on this device — the shipped table is in use."}</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="ops-action" id="opsLoadBarcodeBtn">Load barcode list</button><button class="ops-action" id="opsExportBarcodeBtn">⬇ Download barcodes.js</button></div></div>
+      <div class="ops-settings-row"><div class="info"><b>Barcode conversion</b>Saved in the map, shared with every device: <strong>${fmtNum(mapBarcodeCount())}</strong> barcodes.<br>Shipped with the app: <strong>${fmtNum(shippedBarcodeCount())}</strong>.<br>${bc?`Last file loaded here: ${escOps(bc.fileName)} · ${bc.count} barcodes · ${escOps(fmtDateTime(bc.importedAt))}`:"No file loaded on this device yet."}</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="ops-action" id="opsLoadBarcodeBtn">Load barcode list</button><button class="ops-action" id="opsExportBarcodeBtn">⬇ Download barcodes.js</button></div></div>
       <div class="ops-settings-row"><div class="info"><b>Photo storage</b>Report photos are stored in IndexedDB on this browser/device, not inside localStorage.</div><span class="ops-pill">LOCAL</span></div>
       <div class="ops-settings-row"><div class="info"><b>Report persistence</b>Operational reports, timestamps, quantities and workflow are stored locally in this browser.</div><span class="ops-pill">LOCAL</span></div>
     </div></div>`;
