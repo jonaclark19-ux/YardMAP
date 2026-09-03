@@ -487,3 +487,64 @@ header.topbar::before{content:"";position:absolute;left:0;right:0;top:0;height:2
   *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;
     transition-duration:.001ms !important}
 }
+
+/* ============================================================
+   V2.3.2 addendum — icon tiles, selection badges, dropzone
+   Adds to the component families above; no existing rule edited.
+   ============================================================ */
+
+/* ---- Report Issue: icon tiles + selection checkmark ---------- */
+.ops-type{position:relative}
+.ops-type .ico{flex:none;width:38px;height:38px;border-radius:10px;display:grid;place-items:center;
+  background:var(--panel2);color:var(--muted);box-shadow:var(--inset-hi);
+  transition:background var(--t-fast),color var(--t-fast)}
+.ops-type .ico svg{width:19px;height:19px}
+.ops-type:hover .ico{color:var(--ink)}
+.ops-type.on .ico{background:var(--brand-soft);color:var(--brand-hover)}
+.ops-type-check{position:absolute;top:8px;right:8px;width:20px;height:20px;border-radius:50%;
+  background:var(--brand);color:var(--brand-ink);display:none;place-items:center;box-shadow:var(--shadow-brand)}
+.ops-type-check svg{width:11px;height:11px}
+.ops-type.on .ops-type-check{display:grid}
+.pro-type-section .ops-type .ico{width:30px;height:30px;border-radius:9px}
+.pro-type-section .ops-type .ico svg{width:15px;height:15px}
+.pro-type-section .ops-type-check{width:16px;height:16px;top:5px;right:5px}
+.pro-type-section .ops-type-check svg{width:9px;height:9px}
+
+/* The card's own selected-state border/background is set by three older,
+   unscoped ".ops-type.on" rules (one amber, one invalid --tarter-action,
+   one from the compact "pro-type-section" layout). None of them carry an
+   ID, so this ID-scoped rule reliably wins regardless of source order and
+   keeps the selection colour on-brand instead of amber. */
+#opsReportModal .ops-type.on{border-color:var(--brand);background:var(--brand-softer);
+  box-shadow:0 0 0 1px var(--brand-ring)}
+
+/* ---- Report Issue: evidence becomes a real dropzone ----------- */
+.ops-photo-row{border:1.5px dashed var(--line2);background:rgba(255,255,255,.02);
+  transition:border-color var(--t-fast),background var(--t-fast)}
+.ops-photo-row:hover{border-color:var(--brand-ring);background:var(--brand-softer)}
+.ops-photo-placeholder{background:var(--panel2);color:var(--muted);display:grid;place-items:center}
+.ops-action{border-radius:9px;transition:background var(--t-fast),border-color var(--t-fast)}
+.ops-action:hover{background:var(--panel2);border-color:var(--brand)}
+
+/* ---- Report Issue: "Collapse" reads as a chevron toggle -------- */
+.pro-product-toggle::before{content:"▴ ";font-size:8px;vertical-align:1px}
+.pro-product-section.collapsed .pro-product-toggle::before{content:"▾ "}
+
+/* ---- Control Center overview: per-metric icon tile ------------- */
+.cc23-metric{position:relative}
+.cc23-metric-ico{width:34px;height:34px;border-radius:10px;background:var(--panel2);color:var(--muted);
+  display:grid;place-items:center;margin-bottom:9px}
+.cc23-metric-ico svg{width:17px;height:17px}
+.cc23-metric.alert .cc23-metric-ico{background:var(--amber-soft);color:var(--amber)}
+.cc23-metric.red .cc23-metric-ico{background:rgba(226,58,46,.12);color:var(--red)}
+.cc23-metric.green .cc23-metric-ico{background:rgba(49,192,109,.12);color:var(--green)}
+.cc23-metric.blue .cc23-metric-ico{background:rgba(91,141,239,.12);color:var(--blue)}
+
+/* ---- Data tab: barcode / inventory update actions --------------- */
+.cc23-page-head .right{flex-wrap:wrap}
+
+/* ---- Scanner: icon-tile header, matches Report Issue / CC -------- */
+.scan-head{gap:10px}
+.scan-head-ico{width:30px;height:30px;border-radius:9px;background:var(--brand-softer);
+  color:var(--brand-hover);display:grid;place-items:center;flex:none}
+.scan-head-ico svg{width:16px;height:16px}
