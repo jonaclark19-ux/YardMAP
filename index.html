@@ -5640,19 +5640,54 @@ boot();
       return baseResolveSkuV2(code);
     };
   }
+  /* Barcode-list column detection.
+     The first version matched the SKU header exactly against fg/sku/productsku/
+     fgsku, so anything a real export actually says -- "FG Item", "Item Number",
+     "Part Number", "Product Code", "Codigo" -- was rejected outright. Match on
+     substrings instead, resolve the barcode column first (its names are the more
+     distinctive ones, and "Codigo de barras" would otherwise also look like a SKU
+     header), and fall back to reading the data when the headers say nothing
+     useful: a barcode column is overwhelmingly 8-14 digit numbers, a SKU column
+     is not. */
+  const BC_PAT=["barcode","barras","upc","ean","gtin","jan","scancode"];
+  const SKU_PAT=["sku","fg","item","part","model","product","codigo","articulo","producto","modelo","numero"];
+  const SKU_SKIP=["desc","name","nombre","qty","quantity","cantidad","price","precio","cost","costo","uom","weight","peso","date","fecha","color","size","tamano"];
+  const looksLikeBarcode=v=>/^\d{8,14}$/.test(String(v==null?"":v).replace(/[^0-9]/g,""))&&String(v).replace(/[^0-9]/g,"").length>=8;
+  function columnProfile(rows,hi,col,limit=200){
+    let filled=0,digity=0;
+    for(let r=hi+1;r<Math.min(rows.length,hi+1+limit);r++){
+      const v=(rows[r]||[])[col];
+      if(v==null||String(v).trim()==="") continue;
+      filled++; if(looksLikeBarcode(v)) digity++;
+    }
+    return {filled,ratio:filled?digity/filled:0};
+  }
+  function pickColumns(hs,rows,hi){
+    const bc=hs.findIndex(h=>h&&BC_PAT.some(p=>h.includes(p)));
+    let sku=hs.findIndex((h,i)=>h&&i!==bc&&!SKU_SKIP.some(p=>h.includes(p))&&SKU_PAT.some(p=>h.includes(p)));
+    if(bc>=0&&sku>=0) return {sku,bc};
+    // Headers were not enough -- let the values decide which column is which.
+    const profiles=hs.map((h,i)=>({i,...columnProfile(rows,hi,i)}));
+    const dataBc=bc>=0?bc:(profiles.filter(p=>p.filled>=3&&p.ratio>=.6).sort((a,b)=>b.ratio-a.ratio)[0]||{}).i;
+    if(dataBc==null||dataBc<0) return null;
+    if(sku<0) sku=(profiles.filter(p=>p.i!==dataBc&&p.filled>=3&&p.ratio<.4).sort((a,b)=>b.filled-a.filled)[0]||{}).i;
+    if(sku==null||sku<0) return null;
+    return {sku,bc:dataBc};
+  }
   async function importBarcodeFile(file){
     if(typeof XLSX==="undefined") throw new Error("xlsx_missing");
     const wb=XLSX.read(await file.arrayBuffer(),{type:"array"});
-    const items={}; let rowsLoaded=0; const sheets=[];
+    const items={}; let rowsLoaded=0; const sheets=[]; const seenHeaders=[];
     const normH=v=>String(v==null?"":v).toLowerCase().replace(/[^a-z0-9]/g,"");
     for(const name of wb.SheetNames){
       const rows=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,raw:false,defval:""});
       let hi=-1,skuCol=-1,bcCol=-1;
       for(let r=0;r<Math.min(rows.length,30);r++){
         const hs=(rows[r]||[]).map(normH);
-        skuCol=hs.findIndex(h=>h==="fg"||h==="sku"||h==="productsku"||h==="fgsku");
-        bcCol=hs.findIndex(h=>h.includes("barcode")||h==="upc"||h.includes("upccode")||h==="ean"||h==="gtin"||h==="productcode");
-        if(skuCol>=0&&bcCol>=0){hi=r;break;}
+        if(hs.filter(Boolean).length<2) continue;
+        const found=pickColumns(hs,rows,r);
+        if(found){hi=r;skuCol=found.sku;bcCol=found.bc;break;}
+        if(!seenHeaders.length) hs.filter(Boolean).slice(0,8).forEach(h=>seenHeaders.push(h));
       }
       if(hi<0) continue;
       sheets.push(name);
@@ -5663,7 +5698,11 @@ boot();
         items[bc]=sku; rowsLoaded++;
       }
     }
-    if(!rowsLoaded) throw new Error("barcode_headers_missing");
+    if(!rowsLoaded){
+      const e=new Error("barcode_headers_missing");
+      e.seenHeaders=seenHeaders;
+      throw e;
+    }
     const state={fileName:file.name,importedAt:new Date().toISOString(),count:Object.keys(items).length,sheets,items};
     localStorage.setItem(BARCODE_KEY,JSON.stringify(state));
     // Data-layer function: the caller decides how to refresh the UI. The cc23
@@ -5808,7 +5847,13 @@ boot();
         toast(`Barcode list loaded: ${s.count}`);
         try{renderControlCenter();}catch(_){}
         try{window.YardControlCenter?.render?.();}catch(_){}
-      }catch(err){console.error(err);toast("Could not read barcode list. It needs SKU/FG + Barcode/UPC/EAN columns.");}
+      }catch(err){
+        console.error(err);
+        const seen=Array.isArray(err&&err.seenHeaders)&&err.seenHeaders.length?err.seenHeaders.slice(0,6).join(", "):"";
+        toast(seen
+          ? `Could not find a SKU and a barcode column. Columns seen: ${seen}`
+          : "Could not read that file. It needs a product/SKU column and a barcode column.");
+      }
     };
 
     // Replace the old generic Report button with the new operational flow.
