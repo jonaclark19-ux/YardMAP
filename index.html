@@ -888,21 +888,21 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
     </div>
 
     <div class="bgbar" id="bgbar">
-      <button data-tool="select" class="on" data-i18n="bg.select">Select</button>
+      <button data-tool="select" class="on lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5.4 3.6 18 11.2l-5.3 1.4-2.2 5.1Z"/></svg><span data-i18n="bg.select">Select</span></button>
       <span class="sep"></span>
       <span class="grp">
-        <button class="sh" data-tool="rect" data-i18n-title="bg.rect">▭</button>
-        <button class="sh" data-tool="ellipse" data-i18n-title="bg.ellipse">⬭</button>
-        <button class="sh" data-tool="diamond" data-i18n-title="bg.diamond">◆</button>
-        <button class="sh" data-tool="triangle" data-i18n-title="bg.triangle">▲</button>
-        <button class="sh" data-tool="line" data-i18n-title="bg.line">╱</button>
-        <button class="sh" data-tool="label" data-i18n-title="bg.label">T</button>
-        <button class="sh" data-tool="door" data-i18n-title="bg.door">▮</button>
+        <button class="sh" data-tool="rect" data-i18n-title="bg.rect"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.6" y="6" width="16.8" height="12" rx="2"/></svg></button>
+        <button class="sh" data-tool="ellipse" data-i18n-title="bg.ellipse"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="8.6" ry="6.4"/></svg></button>
+        <button class="sh" data-tool="diamond" data-i18n-title="bg.diamond"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.6 20.4 12 12 20.4 3.6 12Z"/></svg></button>
+        <button class="sh" data-tool="triangle" data-i18n-title="bg.triangle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.4 20.6 19.2H3.4Z"/></svg></button>
+        <button class="sh" data-tool="line" data-i18n-title="bg.line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.6 19.4 19.4 4.6"/><circle cx="4.6" cy="19.4" r="1.7"/><circle cx="19.4" cy="4.6" r="1.7"/></svg></button>
+        <button class="sh" data-tool="label" data-i18n-title="bg.label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6.4V4.6h14v1.8M12 4.6v14.8M9.4 19.4h5.2"/></svg></button>
+        <button class="sh" data-tool="door" data-i18n-title="bg.door"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.6h9.4a1.6 1.6 0 0 1 1.6 1.6v13.6a1.6 1.6 0 0 1-1.6 1.6H6Z"/><circle cx="13.4" cy="12" r="1"/><path d="M19.4 20.4h1.2M3.4 20.4h1.2"/></svg></button>
       </span>
       <span class="sep"></span>
-      <button id="bgPropBtn" data-i18n="bg.props">⚙ Properties</button>
-      <button id="bgDelBtn" data-i18n="bg.delete">🗑 Delete</button>
-      <button id="bgResetBtn" data-i18n="bg.reset">↺ Reset bg</button>
+      <button id="bgPropBtn" class="lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.6 14.6a1.6 1.6 0 0 0 .32 1.76l.06.06a1.9 1.9 0 1 1-2.7 2.7l-.06-.06a1.6 1.6 0 0 0-1.76-.32 1.6 1.6 0 0 0-.97 1.47v.17a1.9 1.9 0 1 1-3.8 0v-.09a1.6 1.6 0 0 0-1.05-1.47 1.6 1.6 0 0 0-1.76.32l-.06.06a1.9 1.9 0 1 1-2.7-2.7l.06-.06a1.6 1.6 0 0 0 .32-1.76 1.6 1.6 0 0 0-1.47-.97H3.7a1.9 1.9 0 1 1 0-3.8h.09a1.6 1.6 0 0 0 1.47-1.05 1.6 1.6 0 0 0-.32-1.76l-.06-.06a1.9 1.9 0 1 1 2.7-2.7l.06.06a1.6 1.6 0 0 0 1.76.32h.08A1.6 1.6 0 0 0 10.45 4V3.7a1.9 1.9 0 1 1 3.8 0v.09a1.6 1.6 0 0 0 .97 1.47 1.6 1.6 0 0 0 1.76-.32l.06-.06a1.9 1.9 0 1 1 2.7 2.7l-.06.06a1.6 1.6 0 0 0-.32 1.76v.08a1.6 1.6 0 0 0 1.47.97h.17a1.9 1.9 0 1 1 0 3.8h-.09a1.6 1.6 0 0 0-1.47.97Z"/></svg><span data-i18n="bg.props">Properties</span></button>
+      <button id="bgDelBtn" class="lbl danger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.8 6.4h16.4M9 6.4V4.8a1.4 1.4 0 0 1 1.4-1.4h3.2A1.4 1.4 0 0 1 15 4.8v1.6"/><path d="M18.2 6.4v13a1.8 1.8 0 0 1-1.8 1.8H7.6a1.8 1.8 0 0 1-1.8-1.8v-13"/><path d="M10.2 10.6v6M13.8 10.6v6"/></svg><span data-i18n="bg.delete">Delete</span></button>
+      <button id="bgResetBtn" class="lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 5.6v5h5"/><path d="M4.7 14a8 8 0 1 0 1.3-6.6L3.6 10.6"/></svg><span data-i18n="bg.reset">Reset bg</span></button>
       <span class="hintx" data-i18n="hint.bgbar"></span>
     </div>
 
@@ -914,10 +914,10 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
         <div id="iForm" style="display:none">
           <div class="irow" id="rowShape"><span class="lb" data-i18n="insp.shape">Shape</span>
             <div class="chips" id="shapeChips">
-              <button data-shape="rect" data-i18n-title="bg.rect">▭</button>
-              <button data-shape="ellipse" data-i18n-title="bg.ellipse">⬭</button>
-              <button data-shape="diamond" data-i18n-title="bg.diamond">◆</button>
-              <button data-shape="triangle" data-i18n-title="bg.triangle">▲</button>
+              <button data-shape="rect" data-i18n-title="bg.rect"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.6" y="6" width="16.8" height="12" rx="2"/></svg></button>
+              <button data-shape="ellipse" data-i18n-title="bg.ellipse"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="8.6" ry="6.4"/></svg></button>
+              <button data-shape="diamond" data-i18n-title="bg.diamond"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.6 20.4 12 12 20.4 3.6 12Z"/></svg></button>
+              <button data-shape="triangle" data-i18n-title="bg.triangle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.4 20.6 19.2H3.4Z"/></svg></button>
             </div>
           </div>
           <div class="irow" id="rowFill"><span class="lb" data-i18n="insp.fill">Fill</span>
@@ -968,21 +968,21 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
     <div class="seltool" id="seltool">
       <span class="cnt"><b id="selCount">0</b> <span data-i18n="sel.count">sel</span></span>
       <span class="sep"></span>
-      <button data-al="left" data-i18n-title="sel.alignLeft">⇤</button>
-      <button data-al="cx" data-i18n-title="sel.alignCx">↔</button>
-      <button data-al="right" data-i18n-title="sel.alignRight">⇥</button>
-      <button data-al="top" data-i18n-title="sel.alignTop">⤒</button>
-      <button data-al="cy" data-i18n-title="sel.alignCy">↕</button>
-      <button data-al="bottom" data-i18n-title="sel.alignBottom">⤓</button>
+      <button data-al="left" data-i18n-title="sel.alignLeft"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.2 3.6v16.8"/><rect x="7.6" y="6" width="11" height="4.2" rx="1.2"/><rect x="7.6" y="13.8" width="7" height="4.2" rx="1.2"/></svg></button>
+      <button data-al="cx" data-i18n-title="sel.alignCx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.6v16.8"/><rect x="5" y="6" width="14" height="4.2" rx="1.2"/><rect x="8" y="13.8" width="8" height="4.2" rx="1.2"/></svg></button>
+      <button data-al="right" data-i18n-title="sel.alignRight"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.8 3.6v16.8"/><rect x="5.4" y="6" width="11" height="4.2" rx="1.2"/><rect x="9.4" y="13.8" width="7" height="4.2" rx="1.2"/></svg></button>
+      <button data-al="top" data-i18n-title="sel.alignTop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 4.2h16.8"/><rect x="6" y="7.6" width="4.2" height="11" rx="1.2"/><rect x="13.8" y="7.6" width="4.2" height="7" rx="1.2"/></svg></button>
+      <button data-al="cy" data-i18n-title="sel.alignCy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 12h16.8"/><rect x="6" y="5" width="4.2" height="14" rx="1.2"/><rect x="13.8" y="8" width="4.2" height="8" rx="1.2"/></svg></button>
+      <button data-al="bottom" data-i18n-title="sel.alignBottom"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 19.8h16.8"/><rect x="6" y="5.4" width="4.2" height="11" rx="1.2"/><rect x="13.8" y="9.4" width="4.2" height="7" rx="1.2"/></svg></button>
       <span class="sep"></span>
-      <button data-al="rowh" data-i18n-title="sel.rowh">⇉</button>
-      <button data-al="colv" data-i18n-title="sel.colv">⇊</button>
-      <button id="selSame" data-i18n-title="sel.same">⬛</button>
+      <button data-al="rowh" data-i18n-title="sel.rowh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 4.6v14.8M20.4 4.6v14.8"/><rect x="7.4" y="8.4" width="9.2" height="7.2" rx="1.4"/></svg></button>
+      <button data-al="colv" data-i18n-title="sel.colv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.6 3.6h14.8M4.6 20.4h14.8"/><rect x="8.4" y="7.4" width="7.2" height="9.2" rx="1.4"/></svg></button>
+      <button id="selSame" data-i18n-title="sel.same"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.6" y="6.6" width="7.4" height="10.8" rx="1.6"/><rect x="13" y="6.6" width="7.4" height="10.8" rx="1.6"/></svg></button>
       <span class="sep"></span>
       <input type="color" id="selColor" value="#37C871" data-i18n-title="sel.color" />
       <span class="sep"></span>
-      <button id="selRename" data-i18n-title="sel.rename">✎</button>
-      <button id="selReport" data-i18n-title="sel.report">📢</button>
+      <button id="selRename" data-i18n-title="sel.rename"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16.4 3.9a2.1 2.1 0 0 1 3 3L8.2 18.1l-4 1 1-4Z"/><path d="M14.4 5.9l3 3"/></svg></button>
+      <button id="selReport" data-i18n-title="sel.report"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.1 2.8 19.5h18.4Z"/><path d="M12 10.2v4M12 17.3h.01"/></svg></button>
     </div>
 
     <div class="zoomctl">
@@ -1024,31 +1024,31 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
   </div>
 
   <div class="dr-sec">
-    <button class="dr-item" id="legendBtn"><span class="di">▦</span><span data-i18n="tool.legend">Legend</span></button>
-    <button class="dr-item" id="drReport"><span class="di">📢</span><span data-i18n="tool.report">Report</span></button>
-    <button class="dr-item" id="drScan"><span class="di">📷</span><span data-i18n="tool.scan">Scan</span></button>
+    <button class="dr-item" id="legendBtn"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.6" y="3.6" width="7" height="7" rx="1.6"/><rect x="13.4" y="3.6" width="7" height="7" rx="1.6"/><rect x="3.6" y="13.4" width="7" height="7" rx="1.6"/><rect x="13.4" y="13.4" width="7" height="7" rx="1.6"/></svg></span><span data-i18n="tool.legend">Legend</span></button>
+    <button class="dr-item" id="drReport"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.1 2.8 19.5h18.4Z"/><path d="M12 10.2v4M12 17.3h.01"/></svg></span><span data-i18n="tool.report">Report</span></button>
+    <button class="dr-item" id="drScan"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8V5.6A2.6 2.6 0 0 1 5.6 3H8M16 3h2.4A2.6 2.6 0 0 1 21 5.6V8M21 16v2.4a2.6 2.6 0 0 1-2.6 2.6H16M8 21H5.6A2.6 2.6 0 0 1 3 18.4V16"/><path d="M7.4 8.6v6.8M10.6 8.6v6.8M13.4 8.6v6.8M16.6 8.6v6.8"/></svg></span><span data-i18n="tool.scan">Scan</span></button>
   </div>
 
   <div class="dr-sec editor-only">
     <div class="dr-label" data-i18n="role.editor">Editor</div>
-    <button class="dr-item" id="editBtn"><span class="di">✎</span><span data-i18n="tool.edit">Edit Products</span></button>
-    <button class="dr-item" id="addBtn"><span class="di">＋</span><span data-i18n="tool.add">Add</span></button>
-    <button class="dr-item" id="bgBtn"><span class="di">▧</span><span data-i18n="tool.editMap">Edit Map</span></button>
-    <button class="dr-item" id="snapBtn"><span class="di">⋕</span><span data-i18n="tool.snap">Snap 12px</span></button>
-    <button class="dr-item" id="mtoBtn"><span class="di">★</span><span data-i18n="tool.mto">MTO Zones</span></button>
+    <button class="dr-item" id="editBtn"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16.4 3.9a2.1 2.1 0 0 1 3 3L8.2 18.1l-4 1 1-4Z"/><path d="m14.4 5.9 3 3"/></svg></span><span data-i18n="tool.edit">Edit Products</span></button>
+    <button class="dr-item" id="addBtn"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.6" y="3.6" width="16.8" height="16.8" rx="3"/><path d="M12 8.4v7.2M8.4 12h7.2"/></svg></span><span data-i18n="tool.add">Add</span></button>
+    <button class="dr-item" id="bgBtn"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4.4 3.6 6.7v12.9L9 17.3l4.2 1.6"/><path d="M9 4.4v12.9"/><path d="M20.4 20.4l-1.9-1.9M14.6 14.6l3.9-3.9a1.7 1.7 0 0 1 2.4 2.4l-3.9 3.9-3 .6Z"/></svg></span><span data-i18n="tool.editMap">Edit Map</span></button>
+    <button class="dr-item" id="snapBtn"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 9.2h16.8M3.6 14.8h16.8M9.2 3.6v16.8M14.8 3.6v16.8"/></svg></span><span data-i18n="tool.snap">Snap 12px</span></button>
+    <button class="dr-item" id="mtoBtn"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3.8 2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.8Z"/></svg></span><span data-i18n="tool.mto">MTO Zones</span></button>
   </div>
 
   <div class="dr-sec editor-only">
-    <button class="dr-item" id="xlsBtn"><span class="di">▤</span><span data-i18n="tool.excel">Import Excel</span></button>
-    <button class="dr-item" id="photoTplBtn"><span class="di">🗒</span><span data-i18n="tool.photoTemplate">Photo sheet</span></button>
-    <button class="dr-item" id="photoXlsBtn"><span class="di">🖼</span><span data-i18n="tool.photoImport">Load photos</span></button>
-    <button class="dr-item" id="importBtn"><span class="di">↥</span><span data-i18n="tool.import">Import</span></button>
-    <button class="dr-item" id="exportBtn"><span class="di">↧</span><span data-i18n="tool.export">Export</span></button>
-    <button class="dr-item danger" id="resetBtn"><span class="di">↺</span><span data-i18n="tool.reset">Reset</span></button>
+    <button class="dr-item" id="xlsBtn"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3.4H7a1.8 1.8 0 0 0-1.8 1.8v13.6A1.8 1.8 0 0 0 7 20.6h10a1.8 1.8 0 0 0 1.8-1.8V8.2Z"/><path d="M14 3.4v4.8h4.8"/><path d="m9.4 12 5.2 5.2M14.6 12l-5.2 5.2"/></svg></span><span data-i18n="tool.excel">Import Excel</span></button>
+    <button class="dr-item" id="photoTplBtn"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3.4H7a1.8 1.8 0 0 0-1.8 1.8v13.6A1.8 1.8 0 0 0 7 20.6h10a1.8 1.8 0 0 0 1.8-1.8V8.2Z"/><path d="M14 3.4v4.8h4.8"/><path d="M8.8 12.6h6.4M8.8 16.2h4.2"/></svg></span><span data-i18n="tool.photoTemplate">Photo sheet</span></button>
+    <button class="dr-item" id="photoXlsBtn"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.4" y="5.2" width="17.2" height="13.6" rx="2.2"/><circle cx="9" cy="10" r="1.7"/><path d="m4.2 17 4.6-4.4 3.1 3 2.9-2.6 5 4.6"/></svg></span><span data-i18n="tool.photoImport">Load photos</span></button>
+    <button class="dr-item" id="importBtn"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15.6V4.2M12 4.2 7.9 8.3M12 4.2l4.1 4.1"/><path d="M4.2 15v3.4a1.8 1.8 0 0 0 1.8 1.8h12a1.8 1.8 0 0 0 1.8-1.8V15"/></svg></span><span data-i18n="tool.import">Import</span></button>
+    <button class="dr-item" id="exportBtn"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.2v11.4M12 15.6 7.9 11.5M12 15.6l4.1-4.1"/><path d="M4.2 15v3.4a1.8 1.8 0 0 0 1.8 1.8h12a1.8 1.8 0 0 0 1.8-1.8V15"/></svg></span><span data-i18n="tool.export">Export</span></button>
+    <button class="dr-item danger" id="resetBtn"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 5.6v5h5"/><path d="M4.7 14a8 8 0 1 0 1.3-6.6L3.6 10.6"/></svg></span><span data-i18n="tool.reset">Reset</span></button>
   </div>
 
   <div class="dr-sec">
-    <button class="dr-item danger" id="signOutBtn"><span class="di">⏻</span><span data-i18n="session.signOut">Sign out</span></button>
+    <button class="dr-item danger" id="signOutBtn"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.4v8.8"/><path d="M6.9 6.4a8 8 0 1 0 10.2 0"/></svg></span><span data-i18n="session.signOut">Sign out</span></button>
   </div>
 
   <input type="file" id="fileIn" accept="application/json" hidden />
@@ -1357,9 +1357,9 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "bg.line": "Line",
       "bg.label": "Text label",
       "bg.door": "Door",
-      "bg.props": "⚙ Properties",
-      "bg.delete": "🗑 Delete",
-      "bg.reset": "↺ Reset bg",
+      "bg.props": "Properties",
+      "bg.delete": "Delete",
+      "bg.reset": "Reset bg",
       "bg.on": "Background edit on — select to move/resize, tools to draw",
       "bg.off": "Background edit off",
       "bg.deleted": "Deleted background item",
@@ -1694,9 +1694,9 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "bg.line": "Línea",
       "bg.label": "Etiqueta de texto",
       "bg.door": "Puerta",
-      "bg.props": "⚙ Propiedades",
-      "bg.delete": "🗑 Eliminar",
-      "bg.reset": "↺ Restaurar fondo",
+      "bg.props": "Propiedades",
+      "bg.delete": "Eliminar",
+      "bg.reset": "Restaurar fondo",
       "bg.on": "Edición de fondo activa — selecciona para mover/redimensionar, usa las herramientas para dibujar",
       "bg.off": "Edición de fondo apagada",
       "bg.deleted": "Elemento de fondo eliminado",
@@ -5276,7 +5276,7 @@ boot();
       const btn = document.createElement("button");
       btn.className = "dr-item";
       btn.id = "inventoryBtn";
-      btn.innerHTML = `<span class="di">📊</span><span id="inventoryBtnText"></span>`;
+      btn.innerHTML = `<span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3.4H7a1.8 1.8 0 0 0-1.8 1.8v13.6A1.8 1.8 0 0 0 7 20.6h10a1.8 1.8 0 0 0 1.8-1.8V8.2Z"/><path d="M14 3.4v4.8h4.8"/><path d="m9.4 12 5.2 5.2M14.6 12l-5.2 5.2"/></svg></span><span id="inventoryBtnText"></span>`;
       section.appendChild(btn);
 
       const status = document.createElement("div");
@@ -5780,7 +5780,7 @@ boot();
     const drawerSection=drawerScan&&drawerScan.closest(".dr-sec");
     if(drawerSection&&!document.getElementById("opsControlBtn")){
       const b=document.createElement("button"); b.className="dr-item"; b.id="opsControlBtn";
-      b.innerHTML='<span class="di">📊</span><span>Control Center</span>';
+      b.innerHTML=`<span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 20.4h16.8"/><rect x="5.6" y="11" width="3.4" height="6.6" rx="1"/><rect x="10.6" y="6.6" width="3.4" height="11" rx="1"/><rect x="15.6" y="9" width="3.4" height="8.6" rx="1"/></svg></span><span>Control Center</span>`;
       drawerSection.insertBefore(b,drawerSection.firstChild);
       b.onclick=()=>{ if(!canEdit()){toast("Admin only");return;} closeDrawer(); openControlCenter(); };
     }
@@ -5824,7 +5824,6 @@ boot();
       dr.title="Quality Report · Report Seconds · Inventory Check · Found Out of Place";
       const lab=dr.querySelector("span:last-child");
       if(lab){ lab.removeAttribute("data-i18n"); lab.textContent="New Operational Report"; }
-      const ico=dr.querySelector(".di"); if(ico) ico.textContent="⚠️";
     }
   }
 
@@ -7055,13 +7054,13 @@ body.showqty .tile .qbadge{display:block}
     const qtyBtn = document.createElement("button");
     qtyBtn.className = "dr-item";
     qtyBtn.id = "qtyBtn";
-    qtyBtn.innerHTML = `<span class="di">#</span><span id="qtyBtnText"></span>`;
+    qtyBtn.innerHTML = `<span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.4 3.8 7.8 20.2M16.2 3.8l-1.6 16.4M3.8 8.6h16.4M3.4 15.4h16.4"/></svg></span><span id="qtyBtnText"></span>`;
     qtyBtn.onclick = () => setShowQty(!showQty);
 
     const auditBtn = document.createElement("button");
     auditBtn.className = "dr-item";
     auditBtn.id = "auditBtn";
-    auditBtn.innerHTML = `<span class="di">⚖</span><span id="auditBtnText"></span>`;
+    auditBtn.innerHTML = `<span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.8v16.4M6.4 6.6h11.2"/><path d="m6.4 6.6-3 6.6a3 3 0 0 0 6 0Z"/><path d="m17.6 6.6-3 6.6a3 3 0 0 0 6 0Z"/><path d="M8.6 20.2h6.8"/></svg></span><span id="auditBtnText"></span>`;
     auditBtn.onclick = () => { try { closeDrawer(); } catch(e){} openAudit(); };
 
     const status = document.getElementById("inventoryStatus");
@@ -7294,7 +7293,7 @@ body.fieldmode .audit-help{font-size:13px;color:var(--muted)}
     item.className = "dr-item";
     item.id = "fieldItem";
     item.type = "button";
-    item.innerHTML = `<span class="di">☀</span><span></span>`;
+    item.innerHTML = `<span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.6v2.2M12 19.2v2.2M4.3 4.3l1.6 1.6M18.1 18.1l1.6 1.6M2.6 12h2.2M19.2 12h2.2M4.3 19.7l1.6-1.6M18.1 5.9l1.6-1.6"/></svg></span><span></span>`;
     item.onclick = () => { set(!on, true); try { closeDrawer(); } catch(e){} };
     // Next to Legend: both are "how the map looks", not "what it contains".
     section.insertBefore(item, legendBtn.nextSibling);
@@ -8107,6 +8106,14 @@ body.measuring .stage{cursor:crosshair}
 `;
   document.body.appendChild(style);
 
+  const ICO = {
+    undo: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.6h9.6a5.4 5.4 0 1 1 0 10.8H7"/><path d="M8 5.2 3.6 9.6 8 14"/></svg>`,
+    redo: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 9.6h-9.6a5.4 5.4 0 1 0 0 10.8H17"/><path d="m16 5.2 4.4 4.4L16 14"/></svg>`,
+    copy: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8.4" y="8.4" width="11.2" height="11.2" rx="2"/><path d="M15.6 8.4V6a1.6 1.6 0 0 0-1.6-1.6H6A1.6 1.6 0 0 0 4.4 6v8a1.6 1.6 0 0 0 1.6 1.6h2.4"/></svg>`,
+    grid: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.6" y="3.6" width="16.8" height="16.8" rx="2"/><path d="M9.2 3.6v16.8M14.8 3.6v16.8M3.6 9.2h16.8M3.6 14.8h16.8"/></svg>`,
+    lock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.6" y="10.4" width="14.8" height="9.8" rx="2.2"/><path d="M8.2 10.4V7.8a3.8 3.8 0 0 1 7.6 0v2.6"/></svg>`,
+    measure: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.8 15.2 15.2 2.8l6 6L8.8 21.2Z"/><path d="M6.6 11.4 8.4 13.2M9.8 8.2l1.8 1.8M13 5l1.8 1.8"/></svg>`
+  };
   const bar = document.getElementById("bgbar");
   let btns = {};
   if(bar){
@@ -8115,16 +8122,16 @@ body.measuring .stage{cursor:crosshair}
     group.id = "mtGroup";
     const mk = (id, label, title) => {
       const b = document.createElement("button");
-      b.type = "button"; b.id = id; b.className = "sh"; b.textContent = label; b.title = title;
+      b.type = "button"; b.id = id; b.className = "sh"; b.innerHTML = label; b.title = title;
       group.appendChild(b);
       return b;
     };
-    btns.undo    = mk("mtUndo", "↶", tx("undo"));
-    btns.redo    = mk("mtRedo", "↷", tx("redo"));
-    btns.copy    = mk("mtCopy", "⧉", tx("copy"));
-    btns.grid    = mk("mtGrid", "⊞", tx("grid"));
-    btns.lock    = mk("mtLock", "🔒", tx("lock"));
-    btns.measure = mk("mtMeasure", "📏", tx("measure"));
+    btns.undo    = mk("mtUndo", ICO.undo, tx("undo"));
+    btns.redo    = mk("mtRedo", ICO.redo, tx("redo"));
+    btns.copy    = mk("mtCopy", ICO.copy, tx("copy"));
+    btns.grid    = mk("mtGrid", ICO.grid, tx("grid"));
+    btns.lock    = mk("mtLock", ICO.lock, tx("lock"));
+    btns.measure = mk("mtMeasure", ICO.measure, tx("measure"));
 
     const sep = document.createElement("span");
     sep.className = "sep";
@@ -8152,7 +8159,7 @@ body.measuring .stage{cursor:crosshair}
     btns.grid.classList.toggle("mt-on", gridSnap);
     btns.measure.classList.toggle("mt-on", measuring);
     const it = selected();
-    btns.lock.textContent = it && it.locked ? "🔓" : "🔒";
+    btns.lock.innerHTML = it && it.locked ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.6" y="10.4" width="14.8" height="9.8" rx="2.2"/><path d="M8.2 10.4V7.8a3.8 3.8 0 0 1 7.3-1.3"/></svg>` : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.6" y="10.4" width="14.8" height="9.8" rx="2.2"/><path d="M8.2 10.4V7.8a3.8 3.8 0 0 1 7.6 0v2.6"/></svg>`;
     btns.lock.title = it && it.locked ? tx("unlock") : tx("lock");
     btns.copy.title = clipboard ? tx("paste") : tx("copy");
     document.querySelectorAll("#bg [data-bi]").forEach(el => {
@@ -8991,6 +8998,88 @@ body.fieldmode .tnav-ico{width:27px;height:27px}
   letter-spacing:.5px;text-transform:uppercase;color:var(--muted2);
   border-top:1px solid var(--line)}
 .ccm-note{padding:0 11px 10px;font-size:10.5px;color:var(--muted2)}
+
+/* ==========================================================================
+   EDITOR CHROME — drawer, background toolbar, selection toolbar, inspector
+   --------------------------------------------------------------------------
+   These were the last places still drawing their icons with text glyphs and
+   emoji, which is what made the editor modes read as unfinished next to the
+   rest of the app.
+   ========================================================================== */
+
+/* ---- Drawer items ------------------------------------------------------ */
+.dr-item .di{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;
+  font-size:0;opacity:1;background:var(--panel);color:var(--muted);
+  box-shadow:inset 0 0 0 1px var(--line);
+  transition:background var(--t-fast),color var(--t-fast)}
+.dr-item .di svg{width:16px;height:16px}
+.dr-item:hover .di{background:var(--panel2);color:var(--ink)}
+.dr-item.on .di{background:rgba(0,0,0,.22);color:#221a02;box-shadow:none}
+.dr-item.danger:hover .di{background:rgba(226,58,46,.18);color:#ffb3ad}
+.dr-item{border-radius:12px;transition:background var(--t-fast),border-color var(--t-fast),
+  transform var(--t-fast)}
+.dr-item:active{transform:scale(.985)}
+
+/* ---- Background (Edit Map) toolbar ------------------------------------- */
+.bgbar{gap:5px;padding:8px;border-radius:16px;
+  background:linear-gradient(180deg,rgba(30,36,45,.94),rgba(20,25,32,.94));
+  backdrop-filter:blur(20px);border:1px solid var(--line2);
+  box-shadow:0 20px 48px rgba(0,0,0,.5),var(--inset-hi);align-items:center}
+/* Tool groups read as segmented controls rather than a loose row of buttons. */
+.bgbar .grp{gap:3px;padding:3px;border-radius:11px;background:rgba(0,0,0,.26)}
+.bgbar .sep{height:26px;margin:0 3px;background:var(--line)}
+.bgbar .sep+.sep{display:none}
+/* Anchored to the left rail rather than centred: centred, the strip grew
+   under the Shape inspector on the right and clipped "Reset bg". */
+@media(min-width:901px){
+  .bgbar{left:94px;transform:none;max-width:calc(100vw - 480px)}
+}
+.bgbar button{border-radius:9px;font-weight:700}
+.bgbar button.sh{min-width:34px;height:32px;padding:0;display:grid;place-items:center;
+  background:transparent;border-color:transparent;color:var(--muted)}
+.bgbar button.sh svg{width:17px;height:17px}
+.bgbar button.sh:hover{background:var(--panel2);color:var(--ink);border-color:transparent}
+.bgbar button.sh.on,.bgbar button.sh.mt-on{background:var(--amber);color:#221a02}
+.bgbar button.lbl{display:inline-flex;align-items:center;gap:7px;height:34px;
+  padding:0 12px;font-size:12px}
+.bgbar button.lbl svg{width:15px;height:15px;flex:none;opacity:.85}
+.bgbar button.lbl.on{background:var(--amber);color:#221a02;border-color:var(--amber)}
+.bgbar button.lbl.danger{color:#FF9B94;border-color:rgba(226,58,46,.34)}
+.bgbar button.lbl.danger:hover{background:rgba(226,58,46,.16);border-color:var(--red)}
+/* The hint wrapped to three ragged lines beside the tools; the bottom hint
+   pill already carries the same guidance, so this is a tooltip now. */
+.bgbar .hintx{display:none}
+
+/* ---- Selection toolbar (Edit Products) --------------------------------- */
+.seltool{gap:4px;padding:8px;border-radius:16px;
+  background:linear-gradient(180deg,rgba(30,36,45,.94),rgba(20,25,32,.94));
+  backdrop-filter:blur(20px);border:1px solid var(--line2);
+  box-shadow:0 20px 48px rgba(0,0,0,.5),var(--inset-hi)}
+.seltool button{min-width:34px;height:32px;border-radius:9px;padding:0;font-size:0;
+  display:grid;place-items:center;background:var(--panel);border-color:var(--line)}
+.seltool button svg{width:17px;height:17px}
+.seltool button:hover{background:var(--panel2);border-color:var(--line2);color:var(--ink)}
+.seltool .cnt{font-size:11px;font-weight:800;letter-spacing:.3px;padding:0 8px 0 4px}
+.seltool .cnt b{font-size:14px;color:var(--amber)}
+.seltool .sep{height:22px}
+.seltool input[type=color]{width:38px;height:32px;border-radius:9px}
+
+/* ---- Inspector ("Shape") panel ----------------------------------------- */
+.insp{border-radius:18px;
+  background:linear-gradient(180deg,rgba(30,36,45,.95),rgba(19,24,31,.95));
+  backdrop-filter:blur(20px);border:1px solid var(--line2);
+  box-shadow:0 22px 54px rgba(0,0,0,.52)}
+.insp .ihead{padding:13px 14px;border-bottom:1px solid var(--line);gap:8px}
+.insp .ihead #iTitle{font-family:var(--display);font-size:14px;font-weight:800}
+.insp .kindtag{padding:3px 8px;border-radius:999px;background:var(--panel2);
+  border:1px solid var(--line);font-size:9px;font-weight:900;letter-spacing:.6px;
+  text-transform:uppercase;color:var(--muted)}
+.insp .ibody button[data-shape]{min-width:36px;height:34px;display:grid;place-items:center;
+  border-radius:9px;font-size:0}
+.insp .ibody button[data-shape] svg{width:17px;height:17px}
+
+/* ---- Mode banners: the two editor modes announce themselves the same way -- */
+.hint.editmode,.hint.bgmode{display:inline-flex;align-items:center;gap:8px}
 
 </style>
 <script id="tarter-pwa">

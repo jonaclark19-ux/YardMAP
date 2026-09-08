@@ -752,3 +752,123 @@ body.fieldmode .tnav-ico{width:27px;height:27px}
 
 @media(max-width:560px){.scan-hint{bottom:10px;font-size:10.5px}
   .scan-reticle .c{width:22px;height:22px}}
+/* ==========================================================================
+   FIXES FROM FIELD FEEDBACK
+   ========================================================================== */
+
+/* ---- Report Issue stays a centred dialog well below the 900px shell
+        breakpoint. Under 900px the sheet layout took over and pinned the
+        modal full-width to the bottom, which on a narrower desktop window
+        reads as "stuck in the corner". Only a genuinely small screen gets
+        the bottom sheet now. ------------------------------------------- */
+@media(min-width:701px){
+  #opsReportModal.show{place-items:center center;padding:20px}
+  #opsReportModal .ops-v2-box{width:min(660px,calc(100vw - 40px));
+    max-height:calc(100dvh - 40px);border-radius:20px}
+  /* the sheet drag handle belongs to the bottom-sheet layout only */
+  #opsReportModal .ops-v2-head:before{display:none}
+  #opsReportModal .ops-v2-head{padding-top:15px}
+  .ops-v2-foot{padding-bottom:12px}
+}
+
+/* ---- The type grid is a card in the flow, not a sticky header ---------- */
+.pro-type-section{background:rgba(255,255,255,.022);
+  border:1px solid var(--line)!important;border-radius:16px}
+#opsReportModal .ops-v2-body>.ops-section{background:#161C24}
+#opsReportModal .ops-v2-body{background:linear-gradient(180deg,#141A21,#0F151B)}
+
+/* ---- Control Center: evidence preview sits at the top of the detail ---- */
+.ccm-block .ccm-media{display:grid;gap:8px;padding:10px 11px}
+.ccm-block .ccm-media.two{grid-template-columns:1fr 1fr}
+.ccm-figure{margin:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;
+  background:rgba(0,0,0,.25)}
+.ccm-figure img{display:block;width:100%;height:150px;object-fit:cover;cursor:zoom-in;
+  transition:transform var(--t)}
+.ccm-figure:hover img{transform:scale(1.03)}
+.ccm-figure figcaption{padding:6px 9px;font-size:9.5px;font-weight:800;
+  letter-spacing:.5px;text-transform:uppercase;color:var(--muted2);
+  border-top:1px solid var(--line)}
+.ccm-note{padding:0 11px 10px;font-size:10.5px;color:var(--muted2)}
+
+/* ==========================================================================
+   EDITOR CHROME — drawer, background toolbar, selection toolbar, inspector
+   --------------------------------------------------------------------------
+   These were the last places still drawing their icons with text glyphs and
+   emoji, which is what made the editor modes read as unfinished next to the
+   rest of the app.
+   ========================================================================== */
+
+/* ---- Drawer items ------------------------------------------------------ */
+.dr-item .di{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;
+  font-size:0;opacity:1;background:var(--panel);color:var(--muted);
+  box-shadow:inset 0 0 0 1px var(--line);
+  transition:background var(--t-fast),color var(--t-fast)}
+.dr-item .di svg{width:16px;height:16px}
+.dr-item:hover .di{background:var(--panel2);color:var(--ink)}
+.dr-item.on .di{background:rgba(0,0,0,.22);color:#221a02;box-shadow:none}
+.dr-item.danger:hover .di{background:rgba(226,58,46,.18);color:#ffb3ad}
+.dr-item{border-radius:12px;transition:background var(--t-fast),border-color var(--t-fast),
+  transform var(--t-fast)}
+.dr-item:active{transform:scale(.985)}
+
+/* ---- Background (Edit Map) toolbar ------------------------------------- */
+.bgbar{gap:5px;padding:8px;border-radius:16px;
+  background:linear-gradient(180deg,rgba(30,36,45,.94),rgba(20,25,32,.94));
+  backdrop-filter:blur(20px);border:1px solid var(--line2);
+  box-shadow:0 20px 48px rgba(0,0,0,.5),var(--inset-hi);align-items:center}
+/* Tool groups read as segmented controls rather than a loose row of buttons. */
+.bgbar .grp{gap:3px;padding:3px;border-radius:11px;background:rgba(0,0,0,.26)}
+.bgbar .sep{height:26px;margin:0 3px;background:var(--line)}
+.bgbar .sep+.sep{display:none}
+/* Anchored to the left rail rather than centred: centred, the strip grew
+   under the Shape inspector on the right and clipped "Reset bg". */
+@media(min-width:901px){
+  .bgbar{left:94px;transform:none;max-width:calc(100vw - 480px)}
+}
+.bgbar button{border-radius:9px;font-weight:700}
+.bgbar button.sh{min-width:34px;height:32px;padding:0;display:grid;place-items:center;
+  background:transparent;border-color:transparent;color:var(--muted)}
+.bgbar button.sh svg{width:17px;height:17px}
+.bgbar button.sh:hover{background:var(--panel2);color:var(--ink);border-color:transparent}
+.bgbar button.sh.on,.bgbar button.sh.mt-on{background:var(--amber);color:#221a02}
+.bgbar button.lbl{display:inline-flex;align-items:center;gap:7px;height:34px;
+  padding:0 12px;font-size:12px}
+.bgbar button.lbl svg{width:15px;height:15px;flex:none;opacity:.85}
+.bgbar button.lbl.on{background:var(--amber);color:#221a02;border-color:var(--amber)}
+.bgbar button.lbl.danger{color:#FF9B94;border-color:rgba(226,58,46,.34)}
+.bgbar button.lbl.danger:hover{background:rgba(226,58,46,.16);border-color:var(--red)}
+/* The hint wrapped to three ragged lines beside the tools; the bottom hint
+   pill already carries the same guidance, so this is a tooltip now. */
+.bgbar .hintx{display:none}
+
+/* ---- Selection toolbar (Edit Products) --------------------------------- */
+.seltool{gap:4px;padding:8px;border-radius:16px;
+  background:linear-gradient(180deg,rgba(30,36,45,.94),rgba(20,25,32,.94));
+  backdrop-filter:blur(20px);border:1px solid var(--line2);
+  box-shadow:0 20px 48px rgba(0,0,0,.5),var(--inset-hi)}
+.seltool button{min-width:34px;height:32px;border-radius:9px;padding:0;font-size:0;
+  display:grid;place-items:center;background:var(--panel);border-color:var(--line)}
+.seltool button svg{width:17px;height:17px}
+.seltool button:hover{background:var(--panel2);border-color:var(--line2);color:var(--ink)}
+.seltool .cnt{font-size:11px;font-weight:800;letter-spacing:.3px;padding:0 8px 0 4px}
+.seltool .cnt b{font-size:14px;color:var(--amber)}
+.seltool .sep{height:22px}
+.seltool input[type=color]{width:38px;height:32px;border-radius:9px}
+
+/* ---- Inspector ("Shape") panel ----------------------------------------- */
+.insp{border-radius:18px;
+  background:linear-gradient(180deg,rgba(30,36,45,.95),rgba(19,24,31,.95));
+  backdrop-filter:blur(20px);border:1px solid var(--line2);
+  box-shadow:0 22px 54px rgba(0,0,0,.52)}
+.insp .ihead{padding:13px 14px;border-bottom:1px solid var(--line);gap:8px}
+.insp .ihead #iTitle{font-family:var(--display);font-size:14px;font-weight:800}
+.insp .kindtag{padding:3px 8px;border-radius:999px;background:var(--panel2);
+  border:1px solid var(--line);font-size:9px;font-weight:900;letter-spacing:.6px;
+  text-transform:uppercase;color:var(--muted)}
+.insp .ibody button[data-shape]{min-width:36px;height:34px;display:grid;place-items:center;
+  border-radius:9px;font-size:0}
+.insp .ibody button[data-shape] svg{width:17px;height:17px}
+
+/* ---- Mode banners: the two editor modes announce themselves the same way -- */
+.hint.editmode,.hint.bgmode{display:inline-flex;align-items:center;gap:8px}
+
