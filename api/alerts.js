@@ -1,7 +1,7 @@
 import { requireEditor, requireUser } from "./_lib/auth.js";
 import { getMeta, rest, rpc } from "./_lib/db.js";
 import { audit } from "./_lib/audit.js";
-import { alertToClient, mapAlertInput } from "./_lib/models.js";
+import { alertToClient, mapAlertInput, mergePayload } from "./_lib/models.js";
 import { json, readJson, errorResponse, methodNotAllowed } from "./_lib/http.js";
 
 async function recurrenceMap(days = 30) {
@@ -78,6 +78,15 @@ export default {
         if (["low", "normal", "high", "critical"].includes(body.priority)) patch.priority = body.priority;
         if (body.assignedTo !== undefined) patch.assigned_to = String(body.assignedTo || "").trim().slice(0, 160) || null;
         if (body.photoUrl !== undefined) patch.photo_url = String(body.photoUrl || "").trim().slice(0, 2000) || null;
+
+        // Workflow edits (owner, resolution note, the appended timeline entry)
+        // live in the payload. Read-modify-write it, so changing one field never
+        // drops the rest of the report.
+        if (body.payload && typeof body.payload === "object") {
+          const { data: current } = await rest("alerts", `id=eq.${encodeURIComponent(id)}&select=payload`);
+          const existing = Array.isArray(current) ? current[0]?.payload : null;
+          patch.payload = mergePayload(existing, body.payload);
+        }
 
         await rest("alerts", `id=eq.${encodeURIComponent(id)}`, {
           method: "PATCH",

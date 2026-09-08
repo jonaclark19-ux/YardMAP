@@ -4767,7 +4767,9 @@ async function boot(){
 
   const probe = await Sync.probe();
   if(probe.mode === "local") showLogin({ local: true });
-  else if(!probe.authed) showLogin({ local: false, misconfigured: probe.misconfigured });
+  // A deployed-but-unconfigured backend must still let people in offline,
+  // otherwise a half-finished Supabase setup locks the whole yard out.
+  else if(!probe.authed) showLogin({ local: !!probe.misconfigured, misconfigured: probe.misconfigured });
   else await startApp();
 }
 
