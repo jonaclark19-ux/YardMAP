@@ -4562,8 +4562,18 @@ $("#reportBtn").onclick = () => openFoundModal(null);
 $("#drReport").onclick = () => { closeDrawer(); openFoundModal(null); };
 
 function startScanFlow(){
-  openFoundModal(null);
-  $("#foundScanBtn").click();
+  Scanner.open({
+    onResult: code => {
+      const r = (typeof resolveSku === "function") ? resolveSku(code) : null;
+      const sku = r && (r.sku || r.found) ? (r.sku || String(code).trim()) : null;
+      if(sku && window.YardProductUX?.open){ window.YardProductUX.open(sku); return; }
+      // Nothing answers to this code: drop it in the search box so the SKU is
+      // not lost and the operator can see what came back.
+      const q = $("#q");
+      if(q){ q.value = String(code).trim(); q.dispatchEvent(new Event("input", {bubbles:true})); q.focus(); }
+      try { toast(t("scan.detected", {code})); } catch(e){}
+    }
+  });
 }
 $("#scanBtn").onclick = startScanFlow;
 $("#drScan").onclick = () => { closeDrawer(); startScanFlow(); };
@@ -6165,7 +6175,7 @@ boot();
 .product-activity{padding:10px 12px;border-top:1px solid #27333f}.product-activity:first-of-type{border-top:0}.product-activity b{font-size:11.5px}.product-activity small{display:block;color:#788696;margin-top:3px;font-size:10.5px;line-height:1.35}.product-empty{padding:13px;color:#748292;font-size:11.5px}.product-sheet-foot{display:grid;grid-template-columns:1fr 1.35fr;gap:8px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--tarter-border);background:rgba(10,15,21,.62);flex:none}.product-sheet-foot button{height:44px;border-radius:11px;border:1px solid #33414f;background:#151e28;color:#e8edf2;font-size:12.5px;font-weight:800}.product-sheet-foot button.primary{background:var(--tarter-action);border-color:var(--tarter-action);color:#241a00}.product-sheet-foot button:hover{border-color:#5b6978}.product-sheet-foot button.primary:hover{filter:brightness(1.04)}
 .multi-location-pin{position:absolute;z-index:12;transform:translate(-50%,-100%);pointer-events:none;display:flex;flex-direction:column;align-items:center;filter:drop-shadow(0 4px 6px rgba(0,0,0,.5))}.multi-location-pin span{padding:3px 7px;border-radius:7px;background:#ffbf27;color:#261b00;font-size:9px;font-weight:900;white-space:nowrap}.multi-location-pin.issue span{background:#e23a2e;color:white}.multi-location-pin:after{content:"";border:5px solid transparent;border-top-color:#ffbf27}.multi-location-pin.issue:after{border-top-color:#e23a2e}.tile.multi-location-focus{outline:3px solid #ffbf27!important;outline-offset:2px!important;z-index:8}.ritem .multi-count{margin-top:3px;color:#ffca52;font-size:10px;font-weight:800}
 /* Report V2.2: type always visible, product selector compact, only relevant evidence */
-#opsReportModal .ops-v2-box{width:min(650px,100%);border-radius:22px;background:linear-gradient(180deg,#151e28,#0e151d)}#opsReportModal .ops-v2-head{padding:14px 16px}#opsReportModal .ops-v2-body{padding:0 16px 15px;gap:10px}.pro-type-section{position:sticky;top:0;z-index:4;order:1!important;flex:none;padding:12px 0 10px!important;background:linear-gradient(180deg,#151e28 80%,rgba(21,30,40,0));border:0!important}.pro-type-section .ops-section-title{display:none}.pro-type-section .ops-type-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.pro-type-section .ops-type{min-height:58px;padding:8px 7px;border-radius:11px;gap:7px;justify-content:center;text-align:center;flex-direction:column}.pro-type-section .ops-type .ico{font-size:15px}.pro-type-section .ops-type b{font-size:10.5px;line-height:1.15}.pro-type-section .ops-type small{display:none}.pro-type-section .ops-type.on{border-color:var(--tarter-action);background:rgba(255,191,39,.10);box-shadow:inset 0 0 0 1px rgba(255,191,39,.11)}
+#opsReportModal .ops-v2-box{width:min(650px,100%);border-radius:22px;background:linear-gradient(180deg,#151e28,#0e151d)}#opsReportModal .ops-v2-head{padding:14px 16px}#opsReportModal .ops-v2-body{padding:0 16px 15px;gap:10px}.pro-type-section{position:relative;z-index:1;order:1!important;flex:none;padding:12px!important}.pro-type-section .ops-section-title{display:none}.pro-type-section .ops-type-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.pro-type-section .ops-type{min-height:58px;padding:8px 7px;border-radius:11px;gap:7px;justify-content:center;text-align:center;flex-direction:column}.pro-type-section .ops-type .ico{font-size:15px}.pro-type-section .ops-type b{font-size:10.5px;line-height:1.15}.pro-type-section .ops-type small{display:none}.pro-type-section .ops-type.on{border-color:var(--tarter-action);background:rgba(255,191,39,.10);box-shadow:inset 0 0 0 1px rgba(255,191,39,.11)}
 .pro-product-section{order:2!important;flex:none;padding:0!important;border:1px solid var(--tarter-border)!important;border-radius:14px;background:#121a23;overflow:hidden}.pro-product-section .ops-section-title{margin:0!important;padding:10px 11px!important;display:flex;align-items:center;justify-content:space-between;color:#8997a6}.pro-product-toggle{border:0;background:transparent;color:#ffca4b;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.4px;padding:4px 2px}.pro-product-section .ops-inline{padding:0 11px 10px}.pro-product-section .ops-sku-status{margin:0;border:0;border-top:1px solid #283541;border-radius:0;background:#0f171f;padding:10px 11px}.pro-product-section.collapsed .ops-inline{display:none}.pro-product-section.collapsed .ops-section-title{padding-bottom:8px!important}.pro-product-section.collapsed .ops-sku-status{border-top:0;padding-top:0;background:transparent}
 .pro-dynamic-section{order:3!important;flex:none;padding:12px!important;border:1px solid var(--tarter-border)!important;border-radius:14px;background:#121a23}.pro-dynamic-section:empty{display:none}.pro-evidence-section{order:4!important;flex:none;padding:12px!important;border:1px solid var(--tarter-border)!important;border-radius:14px;background:#121a23}.pro-evidence-section .ops-section-title{margin-bottom:8px}.pro-evidence-section.photo-hidden .ops-photo-row{display:none}.pro-evidence-section.photo-hidden .ops-section-title{display:none}.pro-evidence-section .ops-photo-row{padding:0 0 10px}.pro-extra{display:grid;gap:8px;margin-top:9px}.pro-extra .ops-field{min-width:0}.pro-field-hidden{display:none!important}.pro-help{font-size:10.5px;color:#7d8a99;line-height:1.4;margin-top:5px}.pro-result-note{padding:9px 10px;border:1px solid #35414e;border-radius:10px;background:#101820;color:#93a0ae;font-size:11px;line-height:1.45}.pro-result-note.good{border-color:rgba(55,200,113,.34);color:#9ee6b7;background:rgba(55,200,113,.06)}.pro-result-note.warn{border-color:rgba(255,191,39,.34);color:#ffd66e;background:rgba(255,191,39,.06)}
 #opsReportModal .ops-timestamp-preview{order:5!important;flex:none}
@@ -7678,6 +7688,17 @@ body.fieldmode .audit-help{font-size:13px;color:var(--muted)}
       return out;
     };
 
+    // Rows open the detail through the module's own internal handler, which
+    // never goes through cc.openReport above -- catch that path too.
+    document.addEventListener("click", e => {
+      if(!e.target.closest("#opsCenter")) return;
+      if(e.target.closest("[data-quick]")) return;
+      const row = e.target.closest("[data-report-id]");
+      if(!row) return;
+      const id = row.dataset.reportId;
+      setTimeout(() => decorateDetail(id), 120);
+    });
+
     // The detail panel is rebuilt on every status change; re-decorate.
     document.addEventListener("click", e => {
       if(e.target.closest("#cc23Ack,#cc23Start,#cc23Resolve,#cc23SaveMeta")){
@@ -8933,6 +8954,44 @@ body.fieldmode .tnav-ico{width:27px;height:27px}
 
 @media(max-width:560px){.scan-hint{bottom:10px;font-size:10.5px}
   .scan-reticle .c{width:22px;height:22px}}
+/* ==========================================================================
+   FIXES FROM FIELD FEEDBACK
+   ========================================================================== */
+
+/* ---- Report Issue stays a centred dialog well below the 900px shell
+        breakpoint. Under 900px the sheet layout took over and pinned the
+        modal full-width to the bottom, which on a narrower desktop window
+        reads as "stuck in the corner". Only a genuinely small screen gets
+        the bottom sheet now. ------------------------------------------- */
+@media(min-width:701px){
+  #opsReportModal.show{place-items:center center;padding:20px}
+  #opsReportModal .ops-v2-box{width:min(660px,calc(100vw - 40px));
+    max-height:calc(100dvh - 40px);border-radius:20px}
+  /* the sheet drag handle belongs to the bottom-sheet layout only */
+  #opsReportModal .ops-v2-head:before{display:none}
+  #opsReportModal .ops-v2-head{padding-top:15px}
+  .ops-v2-foot{padding-bottom:12px}
+}
+
+/* ---- The type grid is a card in the flow, not a sticky header ---------- */
+.pro-type-section{background:rgba(255,255,255,.022);
+  border:1px solid var(--line)!important;border-radius:16px}
+#opsReportModal .ops-v2-body>.ops-section{background:#161C24}
+#opsReportModal .ops-v2-body{background:linear-gradient(180deg,#141A21,#0F151B)}
+
+/* ---- Control Center: evidence preview sits at the top of the detail ---- */
+.ccm-block .ccm-media{display:grid;gap:8px;padding:10px 11px}
+.ccm-block .ccm-media.two{grid-template-columns:1fr 1fr}
+.ccm-figure{margin:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;
+  background:rgba(0,0,0,.25)}
+.ccm-figure img{display:block;width:100%;height:150px;object-fit:cover;cursor:zoom-in;
+  transition:transform var(--t)}
+.ccm-figure:hover img{transform:scale(1.03)}
+.ccm-figure figcaption{padding:6px 9px;font-size:9.5px;font-weight:800;
+  letter-spacing:.5px;text-transform:uppercase;color:var(--muted2);
+  border-top:1px solid var(--line)}
+.ccm-note{padding:0 11px 10px;font-size:10.5px;color:var(--muted2)}
+
 </style>
 <script id="tarter-pwa">
 /* Installable + offline when served next to sw.js; a no-op from file://. */
