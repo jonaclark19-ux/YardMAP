@@ -488,6 +488,7 @@ header.topbar::before{content:"";position:absolute;left:0;right:0;top:0;height:2
     transition-duration:.001ms !important}
 }
 
+
 /* ============================================================
    V2.3.2 addendum — icon tiles, selection badges, dropzone
    Adds to the component families above; no existing rule edited.
@@ -526,9 +527,6 @@ header.topbar::before{content:"";position:absolute;left:0;right:0;top:0;height:2
 .ops-action{border-radius:9px;transition:background var(--t-fast),border-color var(--t-fast)}
 .ops-action:hover{background:var(--panel2);border-color:var(--brand)}
 
-/* ---- Report Issue: "Collapse" reads as a chevron toggle -------- */
-.pro-product-toggle::before{content:"▴ ";font-size:8px;vertical-align:1px}
-.pro-product-section.collapsed .pro-product-toggle::before{content:"▾ "}
 
 /* ---- Control Center overview: per-metric icon tile ------------- */
 .cc23-metric{position:relative}
@@ -548,3 +546,209 @@ header.topbar::before{content:"";position:absolute;left:0;right:0;top:0;height:2
 .scan-head-ico{width:30px;height:30px;border-radius:9px;background:var(--brand-softer);
   color:var(--brand-hover);display:grid;place-items:center;flex:none}
 .scan-head-ico svg{width:16px;height:16px}
+
+/* ==========================================================================
+   PASS 2 — ICON SYSTEM + APPLE-STYLE POLISH
+   --------------------------------------------------------------------------
+   Every glyph in the chrome is now a stroked SVG on the same 24-unit grid, so
+   optical weight matches across the rail, the mobile bar, the Control Center
+   sidebar and the modals. Sizes and colours are set here in one place; the
+   markup only says *which* icon it is.
+   ========================================================================== */
+
+/* ---- Global: one geometry for every inline icon ------------------------- */
+.tnav-ico svg,.tmob span svg,.cc23-nav button .ico svg,
+.cc23-back svg,.cc23-action svg,.ops-scan-btn svg,.scan-btn svg{
+  display:block;width:100%;height:100%;stroke-width:1.8;
+  vector-effect:non-scaling-stroke}
+
+/* ---- Map rail ----------------------------------------------------------- */
+.tnav-ico{width:23px;height:23px;display:grid;place-items:center;font-size:0}
+.tnav{gap:6px}
+.tnav-label{letter-spacing:.1px}
+.tnav:active{transform:scale(.96)}
+.tnav{transition:background var(--t-fast),color var(--t-fast),transform var(--t-fast)}
+body.fieldmode .tnav-ico{width:27px;height:27px}
+
+/* ---- Mobile bar --------------------------------------------------------- */
+.tmob span{width:22px;height:22px;display:grid;place-items:center;font-size:0}
+.tmob:active{transform:scale(.94)}
+.tmob{transition:color var(--t-fast),transform var(--t-fast)}
+.tmob.scan span{width:38px;height:38px;padding:9px;margin-top:-17px}
+.tmob.scan span svg{stroke-width:2}
+
+/* ---- Control Center sidebar --------------------------------------------- */
+.cc23-nav button .ico{width:19px;height:19px;display:grid;place-items:center;
+  font-size:0;flex:none;opacity:.9}
+.cc23-nav button{height:44px;border-radius:12px;gap:11px;
+  transition:background var(--t-fast),color var(--t-fast),transform var(--t-fast)}
+.cc23-nav button:active{transform:scale(.985)}
+.cc23-nav button.on .ico{opacity:1}
+.cc23-nav button>span:not(.ico):not(.count){white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;min-width:0}
+.cc23-nav button .count{flex:none}
+/* The active pill is a filled shape, not a border trick — closer to a
+   sidebar row in Apple's own apps, and it keeps brand red as "selected". */
+.cc23-nav button.on{background:var(--brand-soft);border-color:transparent;color:#fff;
+  box-shadow:inset 0 0 0 1px var(--brand-ring)}
+
+/* ---- Control Center topbar --------------------------------------------- */
+.cc23-back{display:inline-flex;align-items:center;gap:6px;padding:0 13px 0 10px}
+.cc23-back svg{width:16px;height:16px;flex:none;opacity:.75}
+.cc23-brandmark{width:34px;height:34px;border-radius:11px;flex:none;
+  display:grid;place-items:center;color:#fff;background:var(--brand-grad);
+  box-shadow:var(--shadow-brand),var(--inset-hi)}
+.cc23-brandmark{font-family:var(--display);font-weight:900;font-size:18px;letter-spacing:-.5px}
+.cc23-top-actions>.cc23-action{display:inline-flex;align-items:center;gap:7px}
+.cc23-top-actions>.cc23-action svg{width:15px;height:15px;flex:none;opacity:.85}
+.cc23-top-actions>.cc23-action.primary svg{opacity:1}
+@media(max-width:760px){.cc23-brandmark{display:none}}
+
+/* ---- Apple-ish press feedback on the chrome buttons --------------------- */
+.cc23-back,.cc23-action,.cc23-btn,.ops-action,.scan-btn,.ops-scan-btn,
+.ops-v2-foot button{transition:background var(--t-fast),border-color var(--t-fast),
+  color var(--t-fast),transform var(--t-fast),box-shadow var(--t-fast)}
+.cc23-back:active,.cc23-action:active,.cc23-btn:active,.ops-action:active,
+.scan-btn:active,.ops-scan-btn:active,.ops-v2-foot button:active{transform:scale(.97)}
+
+/* ==========================================================================
+   CONTROL CENTER — the middle of the panel
+   ========================================================================== */
+
+/* Status hero: a status *badge*, so the state reads before the words do. */
+.cc23-hero-main{grid-template-columns:auto 1fr auto;gap:16px}
+.cc23-hero-badge{width:52px;height:52px;border-radius:16px;flex:none;
+  display:grid;place-items:center;background:rgba(49,192,109,.12);color:var(--green);
+  box-shadow:inset 0 0 0 1px rgba(49,192,109,.22)}
+.cc23-hero-badge svg{width:27px;height:27px;stroke-width:1.9}
+.cc23-hero-main.attn .cc23-hero-badge{background:var(--amber-soft);color:var(--amber);
+  box-shadow:inset 0 0 0 1px rgba(245,179,43,.24)}
+@media(max-width:760px){.cc23-hero-main{grid-template-columns:auto 1fr}
+  .cc23-hero-badge{width:42px;height:42px;border-radius:13px}
+  .cc23-hero-badge svg{width:22px;height:22px}}
+
+/* Metric tiles: rounder, quieter borders, tabular numbers that line up. */
+.cc23-metric{border-radius:16px;padding:13px;
+  background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.012));
+  transition:border-color var(--t-fast),transform var(--t-fast)}
+.cc23-metric:hover{border-color:var(--line2);transform:translateY(-1px)}
+.cc23-metric .value{font-variant-numeric:tabular-nums;letter-spacing:-.5px;font-size:26px}
+.cc23-metric .label{letter-spacing:.7px}
+.cc23-metric-ico{border-radius:11px;box-shadow:var(--inset-hi);
+  background:rgba(255,255,255,.06);color:#B4C0CD}
+
+/* Panels: hairline heads, icon beside the title. */
+.cc23-panel{border-radius:16px}
+.cc23-panel-head{border-bottom-color:var(--line);padding:12px 14px}
+.cc23-panel-head h4{display:inline-flex;align-items:center;gap:8px;letter-spacing:-.1px}
+.cc23-panel-ico{width:24px;height:24px;border-radius:8px;flex:none;display:grid;
+  place-items:center;background:var(--panel2);color:var(--muted)}
+.cc23-panel-ico svg{width:14px;height:14px;stroke-width:1.9}
+.cc23-panel-ico.is-brand{background:var(--brand-soft);color:#FF6B63}
+.cc23-panel-ico.is-green{background:rgba(49,192,109,.12);color:var(--green)}
+
+/* Empty states get a real illustration slot instead of a bare sentence. */
+.cc23-empty{padding:30px 16px;display:flex;flex-direction:column;align-items:center;
+  gap:4px;line-height:1.5}
+.cc23-empty .cc23-empty-ico{width:46px;height:46px;border-radius:50%;margin-bottom:8px;
+  display:grid;place-items:center;background:var(--panel);color:var(--muted2);
+  box-shadow:inset 0 0 0 1px var(--line)}
+.cc23-empty .cc23-empty-ico svg{width:22px;height:22px;stroke-width:1.6}
+.cc23-empty b{display:block;color:var(--muted);font-size:11.5px;font-weight:700}
+
+/* Range switch reads as one segmented control, iOS-style. */
+.cc23-range{border-radius:11px;padding:3px;background:rgba(0,0,0,.24)}
+.cc23-range button{border-radius:8px;transition:background var(--t-fast),color var(--t-fast)}
+
+/* ==========================================================================
+   REPORT ISSUE — grouped cards + a real dropzone
+   ========================================================================== */
+
+.ops-v2-head{display:flex;align-items:flex-start;gap:12px}
+.ops-head-mark{width:38px;height:38px;border-radius:12px;flex:none;margin-top:1px;
+  display:grid;place-items:center;color:#fff;background:var(--brand-grad);
+  box-shadow:var(--shadow-brand),var(--inset-hi)}
+.ops-head-mark svg{width:21px;height:21px;stroke-width:1.9}
+.ops-v2-head>div:not(.ops-head-mark){min-width:0}
+.ops-v2-close{margin-left:auto;flex:none}
+
+/* Scan button: icon + label, aligned to the input it belongs to. */
+.ops-scan-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.ops-scan-btn svg{width:16px;height:16px;flex:none}
+
+/* Evidence: the whole dashed block is the target, not a button floating in it. */
+.ops-photo-row{width:100%;text-align:left;cursor:pointer;
+  grid-template-columns:auto 1fr;align-items:center;gap:12px;padding:12px;
+  border-radius:14px;color:inherit;font:inherit}
+.ops-photo-row:hover{border-color:var(--brand);background:var(--brand-softer)}
+.ops-photo-row:active{transform:scale(.99)}
+.ops-photo-copy b{display:block;font-size:12.5px;font-weight:800;color:var(--ink);
+  margin-bottom:2px}
+.ops-photo-row .help{margin-top:0}
+.ops-photo-placeholder{display:grid;place-items:center;color:var(--muted);
+  transition:color var(--t-fast),border-color var(--t-fast)}
+.ops-photo-placeholder svg{width:22px;height:22px;stroke-width:1.7}
+.ops-photo-row:hover .ops-photo-placeholder{color:#FF8A83;border-color:var(--brand-ring)}
+#opsReportModal .ops-photo-row{grid-template-columns:auto 1fr}
+.pro-evidence-section .ops-photo-row{padding:12px;margin-bottom:10px}
+
+/* Each labelled group becomes its own card — the reference's strongest idea. */
+#opsReportModal .ops-v2-body>.ops-section{padding:12px;border:1px solid var(--line);
+  border-radius:16px;background:rgba(255,255,255,.022)}
+#opsReportModal .ops-v2-body>.ops-section:empty{display:none}
+#opsReportModal .ops-section-title{letter-spacing:.9px;color:var(--muted2)}
+
+/* ==========================================================================
+   SCANNER — corner brackets, dimmed surround, sweeping line
+   ========================================================================== */
+
+.scan-box{border-radius:20px;overflow:hidden}
+.scan-view{background:#05070a}
+.scan-reticle span{width:78%;height:40%;border:0;border-radius:16px;position:relative;
+  /* The surround dims through a huge spread shadow, so the frame is the
+     brightest thing on screen without painting a second overlay element. */
+  box-shadow:0 0 0 2000px rgba(4,7,11,.52)}
+.scan-reticle .c{position:absolute;width:26px;height:26px;border:3px solid var(--amber);
+  border-radius:4px}
+.scan-reticle .c.tl{top:-2px;left:-2px;border-right:0;border-bottom:0;border-radius:12px 0 0 0}
+.scan-reticle .c.tr{top:-2px;right:-2px;border-left:0;border-bottom:0;border-radius:0 12px 0 0}
+.scan-reticle .c.bl{bottom:-2px;left:-2px;border-right:0;border-top:0;border-radius:0 0 0 12px}
+.scan-reticle .c.br{bottom:-2px;right:-2px;border-left:0;border-top:0;border-radius:0 0 12px 0}
+.scan-reticle .sweep{position:absolute;left:8px;right:8px;height:2px;border-radius:2px;
+  background:linear-gradient(90deg,transparent,var(--amber),transparent);
+  box-shadow:0 0 12px rgba(245,179,43,.8);animation:scanSweep 2.4s var(--ease) infinite}
+@keyframes scanSweep{0%,100%{top:8%;opacity:.15}
+  12%{opacity:1}50%{top:92%;opacity:1}88%{opacity:1}}
+.scan-hint{position:absolute;left:0;right:0;bottom:14px;text-align:center;
+  color:rgba(255,255,255,.78);font-size:11px;font-weight:600;letter-spacing:.2px;
+  text-shadow:0 1px 6px rgba(0,0,0,.7);pointer-events:none}
+.scan-foot{padding:13px;gap:8px}
+.scan-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  border-radius:12px}
+.scan-btn svg{width:16px;height:16px;flex:none;opacity:.9}
+@media (prefers-reduced-motion:reduce){.scan-reticle .sweep{animation:none;top:50%}}
+
+/* ---- Report type: the chosen card carries the brand tint end to end ---- */
+#opsReportModal .ops-type.on .ico{background:var(--brand-soft);color:#FF8A83;
+  box-shadow:inset 0 0 0 1px var(--brand-ring)}
+#opsReportModal .ops-type .ico{transition:background var(--t-fast),color var(--t-fast),
+  box-shadow var(--t-fast)}
+
+/* "Collapse" is a control, not a section label -- sentence case, chevron,
+   and it follows the muted ink rather than shouting in amber. */
+.pro-product-toggle{text-transform:none;font-size:11px;font-weight:700;letter-spacing:0;
+  color:var(--muted);display:inline-flex;align-items:center;gap:5px}
+.pro-product-toggle:hover{color:var(--ink)}
+.pro-product-toggle::before{content:"";width:11px;height:11px;flex:none;
+  background:currentColor;transition:transform var(--t-fast);
+  -webkit-mask:var(--chev) center/11px 11px no-repeat;
+  mask:var(--chev) center/11px 11px no-repeat}
+.pro-product-section.collapsed .pro-product-toggle::before{transform:rotate(180deg)}
+:root{--chev:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 15 7-7 7 7'/%3E%3C/svg%3E")}
+
+/* The brand rule under the title is redundant now that the head carries a
+   brand mark, and at left:20px it sits under the tile and reads as a bleed. */
+#opsReportModal .ops-v2-head::after{display:none}
+
+@media(max-width:560px){.scan-hint{bottom:10px;font-size:10.5px}
+  .scan-reticle .c{width:22px;height:22px}}
