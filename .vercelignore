@@ -1,0 +1,6 @@
+# The V2.3.2 pilot build stores its data on the device. If the serverless
+# functions ship without Supabase configured, /api/me answers 401, the app
+# concludes a server is there and hides "Continue offline" — which locks
+# everyone out of the site. Keep the functions out of the deployment until the
+# backend is configured, then delete this file.
+api
