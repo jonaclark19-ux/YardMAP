@@ -1224,10 +1224,43 @@ El resumen semanal se envía automáticamente todos los lunes (configurado en
 alerta por correo aparece dentro de cada tarjeta de alerta en el panel de
 "Active reports".
 
-## Importación diaria del inventario (TGU FG) — pendiente de definir
+## Importación diaria del inventario (TGU FG Report)
 
-Está pensado un endpoint (`/api/inventory-import`, aún por construir) al
-que Power Automate le va a hacer un POST directo apenas reciba el correo
-diario con el Excel adjunto. Falta definir con el Excel real qué columnas
-trae y cómo se relacionan con los tiles del mapa antes de programarlo.
+Ya está construido `/api/inventory-import`. Usa las mismas columnas que ya
+reconoce el importador manual de la app (hojas "TGU FG Report" / "Worksheet",
+columnas `FG`/`Total Inventory On Hand` o `Part`/`On Hand`), así que el
+resultado es idéntico a subir el Excel a mano — pero queda guardado en
+Supabase y se comparte automáticamente entre todos los dispositivos (se
+sincroniza solo cada 5 minutos, sin tener que tocar nada).
+
+Si un SKU del Excel no está todavía como tile en el mapa, se guarda igual en
+el catálogo de inventario (para búsquedas, tarjetas de producto, etc.) pero
+no se crea ni se mueve ningún tile — eso lo sigue haciendo un editor a mano.
+
+### Configuración
+
+1. Agregá la Environment Variable `INVENTORY_IMPORT_SECRET` en Vercel — una
+   clave larga que vos inventes (por ejemplo, generada con un gestor de
+   contraseñas). Es la que va a usar Power Automate para autenticarse.
+2. En Power Automate, creá un flujo:
+   - Disparador: "Cuando llega un correo nuevo" (Office 365 Outlook),
+     filtrado por remitente/asunto del TGU FG Report.
+   - Acción: "Obtener el contenido del adjunto" del correo.
+   - Acción: HTTP POST a `https://TU-DOMINIO.vercel.app/api/inventory-import`
+     con:
+     - Header `Content-Type: application/json`
+     - Header `x-import-secret: <el mismo valor de INVENTORY_IMPORT_SECRET>`
+     - Body JSON:
+       ```json
+       {
+         "fileName": "@{triggerOutputs()?['body/attachments'][0]?['name']}",
+         "fileBase64": "@{triggerOutputs()?['body/attachments'][0]?['contentBytes']}"
+       }
+       ```
+       (Power Automate ya entrega el adjunto en base64 en `contentBytes`,
+       así que no hace falta convertir nada.)
+
+La respuesta indica cuántas filas se importaron (`rowCount`) y si hubo
+conflictos entre hojas (`conflicts`), útil para armar una alerta en el
+propio flujo de Power Automate si algo sale raro.
 

@@ -386,10 +386,17 @@
     if("serviceWorker" in navigator && location.protocol==="https:") navigator.serviceWorker.register("/sw.js").catch(()=>{});
   }
 
+  async function syncSharedInventory(){
+    try{
+      const r=await api("/api/inventory");
+      if(r.data) window.YardInventory?.applyServerState?.(r.rev,r.data);
+    }catch(e){}
+  }
+
   function init(){
     injectShell(); injectReportFields(); patchSubmitAlert(); patchVerification(); overrideAlerts(); patchBackground(); patchEditLock(); registerPwa(); deepLink();
     try{ if(!document.getElementById("app")?.hidden) renderAlerts(); }catch(e){}
-    const wait=setInterval(()=>{if(window.Sync&&Sync.mode!=="unknown"){clearInterval(wait);refreshSummary();setInterval(refreshSummary,60000);}},500);
+    const wait=setInterval(()=>{if(window.Sync&&Sync.mode!=="unknown"){clearInterval(wait);refreshSummary();setInterval(refreshSummary,60000);syncSharedInventory();setInterval(syncSharedInventory,300000);}},500);
     if(window.I18N?.onLangChange) I18N.onLangChange(()=>{injectShell();paintBanner();if(document.getElementById("opsModal")?.classList.contains("show"))paintOps();});
   }
 
