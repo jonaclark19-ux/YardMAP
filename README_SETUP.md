@@ -1203,3 +1203,31 @@ Las ubicaciones exactas de algunos botones pueden cambiar ligeramente con actual
 - Vercel Environment Variables: https://vercel.com/docs/environment-variables
 - GitHub Upload Files: https://docs.github.com/en/repositories/working-with-files/managing-files/adding-a-file-to-a-repository
 
+---
+
+# CORREO AUTOMÁTICO (alertas y resumen semanal)
+
+Para que funcione el botón "Enviar por correo" de cada alerta y el resumen
+semanal automático, agregá estas Environment Variables en Vercel (además de
+las 5 ya existentes):
+
+- `SMTP_HOST` — servidor SMTP de tu correo corporativo (ej. `smtp.office365.com`)
+- `SMTP_PORT` — normalmente `587`
+- `SMTP_USER` — la cuenta de correo que va a enviar (ej. `alertas@tuempresa.com`)
+- `SMTP_PASS` — la contraseña o "app password" de esa cuenta
+- `SMTP_FROM` — opcional; si no se pone, se usa `SMTP_USER`
+- `ALERT_SUMMARY_RECIPIENTS` — correos que reciben el resumen semanal, separados por coma
+- `CRON_SECRET` — una clave larga cualquiera que vos inventes; protege que solo Vercel Cron pueda disparar el resumen
+
+El resumen semanal se envía automáticamente todos los lunes (configurado en
+`vercel.json`, se puede cambiar el horario ahí). El botón de enviar una
+alerta por correo aparece dentro de cada tarjeta de alerta en el panel de
+"Active reports".
+
+## Importación diaria del inventario (TGU FG) — pendiente de definir
+
+Está pensado un endpoint (`/api/inventory-import`, aún por construir) al
+que Power Automate le va a hacer un POST directo apenas reciba el correo
+diario con el Excel adjunto. Falta definir con el Excel real qué columnas
+trae y cómo se relacionan con los tiles del mapa antes de programarlo.
+

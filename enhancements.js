@@ -171,6 +171,18 @@
     }catch(e){ toast(e.status===403?t("session.noPermission"):L("Could not update report","No se pudo actualizar el reporte")); return false; }
   }
 
+  async function emailAlert(a){
+    const to=prompt(L("Send to (comma-separated emails)","Enviar a (correos separados por coma)"),lastAlertEmailTo||"");
+    if(!to)return;
+    const note=prompt(L("Message (optional)","Mensaje (opcional)"),"")||"";
+    try{
+      await api("/api/alert-email",{method:"POST",body:{id:a.id,to,note}});
+      lastAlertEmailTo=to;
+      toast(L("Alert sent by email","Alerta enviada por correo"));
+    }catch(e){ toast(e.status===400?L("Invalid email address","Correo inválido"):L("Could not send the email","No se pudo enviar el correo")); }
+  }
+  let lastAlertEmailTo="";
+
   function overrideAlerts(){
     window.resolveAlert=async id=>{ if(await patchAlert(id,{status:"resolved"})) toast(t("alerts.resolved")); };
     window.renderAlerts=function(){
@@ -191,6 +203,7 @@
           ${a.photoUrl?`<img class="ops-alert-photo" src="${esc(a.photoUrl)}" alt="Alert evidence" />`:""}
           <div class="ops-alert-actions">
             ${canGo?`<button data-act="go">${esc(t("alerts.goto"))}</button>`:""}
+            <button data-act="email">${esc(L("Send by email","Enviar por correo"))}</button>
             ${(!done&&canEdit())?`<button data-act="ack">${esc(L("Acknowledge","Recibir"))}</button><button data-act="progress">${esc(L("In progress","En proceso"))}</button><button data-act="assign">${esc(L("Assign","Asignar"))}</button><button data-act="priority">${esc(L("Priority","Prioridad"))}</button><button class="ok" data-act="resolve">${esc(t("alerts.resolve"))}</button>`:""}
             ${(canEdit()&&a.type==="found"&&a.foundAt)?`<button data-act="movehere">${esc(L("Move map here","Mover mapa aquí"))}</button><button data-act="secondary">${esc(L("Secondary spot","Lugar secundario"))}</button><button data-act="keephome">${esc(L("Keep original","Mantener original"))}</button>`:""}
           </div>
@@ -199,6 +212,7 @@
       body.querySelectorAll(".alert-item").forEach(item=>{
         const a=ALERTS.find(x=>String(x.id)===item.dataset.id); if(!a) return;
         item.querySelector('[data-act="go"]')?.addEventListener("click",e=>{e.stopPropagation(); alertGoto(a);});
+        item.querySelector('[data-act="email"]')?.addEventListener("click",e=>{e.stopPropagation(); emailAlert(a);});
         item.querySelector('[data-act="ack"]')?.addEventListener("click",()=>patchAlert(a.id,{status:"acknowledged"}));
         item.querySelector('[data-act="progress"]')?.addEventListener("click",()=>patchAlert(a.id,{status:"in_progress"}));
         item.querySelector('[data-act="assign"]')?.addEventListener("click",()=>{const who=prompt(L("Assign to","Asignar a"),a.assignedTo||"");if(who!==null)patchAlert(a.id,{assignedTo:who});});

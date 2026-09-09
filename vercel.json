@@ -15,5 +15,8 @@
         { "key": "Service-Worker-Allowed", "value": "/" }
       ]
     }
+  ],
+  "crons": [
+    { "path": "/api/alerts-weekly-summary", "schedule": "0 12 * * 1" }
   ]
 }

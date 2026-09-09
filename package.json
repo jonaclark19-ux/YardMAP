@@ -5,6 +5,9 @@
   "type": "module",
   "engines": { "node": ">=20" },
   "scripts": {
-    "check": "node --check api/login.js && node --check api/state.js && node --check api/alerts.js && node --check enhancements.js"
+    "check": "node --check api/login.js && node --check api/state.js && node --check api/alerts.js && node --check api/alert-email.js && node --check api/alerts-weekly-summary.js && node --check enhancements.js"
+  },
+  "dependencies": {
+    "nodemailer": "^6.9.15"
   }
 }
