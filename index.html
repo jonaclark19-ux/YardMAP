@@ -1072,6 +1072,21 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
   <div class="alerts-body" id="alertsBody"></div>
 </div>
 
+<!-- ======================================================= ALERT EMAIL -->
+<div class="ops-v2-modal" id="alertEmailModal">
+  <div class="ops-v2-box" style="max-width:480px">
+    <div class="ops-v2-head"><h2>Send by email</h2></div>
+    <div class="ops-v2-body">
+      <label class="ops-field"><span>Send to (comma-separated emails)</span><input id="alertEmailTo" type="text" placeholder="name@company.com"></label>
+      <label class="ops-field"><span>Message (optional)</span><textarea id="alertEmailNote" placeholder="Optional note..."></textarea></label>
+    </div>
+    <div class="ops-v2-foot">
+      <button id="alertEmailCancel">Cancel</button>
+      <button class="primary" id="alertEmailSend">Send</button>
+    </div>
+  </div>
+</div>
+
 <!-- ======================================================= MTO -->
 <div class="report-modal" id="mtoModal">
   <div class="report-box" style="max-width:560px">
@@ -6180,9 +6195,50 @@ boot();
       const list=ALERTS.filter(a=>alertFilter==="all"?true:alertFilter==="done"?a.status==="resolved":a.status!=="resolved");
       if(!list.length){body.innerHTML=`<div class="alerts-none">${t("alerts.none")}</div>`;return;}
       body.innerHTML=list.map(a=>{const done=a.status==="resolved";const canGo=!!(a.foundAt&&a.foundAt.x!=null)||!!findTileBySku(a.sku);const label=alertTypeLabel(a.type);return `<div class="alert-item ${done?"done":""}" data-aid="${escOps(a.id)}"><div class="atitle"><span class="atype ${escOps(a.type)}">${escOps(label)}</span><span>${escOps(a.sku||a.rawCode||"?")}</span></div><div class="amsg">${escOps(alertMessage(a))}${a.note?" · "+escOps(a.note):""}</div><div class="ameta">${escOps(fmtDateTime(a.createdAt))} · ${escOps(a.by||"—")} · ${escOps(STATUS_LABEL[a.status]||a.status||"New")}${a.hasPhoto?" · 📷":""}</div><div class="aacts">${canGo?`<button data-act="go">Show on map</button>`:""}${a.hasPhoto?`<button data-act="photo">Photo</button>`:""}<button data-act="email">Send by email</button>${(!done&&canEdit())?`<button data-act="resolve">Resolve</button>`:""}</div></div>`;}).join("");
-      body.querySelectorAll(".alert-item").forEach(item=>{const id=item.dataset.aid,a=ALERTS.find(x=>x.id===id);item.querySelectorAll("[data-act]").forEach(btn=>btn.onclick=async e=>{e.stopPropagation();if(btn.dataset.act==="go")focusAlert(a);else if(btn.dataset.act==="resolve")setDetailedStatus(id,"resolved");else if(btn.dataset.act==="photo")showPhoto(id);else if(btn.dataset.act==="email"){let lastTo="";try{lastTo=localStorage.getItem("tarterYardLastEmailTo")||"";}catch(e){}const to=prompt("Send to (comma-separated emails)",lastTo);if(!to)return;const note=prompt("Message (optional)","")||"";try{const r=await api("alerts?route=email",{method:"POST",body:JSON.stringify({id,to,note})});if(!r.ok)throw new Error(r.body.error||"send_failed");try{localStorage.setItem("tarterYardLastEmailTo",to);}catch(e){}toast("Alert sent by email");}catch(err){toast(err.message==="invalid_recipients"?"Invalid email address":"Could not send the email");}}});item.onclick=()=>focusAlert(a);});
+      body.querySelectorAll(".alert-item").forEach(item=>{const id=item.dataset.aid,a=ALERTS.find(x=>x.id===id);item.querySelectorAll("[data-act]").forEach(btn=>btn.onclick=e=>{e.stopPropagation();if(btn.dataset.act==="go")focusAlert(a);else if(btn.dataset.act==="resolve")setDetailedStatus(id,"resolved");else if(btn.dataset.act==="photo")showPhoto(id);else if(btn.dataset.act==="email")openAlertEmailModal(id);});item.onclick=()=>focusAlert(a);});
     };
   }
+
+  // In-app modal for the "Send by email" action, replacing the browser prompt().
+  let alertEmailTargetId=null;
+  function openAlertEmailModal(id){
+    alertEmailTargetId=id;
+    const modal=document.getElementById("alertEmailModal"); if(!modal)return;
+    const toField=document.getElementById("alertEmailTo"), noteField=document.getElementById("alertEmailNote");
+    let lastTo=""; try{lastTo=localStorage.getItem("tarterYardLastEmailTo")||"";}catch(e){}
+    if(toField)toField.value=lastTo;
+    if(noteField)noteField.value="";
+    modal.classList.add("show");
+    setTimeout(()=>toField&&toField.focus(),50);
+  }
+  function closeAlertEmailModal(){
+    const modal=document.getElementById("alertEmailModal"); if(modal)modal.classList.remove("show");
+    alertEmailTargetId=null;
+  }
+  (function initAlertEmailModal(){
+    const modal=document.getElementById("alertEmailModal"); if(!modal)return;
+    document.getElementById("alertEmailCancel").onclick=closeAlertEmailModal;
+    modal.addEventListener("click",e=>{if(e.target===modal)closeAlertEmailModal();});
+    const sendBtn=document.getElementById("alertEmailSend");
+    sendBtn.onclick=async ()=>{
+      const id=alertEmailTargetId; if(!id)return;
+      const to=(document.getElementById("alertEmailTo").value||"").trim();
+      const note=(document.getElementById("alertEmailNote").value||"").trim();
+      if(!to){toast("Enter at least one email address");return;}
+      sendBtn.disabled=true; sendBtn.textContent="Sending…";
+      try{
+        const r=await api("alerts?route=email",{method:"POST",body:JSON.stringify({id,to,note})});
+        if(!r.ok)throw new Error(r.body.error||"send_failed");
+        try{localStorage.setItem("tarterYardLastEmailTo",to);}catch(e){}
+        toast("Alert sent by email");
+        closeAlertEmailModal();
+      }catch(err){
+        toast(err.message==="invalid_recipients"?"Invalid email address":"Could not send the email");
+      }finally{
+        sendBtn.disabled=false; sendBtn.textContent="Send";
+      }
+    };
+  })();
 
   // Out-of-place reports render as pins instead of only badging the home tile.
   if(typeof renderAlertPins==="function"){
