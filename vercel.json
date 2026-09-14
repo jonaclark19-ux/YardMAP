@@ -34,6 +34,7 @@
     { "source": "/api/handoff", "destination": "/api/ops?route=handoff" },
     { "source": "/api/zones", "destination": "/api/ops?route=zones" },
     { "source": "/api/ops-summary", "destination": "/api/ops?route=summary" },
+    { "source": "/api/weekly-report", "destination": "/api/ops?route=weekly-report" },
     { "source": "/api/audit", "destination": "/api/ops?route=audit" }
   ]
 }
