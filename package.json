@@ -5,7 +5,8 @@
   "type": "module",
   "engines": { "node": ">=20" },
   "scripts": {
-    "check": "for f in api/*.js api/_lib/*.js enhancements.js; do node --check \"$f\" || exit 1; done"
+    "check": "for f in api/*.js api/_lib/*.js enhancements.js; do node --check \"$f\" || exit 1; done && npm test",
+    "test": "node --test"
   },
   "dependencies": {
     "nodemailer": "^6.9.15",
