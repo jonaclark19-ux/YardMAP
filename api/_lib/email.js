@@ -38,7 +38,7 @@ export function parseRecipients(raw, max = 20) {
     .slice(0, max);
 }
 
-export async function sendMail({ to, subject, html, text }) {
+export async function sendMail({ to, subject, html, text, attachments }) {
   const { from } = config();
   const recipients = Array.isArray(to) ? to : [to];
   if (!recipients.length) throw Object.assign(new Error("no_recipients"), { status: 400 });
@@ -49,5 +49,6 @@ export async function sendMail({ to, subject, html, text }) {
     subject,
     html,
     text: text || html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(),
+    attachments: attachments && attachments.length ? attachments : undefined,
   });
 }

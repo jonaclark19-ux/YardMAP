@@ -1076,11 +1076,17 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
 <div class="ops-v2-modal" id="alertEmailModal">
   <div class="ops-v2-box" style="max-width:480px">
     <div class="ops-v2-head"><h2>Send by email</h2></div>
-    <div class="ops-v2-body">
+    <div class="ops-v2-body" id="alertEmailForm">
       <label class="ops-field"><span>Send to (comma-separated emails)</span><input id="alertEmailTo" type="text" placeholder="name@company.com"></label>
       <label class="ops-field"><span>Message (optional)</span><textarea id="alertEmailNote" placeholder="Optional note..."></textarea></label>
     </div>
-    <div class="ops-v2-foot">
+    <div class="ops-v2-body" id="alertEmailDone" hidden style="align-items:center;text-align:center;gap:10px">
+      <div id="alertEmailCheck" style="width:56px;height:56px;border-radius:14px;background:#1e9e5a;display:flex;align-items:center;justify-content:center;margin:8px auto">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M4 12.5l5 5L20 6" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div style="font-weight:700">Email sent</div>
+    </div>
+    <div class="ops-v2-foot" id="alertEmailFoot">
       <button id="alertEmailCancel">Cancel</button>
       <button class="primary" id="alertEmailSend">Send</button>
     </div>
@@ -6217,17 +6223,23 @@ boot();
 
   // In-app modal for the "Send by email" action, replacing the browser prompt().
   let alertEmailTargetId=null;
+  let alertEmailCloseTimer=null;
   function openAlertEmailModal(id){
     alertEmailTargetId=id;
     const modal=document.getElementById("alertEmailModal"); if(!modal)return;
+    clearTimeout(alertEmailCloseTimer);
     const toField=document.getElementById("alertEmailTo"), noteField=document.getElementById("alertEmailNote");
     let lastTo=""; try{lastTo=localStorage.getItem("tarterYardLastEmailTo")||"";}catch(e){}
     if(toField)toField.value=lastTo;
     if(noteField)noteField.value="";
+    document.getElementById("alertEmailForm").hidden=false;
+    document.getElementById("alertEmailDone").hidden=true;
+    document.getElementById("alertEmailFoot").hidden=false;
     modal.classList.add("show");
     setTimeout(()=>toField&&toField.focus(),50);
   }
   function closeAlertEmailModal(){
+    clearTimeout(alertEmailCloseTimer);
     const modal=document.getElementById("alertEmailModal"); if(modal)modal.classList.remove("show");
     alertEmailTargetId=null;
   }
@@ -6242,8 +6254,10 @@ boot();
       const r=await Sync.api("alerts?route=email",{method:"POST",body:JSON.stringify({id,to,note})});
       if(!r.ok)throw new Error(r.body.error||"send_failed");
       try{localStorage.setItem("tarterYardLastEmailTo",to);}catch(e){}
-      toast("Alert sent by email");
-      closeAlertEmailModal();
+      document.getElementById("alertEmailForm").hidden=true;
+      document.getElementById("alertEmailFoot").hidden=true;
+      document.getElementById("alertEmailDone").hidden=false;
+      alertEmailCloseTimer=setTimeout(closeAlertEmailModal,1400);
     }catch(err){
       toast(err.message==="invalid_recipients"?"Invalid email address":err.message==="not_found"?"This alert was not saved to the server and can't be emailed. Refresh the page and try again.":"Could not send the email");
     }finally{
