@@ -1226,7 +1226,7 @@ alerta por correo aparece dentro de cada tarjeta de alerta en el panel de
 
 ## Importación diaria del inventario (TGU FG Report)
 
-Ya está construido `/api/inventory-import`. Usa las mismas columnas que ya
+Ya está construido `/api/inventory` (POST). Usa las mismas columnas que ya
 reconoce el importador manual de la app (hojas "TGU FG Report" / "Worksheet",
 columnas `FG`/`Total Inventory On Hand` o `Part`/`On Hand`), así que el
 resultado es idéntico a subir el Excel a mano — pero queda guardado en
@@ -1246,7 +1246,7 @@ no se crea ni se mueve ningún tile — eso lo sigue haciendo un editor a mano.
    - Disparador: "Cuando llega un correo nuevo" (Office 365 Outlook),
      filtrado por remitente/asunto del TGU FG Report.
    - Acción: "Obtener el contenido del adjunto" del correo.
-   - Acción: HTTP POST a `https://TU-DOMINIO.vercel.app/api/inventory-import`
+   - Acción: HTTP POST a `https://TU-DOMINIO.vercel.app/api/inventory`
      con:
      - Header `Content-Type: application/json`
      - Header `x-import-secret: <el mismo valor de INVENTORY_IMPORT_SECRET>`
