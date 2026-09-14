@@ -126,19 +126,55 @@ const TYPE_LABEL = {
   found: "FUERA DE LUGAR",
   unknown: "CÓDIGO DESCONOCIDO",
   low: "QUEDA POCO",
+  quality: "CALIDAD",
+  seconds: "SECONDS",
+  inventory: "INVENTARIO",
+  out_of_place: "FUERA DE LUGAR",
 };
 
 function alertHtml(a, user, note) {
   const rows = [
     ["Tipo", TYPE_LABEL[a.type] || a.type || "-"],
     ["SKU / Código", a.sku || a.rawCode || "-"],
+  ];
+  // The V2 report form (quality/seconds/inventory/out_of_place) carries
+  // several type-specific fields inside the alert's payload -- without
+  // these the email only ever showed the generic columns, dropping the
+  // actual problem detail (reason, disposition, destination, variance...).
+  if (a.type === "quality") {
+    rows.push(
+      ["Cantidad", a.quantity ?? "-"],
+      ["Razón", a.reason || "-"],
+      ["Disposición", a.disposition ? String(a.disposition).replace(/_/g, " ") : "-"],
+      ["Destino", a.destination || "-"],
+    );
+  } else if (a.type === "seconds") {
+    rows.push(
+      ["Cantidad", a.quantity ?? "-"],
+      ["Razón", a.reason || "-"],
+    );
+  } else if (a.type === "inventory") {
+    rows.push(
+      ["Sistema", a.systemInventory ?? "-"],
+      ["Físico", a.physicalQuantity ?? "-"],
+      ["Variación", a.variance ?? "-"],
+      ["Resultado", a.inventoryResult ? String(a.inventoryResult).replace(/_/g, " ") : "-"],
+    );
+  } else if (a.type === "out_of_place") {
+    rows.push(
+      ["Hallazgo", a.locationFinding === "additional_stock" ? "Stock adicional" : "Ubicación incorrecta"],
+      ["Cantidad", a.quantity ?? "-"],
+      ["Grupo asignado", a.homeGroup || "-"],
+    );
+  }
+  rows.push(
     ["Prioridad", (a.priority || "normal").toUpperCase()],
     ["Estado", (a.status || "new").toUpperCase()],
     ["Reportado por", `${a.by || "-"}${a.role ? ` (${a.role})` : ""}`],
     ["Fecha", a.createdAt ? new Date(a.createdAt).toLocaleString("es") : "-"],
     ["Asignado a", a.assignedTo || "-"],
     ["Nota", a.note || "-"],
-  ];
+  );
   const rowsHtml = rows.map(([k, v]) => `
     <tr>
       <td style="padding:6px 12px;border:1px solid #ddd;font-weight:600;background:#f4f4f4">${esc(k)}</td>
