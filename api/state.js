@@ -102,7 +102,10 @@ async function handleSync(request) {
   const out = { srev: serverSrev, arev: serverArev };
   if (serverSrev !== srev) out.state = { rev: serverSrev, data: state.data, updatedBy: state.updated_by, updatedAt: state.updated_at };
   if (serverArev !== arev) {
-    const { data } = await rest("alerts", "select=*&order=created_at.desc&limit=400");
+    // Keep in sync with the same cap in api/alerts.js -- this is the same
+    // "full list" the client syncs against, just delivered via polling
+    // instead of a direct GET.
+    const { data } = await rest("alerts", "select=*&order=created_at.desc&limit=1500");
     out.alerts = { rev: serverArev, items: (data || []).map((a) => alertToClient(a)) };
   }
   return json(out);

@@ -19,7 +19,12 @@ async function recurrenceMap(days = 30) {
 }
 
 async function getAlerts() {
-  const { data } = await rest("alerts", "select=*&order=created_at.desc&limit=400");
+  // Real pagination would need to change how the client syncs alerts (it
+  // currently treats this as the full authoritative list, not a page of
+  // one), which is a bigger change than is safe to make in isolation. This
+  // higher cap is a stop-gap: it buys a lot more headroom before the
+  // oldest open alerts start silently falling out of the list.
+  const { data } = await rest("alerts", "select=*&order=created_at.desc&limit=1500");
   const rec = await recurrenceMap(30);
   return (data || []).map((a) => alertToClient(a, rec.get(String(a.sku || "")) || 0));
 }
