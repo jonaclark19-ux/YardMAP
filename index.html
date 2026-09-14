@@ -2257,6 +2257,11 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
         return { ok: true, alert: r.body.alert };
       }
       if (r.status === 401) return { ok: false, unauthorized: true, alert: optimistic };
+      // A 4xx here means the server rejected the payload itself (bad data,
+      // not a connectivity blip) -- queuing it would just retry the same
+      // rejection forever on every sync poll. Only a network failure
+      // (caught below) or a 5xx is worth retrying.
+      if (r.status >= 400 && r.status < 500) return { ok: false, rejected: true, alert: optimistic };
     } catch (e) { /* queue below */ }
 
     const q = queued(); q.push(input); setQueued(q);
@@ -2271,7 +2276,9 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
     for (const item of q) {
       try {
         const r = await api("alerts", { method: "POST", body: JSON.stringify({ alert: item }) });
-        if (!r.ok) rest.push(item);
+        // Same rule as addAlert: a 4xx is a permanent rejection, not a
+        // transient failure, so drop it instead of requeuing it forever.
+        if (!r.ok && !(r.status >= 400 && r.status < 500)) rest.push(item);
       } catch (e) { rest.push(item); }
     }
     setQueued(rest);
