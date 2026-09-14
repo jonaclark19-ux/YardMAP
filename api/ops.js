@@ -1,6 +1,7 @@
 import { requireEditor, requireUser } from "./_lib/auth.js";
 import { getMeta, rest, rpc } from "./_lib/db.js";
 import { audit } from "./_lib/audit.js";
+import { parseRecipients, sendMail } from "./_lib/email.js";
 import { json, readJson, errorResponse, methodNotAllowed } from "./_lib/http.js";
 
 /* Combines announcements, shift handoffs, zone status, the ops summary and
@@ -107,6 +108,26 @@ async function handleSummary(request) {
   return json({ role: user.role, announcements: activeAnnouncements, zones: zones || [], handoffs: handoffs || [], lock, revisions: { announcements: Number(meta?.announcements_rev || 0), verifications: Number(meta?.verifications_rev || 0) } });
 }
 
+// The weekly / manual report builders in Control Center already have every
+// figure they need on the client (Sync.state, local inventory & location
+// caches), so this just relays a client-built HTML email instead of
+// duplicating that aggregation server-side. It's editor-only, same trust
+// level as every other admin action in Control Center.
+async function handleWeeklyReport(request) {
+  if (request.method !== "POST") return methodNotAllowed(["POST"]);
+  const user = await requireEditor(request);
+  const body = await readJson(request, 400_000);
+  const to = parseRecipients(body.to);
+  if (!to.length) return json({ error: "invalid_recipients" }, 400);
+  const subject = String(body.subject || "Tarter Yard Map · Report").trim().slice(0, 200);
+  const html = String(body.html || "").trim();
+  if (!html) return json({ error: "missing_html" }, 400);
+  if (html.length > 350_000) return json({ error: "report_too_large" }, 400);
+  await sendMail({ to, subject, html });
+  await audit(user, "weekly_report_emailed", "report", null, { to, count: to.length, subject });
+  return json({ ok: true, to });
+}
+
 async function handleAudit(request) {
   if (request.method !== "GET") return methodNotAllowed(["GET"]);
   await requireEditor(request);
@@ -122,6 +143,7 @@ export default {
       if (route === "handoff") return await handleHandoff(request);
       if (route === "zones") return await handleZones(request);
       if (route === "summary") return await handleSummary(request);
+      if (route === "weekly-report") return await handleWeeklyReport(request);
       if (route === "audit") return await handleAudit(request);
       return json({ error: "unknown_route" }, 404);
     } catch (error) { return errorResponse(error); }
