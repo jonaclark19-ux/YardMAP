@@ -5892,32 +5892,10 @@ boot();
         </div>
       </div>
 
-      <div class="ops-center" id="opsCenter">
-        <div class="ops-center-head">
-          <button class="ops-action" id="opsCenterClose">← Map</button>
-          <div class="ops-center-title"><h2>Yard Control Center</h2><p id="opsCenterSubtitle">Local Admin · operational reports</p></div>
-          <div class="ops-center-actions">
-            <button id="opsExportBtn">⬇ <span class="label">Export Excel</span></button>
-            <button id="opsNewReportBtn">＋ <span class="label">New Report</span></button>
-          </div>
-        </div>
-        <div class="ops-center-tabs" id="opsCenterTabs">
-          <button data-tab="overview" class="on">Overview</button>
-          <button data-tab="reports">Reports</button>
-          <button data-tab="inventory">Inventory</button>
-          <button data-tab="quality">Quality & Seconds</button>
-          <button data-tab="activity">Activity</button>
-          <button data-tab="settings">Data</button>
-        </div>
-        <div class="ops-center-body">
-          <section class="ops-page on" data-page="overview" id="opsPageOverview"></section>
-          <section class="ops-page" data-page="reports" id="opsPageReports"></section>
-          <section class="ops-page" data-page="inventory" id="opsPageInventory"></section>
-          <section class="ops-page" data-page="quality" id="opsPageQuality"></section>
-          <section class="ops-page" data-page="activity" id="opsPageActivity"></section>
-          <section class="ops-page" data-page="settings" id="opsPageSettings"></section>
-        </div>
-      </div>
+      <!-- Populated by tarter-control-center-v23-js's shell() on first open,
+           which replaces this container's innerHTML wholesale -- there is no
+           static markup to keep here. -->
+      <div class="ops-center" id="opsCenter"></div>
 
       <div class="ops-v2-modal ops-photo-viewer" id="opsPhotoViewer"><div><img id="opsPhotoViewerImg" alt="Report photo" /><div style="text-align:center;margin-top:8px"><button class="ops-action" id="opsPhotoViewerClose">Close</button></div></div></div>
       <input id="opsBarcodeFile" type="file" accept=".xlsx,.xls,.csv" hidden />
@@ -5942,10 +5920,6 @@ boot();
     document.getElementById("opsPhotoBtn").onclick=()=>document.getElementById("opsPhotoInput").click();
     document.getElementById("opsPhotoInput").onchange=onPhotoSelected;
     document.getElementById("opsReportSubmit").onclick=submitOpsReport;
-    document.getElementById("opsCenterClose").onclick=closeControlCenter;
-    document.getElementById("opsNewReportBtn").onclick=()=>{closeControlCenter();openOpsReport({});};
-    document.getElementById("opsExportBtn").onclick=exportReports;
-    document.querySelectorAll("#opsCenterTabs button").forEach(b=>b.onclick=()=>switchCenterTab(b.dataset.tab));
     document.getElementById("opsPhotoViewerClose").onclick=closePhotoViewer;
     document.getElementById("opsPhotoViewer").addEventListener("click",e=>{if(e.target.id==="opsPhotoViewer")closePhotoViewer();});
     document.getElementById("opsBarcodeFile").onchange=async e=>{
