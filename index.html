@@ -35,6 +35,7 @@
   .app{display:flex; flex-direction:column; height:100dvh}
   header.topbar{display:flex; align-items:center; gap:14px; padding:10px 16px;
     background:linear-gradient(180deg,#1b212b,#161b22); border-bottom:1px solid var(--line); flex-wrap:wrap; z-index:30}
+  body.viewer #inventoryBtn, body.viewer #auditBtn{display:none}
   #announceBar{display:flex; flex-direction:column; gap:1px; position:relative; z-index:29}
   #announceBar[hidden]{display:none}
   .announce-item{display:flex; align-items:center; gap:10px; padding:8px 16px; font-size:12.5px; font-weight:600;
@@ -2357,6 +2358,33 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
     }
   }
 
+  /* Generic alert PATCH for fields other than status (owner, priority,
+     assignedTo, and anything carried in payload -- notes, timeline
+     entries, emailedAt...). The Control Center's own patchReport() only
+     ever touched the local copy, so owner/priority edits and workflow
+     notes typed there never actually reached the server -- silently lost
+     on the next refresh. */
+  async function patchAlert(id, patch) {
+    S.alerts = S.alerts.map((a) => (a.id === id ? Object.assign({}, a, patch) : a));
+    lsSet(LS_ALERTS, { rev: S.alertsRev, items: S.alerts });
+    emit("alerts", S.alerts);
+    if (S.mode !== "remote") return { ok: true, local: true };
+    try {
+      const r = await api("alerts", { method: "PATCH", body: JSON.stringify(Object.assign({ id }, patch)) });
+      if (r.ok) {
+        S.alertsRev = r.body.rev || S.alertsRev;
+        S.alerts = r.body.items || S.alerts;
+        lsSet(LS_ALERTS, { rev: S.alertsRev, items: S.alerts });
+        emit("alerts", S.alerts);
+        return { ok: true };
+      }
+      if (r.status === 403) return { ok: false, forbidden: true };
+      return { ok: false, error: r.body.error };
+    } catch (e) {
+      return { ok: false, offline: true };
+    }
+  }
+
   /* -------------------------------------------------- polling */
 
   let pollTimer = null;
@@ -2442,7 +2470,7 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
     api,
     probe, login, signup, logout, useLocalMode,
     loadState, pushState, pushStateNow, flush,
-    loadAlerts, addAlert, setAlertStatus, pollOnce, startPolling, stopPolling,
+    loadAlerts, addAlert, setAlertStatus, patchAlert, pollOnce, startPolling, stopPolling,
     onState: (fn) => listeners.state.push(fn),
     onAlerts: (fn) => listeners.alerts.push(fn),
     onStatus: (fn) => listeners.status.push(fn),
@@ -3152,7 +3180,7 @@ function endTileDrag(e){
   save();
   toast(drag.ids.length>1 ? t("tile.movedN",{n:drag.ids.length}) : t("tile.moved",{sku:data.tiles[drag.lead].sku}));
 }
-function flashTile(i){ const el=tileEls.get(i); if(el){ el.classList.add("match"); setTimeout(()=>el.classList.remove("match"),1300); } }
+function flashTile(i){ const el=tileEls.get(i); if(el){ el.classList.add("match"); setTimeout(()=>{ if(typeof highlightSearch==="function") highlightSearch(); else el.classList.remove("match"); },1300); } }
 
 function startResize(tileEl,e){
   const i=+tileEl.dataset.i; e.stopPropagation(); const t=data.tiles[i];
@@ -5418,7 +5446,7 @@ boot();
       input.hidden = true;
       document.getElementById("drawer")?.appendChild(input);
 
-      btn.addEventListener("click", () => input.click());
+      btn.addEventListener("click", () => { if(typeof canEdit==="function"&&!canEdit()){if(typeof toast==="function")toast("Admin only");return;} input.click(); });
       input.addEventListener("change", async () => {
         const file = input.files && input.files[0];
         input.value = "";
@@ -6283,7 +6311,7 @@ boot();
       updateAlertBadge(); const body=document.getElementById("alertsBody"); if(!body)return;
       const list=ALERTS.filter(a=>alertFilter==="all"?true:alertFilter==="done"?a.status==="resolved":a.status!=="resolved");
       if(!list.length){body.innerHTML=`<div class="alerts-none">${t("alerts.none")}</div>`;return;}
-      body.innerHTML=list.map(a=>{const done=a.status==="resolved";const canGo=!!(a.foundAt&&a.foundAt.x!=null)||!!findTileBySku(a.sku);const label=alertTypeLabel(a.type);return `<div class="alert-item ${done?"done":""}" data-aid="${escOps(a.id)}"><div class="atitle"><span class="atype ${escOps(a.type)}">${escOps(label)}</span><span>${escOps(a.sku||a.rawCode||"?")}</span></div><div class="amsg">${escOps(alertMessage(a))}${a.note?" · "+escOps(a.note):""}</div><div class="ameta">${escOps(fmtDateTime(a.createdAt))} · ${escOps(a.by||"—")} · ${escOps(STATUS_LABEL[a.status]||a.status||"New")}${a.hasPhoto?" · 📷":""}</div><div class="aacts">${canGo?`<button data-act="go">Show on map</button>`:""}${a.hasPhoto?`<button data-act="photo">Photo</button>`:""}${canEdit()?`<button data-act="email">Send by email</button>`:""}${(!done&&canEdit())?`<button data-act="resolve">Resolve</button>`:""}</div></div>`;}).join("");
+      body.innerHTML=list.map(a=>{const done=a.status==="resolved";const canGo=!!(a.foundAt&&a.foundAt.x!=null)||!!findTileBySku(a.sku);const label=alertTypeLabel(a.type);return `<div class="alert-item ${done?"done":""}" data-aid="${escOps(a.id)}"><div class="atitle"><span class="atype ${escOps(a.type)}">${escOps(label)}</span><span>${escOps(a.sku||a.rawCode||"?")}</span></div><div class="amsg">${escOps(alertMessage(a))}${a.note?" · "+escOps(a.note):""}</div><div class="ameta">${escOps(fmtDateTime(a.createdAt))} · ${escOps(a.by||"—")} · ${escOps(STATUS_LABEL[a.status]||a.status||"New")}${a.hasPhoto?" · 📷":""}</div><div class="aacts">${canGo?`<button data-act="go">Show on map</button>`:""}${a.hasPhoto?`<button data-act="photo">Photo</button>`:""}${canEdit()?`<button data-act="email"${a.emailedAt?" class=\"emailed\"":""}>${a.emailedAt?"Email sent":"Send by email"}</button>`:""}${(!done&&canEdit())?`<button data-act="resolve">Resolve</button>`:""}</div></div>`;}).join("");
       body.querySelectorAll(".alert-item").forEach(item=>{const id=item.dataset.aid,a=ALERTS.find(x=>x.id===id);item.querySelectorAll("[data-act]").forEach(btn=>btn.onclick=e=>{e.stopPropagation();if(btn.dataset.act==="go")focusAlert(a);else if(btn.dataset.act==="resolve")setDetailedStatus(id,"resolved");else if(btn.dataset.act==="photo")showPhoto(id);else if(btn.dataset.act==="email")openAlertEmailModal(id);});item.onclick=()=>focusAlert(a);});
     };
   }
@@ -6353,6 +6381,12 @@ boot();
       const r=await Sync.api("alerts?route=email",{method:"POST",body:JSON.stringify({id,to,note})});
       if(!r.ok)throw new Error(r.body.error||"send_failed");
       try{localStorage.setItem("tarterYardLastEmailTo",to);}catch(e){}
+      // Record that this alert was emailed so the UI can show "Email sent"
+      // instead of the plain action everywhere the alert appears.
+      try{
+        await Sync.api("alerts",{method:"PATCH",body:JSON.stringify({id,payload:{emailedAt:new Date().toISOString()}})});
+        await Sync.loadAlerts();
+      }catch(e){}
       document.getElementById("alertEmailForm").hidden=true;
       document.getElementById("alertEmailFoot").hidden=true;
       document.getElementById("alertEmailDone").hidden=false;
@@ -6699,7 +6733,28 @@ boot();
   function barcodeState(){try{return JSON.parse(localStorage.getItem("tarter_yard_barcodes_v1")||"null")}catch(e){return null}}
   function locationState(){try{const k=window.YardProductUX?.locations?.storageKey||"tarter_yard_secondary_locations_v1";const v=JSON.parse(localStorage.getItem(k)||"null");return v&&Array.isArray(v.items)?v.items:[]}catch(e){return []}}
   function persistAlerts(){try{const old=JSON.parse(localStorage.getItem(ALERTS_KEY)||"{}");localStorage.setItem(ALERTS_KEY,JSON.stringify({rev:old.rev||0,items:Sync.state.alerts||[]}))}catch(e){console.warn(e)}}
-  function patchReport(id,patch,comment){const r=Sync.state.alerts.find(x=>x.id===id);if(!r)return null;Object.assign(r,patch||{});if(comment){r.timeline=Array.isArray(r.timeline)?r.timeline:[];r.timeline.push({status:r.status||"new",at:new Date().toISOString(),by:currentUser(),comment});}persistAlerts();return r;}
+  // patch's non-priority fields (owner, ownerAssignedAt, timeline...) aren't
+  // columns the server recognizes on their own -- they ride inside payload,
+  // same as every other V2 report field. Without this, edits here (owner,
+  // priority, and any workflow note saved without a status change) only
+  // ever touched the local copy and were silently lost on the next refresh.
+  async function patchReport(id,patch,comment){
+    const r=Sync.state.alerts.find(x=>x.id===id);if(!r)return null;
+    Object.assign(r,patch||{});
+    const payloadPatch={};
+    Object.keys(patch||{}).forEach(k=>{if(k!=="priority")payloadPatch[k]=patch[k];});
+    if(comment){
+      r.timeline=Array.isArray(r.timeline)?r.timeline:[];
+      r.timeline.push({status:r.status||"new",at:new Date().toISOString(),by:currentUser(),comment});
+      payloadPatch.timeline=r.timeline;
+    }
+    persistAlerts();
+    const serverPatch={};
+    if(patch&&patch.priority)serverPatch.priority=patch.priority;
+    if(Object.keys(payloadPatch).length)serverPatch.payload=payloadPatch;
+    if(Object.keys(serverPatch).length){ try{await Sync.patchAlert(id,serverPatch);}catch(e){} }
+    return r;
+  }
   async function setStatus(id,status,comment){if(!window.Sync)return;await Sync.setAlertStatus(id,status,false);const r=Sync.state.alerts.find(x=>x.id===id);if(!r)return;const stamp=new Date().toISOString();r.timeline=Array.isArray(r.timeline)?r.timeline:[];r.timeline.push({status,at:stamp,by:currentUser(),comment:comment||""});if(status==="acknowledged"){r.acknowledgedAt=stamp;r.acknowledgedBy=currentUser()}if(status==="in_progress"){r.inProgressAt=stamp;r.inProgressBy=currentUser()}if(status==="resolved"){r.resolvedAt=r.resolvedAt||stamp;r.resolvedBy=r.resolvedBy||currentUser();if(comment)r.resolutionNote=comment}persistAlerts();render();openDetail(id);}
   function classifyYard(){const open=reports().filter(openReport);const high=open.filter(r=>autoPriority(r)==="high");return {open,high,label:open.length?`${open.length} need attention`:"Yard clear"};}
   function shell(){
@@ -6739,7 +6794,7 @@ boot();
   /* Empty states get an icon + a headline, so "nothing here" looks deliberate. */
   function ccEmpty(icon,title,sub=''){return `<div class="cc23-empty"><span class="cc23-empty-ico">${icon}</span><b>${title}</b>${sub?`<span>${sub}</span>`:''}</div>`}
   function metric(label,value,foot,cls="",icon=""){return `<div class="cc23-metric ${cls}">${icon?`<div class="cc23-metric-ico">${icon}</div>`:""}<div class="label">${esc(label)}</div><div class="value">${esc(value)}</div><div class="foot">${esc(foot||"")}</div></div>`}
-  function qRow(r,quick=true){const m=META[r.type]||{label:r.type||"Report",cls:""},p=autoPriority(r),owner=r.owner||"Unassigned";return `<div class="cc23-qrow" data-report-id="${esc(r.id)}"><div class="cc23-qprio ${p}"></div><div class="cc23-qmain"><div class="cc23-qtop"><span class="cc23-type ${m.cls}">${esc(m.label)}</span><span class="cc23-qsku">${esc(r.sku||"?")}</span><span class="cc23-status ${esc(r.status||"new")}">${esc(STATUS[r.status]||r.status||"New")}</span></div><div class="cc23-qdesc">${esc(reportSummary(r))}${r.note?` · ${esc(r.note)}`:""}</div><div class="cc23-qmeta">${esc(r.homeGroup||"No mapped group")} · ${esc(fmtDT(r.createdAt))} · ${esc(r.by||"—")}</div></div><div class="cc23-qright"><div class="cc23-qage">${esc(ageText(r))}</div><div class="cc23-qowner">${esc(owner)}</div>${quick&&openReport(r)?`<div class="cc23-qquick">${!r.owner?`<button data-quick="assign" data-id="${esc(r.id)}">Assign me</button>`:""}${r.status!=="in_progress"?`<button data-quick="start" data-id="${esc(r.id)}">Start</button>`:""}${canEdit()?`<button data-quick="email" data-id="${esc(r.id)}">Email</button>`:""}</div>`:""}</div></div>`}
+  function qRow(r,quick=true){const m=META[r.type]||{label:r.type||"Report",cls:""},p=autoPriority(r),owner=r.owner||"Unassigned";return `<div class="cc23-qrow" data-report-id="${esc(r.id)}"><div class="cc23-qprio ${p}"></div><div class="cc23-qmain"><div class="cc23-qtop"><span class="cc23-type ${m.cls}">${esc(m.label)}</span><span class="cc23-qsku">${esc(r.sku||"?")}</span><span class="cc23-status ${esc(r.status||"new")}">${esc(STATUS[r.status]||r.status||"New")}</span></div><div class="cc23-qdesc">${esc(reportSummary(r))}${r.note?` · ${esc(r.note)}`:""}</div><div class="cc23-qmeta">${esc(r.homeGroup||"No mapped group")} · ${esc(fmtDT(r.createdAt))} · ${esc(r.by||"—")}</div></div><div class="cc23-qright"><div class="cc23-qage">${esc(ageText(r))}</div><div class="cc23-qowner">${esc(owner)}</div>${quick&&openReport(r)?`<div class="cc23-qquick">${!r.owner?`<button data-quick="assign" data-id="${esc(r.id)}">Assign me</button>`:""}${r.status!=="in_progress"?`<button data-quick="start" data-id="${esc(r.id)}">Start</button>`:""}${canEdit()?`<button data-quick="email" data-id="${esc(r.id)}"${r.emailedAt?" class=\"emailed\"":""}>${r.emailedAt?"Email sent":"Email"}</button>`:""}</div>`:""}</div></div>`}
   function bindRows(root){root.querySelectorAll("[data-report-id]").forEach(row=>row.onclick=e=>{if(e.target.closest("[data-quick]"))return;openDetail(row.dataset.reportId)});root.querySelectorAll("[data-quick]").forEach(b=>b.onclick=async e=>{e.stopPropagation();const id=b.dataset.id;if(b.dataset.quick==="assign"){patchReport(id,{owner:currentUser(),ownerAssignedAt:new Date().toISOString(),ownerAssignedBy:currentUser()},`Assigned to ${currentUser()}`);render();openDetail(id)}else if(b.dataset.quick==="start")await setStatus(id,"in_progress","Work started from Control Center");else if(b.dataset.quick==="email")window.YardOpsV2?.openAlertEmailModal?.(id)})}
   function pageHeader(title,sub,right=""){return `<div class="cc23-page-head"><div><h3>${esc(title)}</h3><p>${esc(sub||"")}</p></div>${right?`<div class="right">${right}</div>`:""}</div>`}
   function overview(){const all=reports(),o=all.filter(openReport),t=rangeReports(all),today=(()=>{const d=new Date();return all.filter(r=>new Date(r.createdAt).toDateString()===d.toDateString())})();const inv=inventoryState(),locs=locationState(),pendingLocs=locs.filter(l=>l.status==="observed");const high=o.filter(r=>autoPriority(r)==="high"),inprog=o.filter(r=>r.status==="in_progress"),newc=o.filter(r=>!r.status||r.status==="new"||r.status==="open"),quality=o.filter(r=>r.type==="quality"),invOpen=o.filter(r=>r.type==="inventory"),secondsUnits=t.filter(r=>r.type==="seconds").reduce((s,r)=>s+(num(r.quantity)||0),0),oop=o.filter(r=>r.type==="out_of_place").length;const oldest=o.slice().sort((a,b)=>dateMs(a.createdAt)-dateMs(b.createdAt))[0];const queue=o.slice().sort((a,b)=>priorityScore(b)-priorityScore(a)||dateMs(a.createdAt)-dateMs(b.createdAt)).slice(0,7),rep=repeatedSkus();const resolved=t.filter(r=>r.status==="resolved"||r.inventoryResult==="verified").length,resRate=t.length?Math.round(resolved/t.length*100):100;return `${pageHeader("Operational overview","What needs attention now, plus the health of the yard workflow.")}
@@ -6794,7 +6849,7 @@ boot();
       b.disabled=false;
     });
   }
-  function openDetail(id){const r=reports().find(x=>x.id===id);if(!r)return;state.selected=id;const d=document.getElementById("cc23Detail"),scr=document.getElementById("cc23DetailScrim"),m=META[r.type]||{label:r.type||"Report",cls:""},inv=window.YardInventory?.get?.(r.sku),timeline=(Array.isArray(r.timeline)?r.timeline:[]).slice().sort((a,b)=>dateMs(b.at)-dateMs(a.at));document.getElementById("cc23DetailTitle").textContent=`${r.sku||"?"} · ${m.label}`;document.getElementById("cc23DetailSub").textContent=`${STATUS[r.status]||r.status||"New"} · ${ageText(r)} old · ${fmtDT(r.createdAt)}`;const detailRows=[];if(r.type==="quality"){detailRows.push(["Quantity",r.quantity??"—"],["Reason",r.reason||"—"],["Disposition",r.disposition?String(r.disposition).replace(/_/g," "):"—"],["Destination",r.destination||"—"])}else if(r.type==="seconds"){detailRows.push(["Quantity",r.quantity??"—"],["Reason",r.reason||"—"],["Destination","Seconds"],["System On Hand",r.systemInventory??inv?.onHand??"—"])}else if(r.type==="inventory"){detailRows.push(["System",r.systemInventory??"—"],["Physical",r.physicalQuantity??"—"],["Variance",`${(num(r.variance)||0)>0?"+":""}${r.variance??"—"}`],["Result",r.inventoryResult?String(r.inventoryResult).replace(/_/g," "):"—"])}else if(r.type==="out_of_place"){detailRows.push(["Finding",r.locationFinding==="additional_stock"?"Additional stock":"Wrong location"],["Quantity",r.quantity??"—"],["Assigned group",r.homeGroup||"—"],["Found point",r.foundAt?`${r.foundAt.x}, ${r.foundAt.y}`:"—"])}const body=document.getElementById("cc23DetailBody");body.innerHTML=`<div class="cc23-detail-block"><h5>Report context</h5><div class="cc23-detail-grid">${detailRows.map(([k,v])=>`<div class="cc23-detail-kv"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join("")}<div class="cc23-detail-kv"><span>Reporter</span><b>${esc(r.by||"—")}</b></div><div class="cc23-detail-kv"><span>Created</span><b>${esc(fmtDT(r.createdAt))}</b></div></div>${r.note?`<div class="cc23-detail-copy"><b style="color:#dbe2e8">Note:</b> ${esc(r.note)}</div>`:""}</div><div class="cc23-detail-block"><h5>Product context</h5><div class="cc23-detail-grid"><div class="cc23-detail-kv"><span>System On Hand</span><b>${esc(inv?.onHand??r.systemInventory??"—")}</b></div><div class="cc23-detail-kv"><span>Product group</span><b>${esc(inv?.productGroup||r.homeGroup||"—")}</b></div></div><div class="cc23-inline-actions" style="padding:10px 11px"><button id="cc23OpenProduct">Open product</button><button id="cc23ShowMap">Show on map</button>${r.hasPhoto?`<button id="cc23OpenPhoto">View photo</button>`:""}${canEdit()?`<button id="cc23EmailReport">Send by email</button>`:""}</div></div><div class="cc23-detail-block"><h5>Owner & priority</h5><div style="padding:10px 11px"><div class="cc23-owner-row"><input id="cc23Owner" value="${esc(r.owner||"")}" placeholder="Owner / team"/><button id="cc23AssignMe">Assign to me</button></div><div class="cc23-field" style="margin-top:8px"><label>Priority</label><select id="cc23Priority"><option value="" ${!r.priority?"selected":""}>Auto (${autoPriority(r)})</option><option value="normal" ${r.priority==="normal"?"selected":""}>Normal</option><option value="high" ${r.priority==="high"?"selected":""}>High</option></select></div></div></div><div class="cc23-detail-block"><h5>Workflow</h5><div style="padding:10px 11px"><textarea class="cc23-detail-note" id="cc23Resolution" placeholder="Optional status / resolution note...">${esc(r.resolutionNote||"")}</textarea><div class="cc23-detail-actions" style="margin-top:7px"><button id="cc23Ack" ${r.status==="resolved"?"disabled":""}>Acknowledge</button><button id="cc23Start" ${r.status==="resolved"?"disabled":""}>Start work</button><button class="ok" id="cc23Resolve" ${r.status==="resolved"?"disabled":""}>Resolve</button><button class="primary" id="cc23SaveMeta">Save owner / priority</button></div></div></div><div class="cc23-detail-block"><h5>Activity</h5><div style="padding:10px 11px"><div class="cc23-activity">${timeline.length?timeline.map(e=>`<div class="cc23-event"><div class="time">${esc(fmtDT(e.at))}</div><div class="rail"><i></i></div><div class="text"><b>${esc(e.by||"—")}</b> · ${esc(STATUS[e.status]||e.status||"")}${e.comment?`<br><span class="comment">${esc(e.comment)}</span>`:""}</div></div>`).join(""):'<div class="cc23-empty">No workflow activity recorded yet.</div>'}</div></div></div>`;d.classList.add("show");scr.classList.add("show");const note=()=>body.querySelector("#cc23Resolution")?.value.trim()||"";body.querySelector("#cc23Ack").onclick=()=>setStatus(id,"acknowledged",note()||"Acknowledged in Control Center");body.querySelector("#cc23Start").onclick=()=>setStatus(id,"in_progress",note()||"Work started in Control Center");body.querySelector("#cc23Resolve").onclick=()=>setStatus(id,"resolved",note()||"Resolved in Control Center");body.querySelector("#cc23AssignMe").onclick=()=>{body.querySelector("#cc23Owner").value=currentUser()};body.querySelector("#cc23SaveMeta").onclick=()=>{const owner=body.querySelector("#cc23Owner").value.trim(),priority=body.querySelector("#cc23Priority").value;patchReport(id,{owner,priority:priority||undefined,ownerAssignedAt:owner?new Date().toISOString():null,ownerAssignedBy:owner?currentUser():null},`Control Center metadata updated${owner?` · owner ${owner}`:""}${priority?` · priority ${priority}`:""}`);render();openDetail(id);try{toast("Report updated")}catch(e){}};body.querySelector("#cc23OpenProduct").onclick=()=>{close();window.YardProductUX?.open?.(r.sku)};body.querySelector("#cc23ShowMap").onclick=()=>{close();window.YardProductUX?.focusLocations?.(r.sku)};const pb=body.querySelector("#cc23OpenPhoto");if(pb)pb.onclick=()=>showPhoto(r.id);const eb=body.querySelector("#cc23EmailReport");if(eb)eb.onclick=()=>window.YardOpsV2?.openAlertEmailModal?.(r.id);}
+  function openDetail(id){const r=reports().find(x=>x.id===id);if(!r)return;state.selected=id;const d=document.getElementById("cc23Detail"),scr=document.getElementById("cc23DetailScrim"),m=META[r.type]||{label:r.type||"Report",cls:""},inv=window.YardInventory?.get?.(r.sku),timeline=(Array.isArray(r.timeline)?r.timeline:[]).slice().sort((a,b)=>dateMs(b.at)-dateMs(a.at));document.getElementById("cc23DetailTitle").textContent=`${r.sku||"?"} · ${m.label}`;document.getElementById("cc23DetailSub").textContent=`${STATUS[r.status]||r.status||"New"} · ${ageText(r)} old · ${fmtDT(r.createdAt)}`;const detailRows=[];if(r.type==="quality"){detailRows.push(["Quantity",r.quantity??"—"],["Reason",r.reason||"—"],["Disposition",r.disposition?String(r.disposition).replace(/_/g," "):"—"],["Destination",r.destination||"—"])}else if(r.type==="seconds"){detailRows.push(["Quantity",r.quantity??"—"],["Reason",r.reason||"—"],["Destination","Seconds"],["System On Hand",r.systemInventory??inv?.onHand??"—"])}else if(r.type==="inventory"){detailRows.push(["System",r.systemInventory??"—"],["Physical",r.physicalQuantity??"—"],["Variance",`${(num(r.variance)||0)>0?"+":""}${r.variance??"—"}`],["Result",r.inventoryResult?String(r.inventoryResult).replace(/_/g," "):"—"])}else if(r.type==="out_of_place"){detailRows.push(["Finding",r.locationFinding==="additional_stock"?"Additional stock":"Wrong location"],["Quantity",r.quantity??"—"],["Assigned group",r.homeGroup||"—"],["Found point",r.foundAt?`${r.foundAt.x}, ${r.foundAt.y}`:"—"])}const body=document.getElementById("cc23DetailBody");body.innerHTML=`<div class="cc23-detail-block"><h5>Report context</h5><div class="cc23-detail-grid">${detailRows.map(([k,v])=>`<div class="cc23-detail-kv"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join("")}<div class="cc23-detail-kv"><span>Reporter</span><b>${esc(r.by||"—")}</b></div><div class="cc23-detail-kv"><span>Created</span><b>${esc(fmtDT(r.createdAt))}</b></div></div>${r.note?`<div class="cc23-detail-copy"><b style="color:#dbe2e8">Note:</b> ${esc(r.note)}</div>`:""}</div><div class="cc23-detail-block"><h5>Product context</h5><div class="cc23-detail-grid"><div class="cc23-detail-kv"><span>System On Hand</span><b>${esc(inv?.onHand??r.systemInventory??"—")}</b></div><div class="cc23-detail-kv"><span>Product group</span><b>${esc(inv?.productGroup||r.homeGroup||"—")}</b></div></div><div class="cc23-inline-actions" style="padding:10px 11px"><button id="cc23OpenProduct">Open product</button><button id="cc23ShowMap">Show on map</button>${r.hasPhoto?`<button id="cc23OpenPhoto">View photo</button>`:""}${canEdit()?`<button id="cc23EmailReport">${r.emailedAt?"Email sent":"Send by email"}</button>`:""}</div></div><div class="cc23-detail-block"><h5>Owner & priority</h5><div style="padding:10px 11px"><div class="cc23-owner-row"><input id="cc23Owner" value="${esc(r.owner||"")}" placeholder="Owner / team"/><button id="cc23AssignMe">Assign to me</button></div><div class="cc23-field" style="margin-top:8px"><label>Priority</label><select id="cc23Priority"><option value="" ${!r.priority?"selected":""}>Auto (${autoPriority(r)})</option><option value="normal" ${r.priority==="normal"?"selected":""}>Normal</option><option value="high" ${r.priority==="high"?"selected":""}>High</option></select></div></div></div><div class="cc23-detail-block"><h5>Workflow</h5><div style="padding:10px 11px"><textarea class="cc23-detail-note" id="cc23Resolution" placeholder="Optional status / resolution note...">${esc(r.resolutionNote||"")}</textarea><div class="cc23-detail-actions" style="margin-top:7px"><button id="cc23Ack" ${r.status==="resolved"?"disabled":""}>Acknowledge</button><button id="cc23Start" ${r.status==="resolved"?"disabled":""}>Start work</button><button class="ok" id="cc23Resolve" ${r.status==="resolved"?"disabled":""}>Resolve</button><button id="cc23SaveNote">Save note</button><button class="primary" id="cc23SaveMeta">Save owner / priority</button></div></div></div><div class="cc23-detail-block"><h5>Activity</h5><div style="padding:10px 11px"><div class="cc23-activity">${timeline.length?timeline.map(e=>`<div class="cc23-event"><div class="time">${esc(fmtDT(e.at))}</div><div class="rail"><i></i></div><div class="text"><b>${esc(e.by||"—")}</b> · ${esc(STATUS[e.status]||e.status||"")}${e.comment?`<br><span class="comment">${esc(e.comment)}</span>`:""}</div></div>`).join(""):'<div class="cc23-empty">No workflow activity recorded yet.</div>'}</div></div></div>`;d.classList.add("show");scr.classList.add("show");const note=()=>body.querySelector("#cc23Resolution")?.value.trim()||"";body.querySelector("#cc23Ack").onclick=()=>setStatus(id,"acknowledged",note()||"Acknowledged in Control Center");body.querySelector("#cc23Start").onclick=()=>setStatus(id,"in_progress",note()||"Work started in Control Center");body.querySelector("#cc23Resolve").onclick=()=>setStatus(id,"resolved",note()||"Resolved in Control Center");body.querySelector("#cc23SaveNote").onclick=async()=>{const n=note();if(!n){toast("Write a note first.");return;}await patchReport(id,{},n);render();openDetail(id);try{toast("Note saved")}catch(e){}};body.querySelector("#cc23AssignMe").onclick=()=>{body.querySelector("#cc23Owner").value=currentUser()};body.querySelector("#cc23SaveMeta").onclick=()=>{const owner=body.querySelector("#cc23Owner").value.trim(),priority=body.querySelector("#cc23Priority").value;patchReport(id,{owner,priority:priority||undefined,ownerAssignedAt:owner?new Date().toISOString():null,ownerAssignedBy:owner?currentUser():null},`Control Center metadata updated${owner?` · owner ${owner}`:""}${priority?` · priority ${priority}`:""}`);render();openDetail(id);try{toast("Report updated")}catch(e){}};body.querySelector("#cc23OpenProduct").onclick=()=>{close();window.YardProductUX?.open?.(r.sku)};body.querySelector("#cc23ShowMap").onclick=()=>{close();window.YardProductUX?.focusLocations?.(r.sku)};const pb=body.querySelector("#cc23OpenPhoto");if(pb)pb.onclick=()=>showPhoto(r.id);const eb=body.querySelector("#cc23EmailReport");if(eb)eb.onclick=()=>window.YardOpsV2?.openAlertEmailModal?.(r.id);}
   async function showPhoto(id){try{const blob=await window.YardOpsV2?.PhotoStore?.get?.(id);if(!blob){toast?.("Photo is not available on this device.");return}const url=URL.createObjectURL(blob),viewer=document.getElementById("opsPhotoViewer"),img=document.getElementById("opsPhotoViewerImg");if(!viewer||!img)return;img.src=url;viewer.classList.add("show");const closeBtn=document.getElementById("opsPhotoViewerClose");const revoke=()=>{setTimeout(()=>URL.revokeObjectURL(url),500)};closeBtn?.addEventListener("click",revoke,{once:true})}catch(e){console.error(e)}}
   function exportWeekly(){if(!window.XLSX){try{toast("Excel export is unavailable in this build.")}catch(e){}return}const cut=now()-7*86400000,rr=reports().filter(r=>dateMs(r.createdAt)>=cut),open=reports().filter(openReport),repeat=repeatedSkus(7),summary=[{Metric:"Reports created",Value:rr.length},{Metric:"Quality reports",Value:rr.filter(r=>r.type==="quality").length},{Metric:"Seconds units",Value:rr.filter(r=>r.type==="seconds").reduce((a,r)=>a+(num(r.quantity)||0),0)},{Metric:"Inventory discrepancies",Value:rr.filter(r=>r.type==="inventory"&&r.inventoryResult!=="verified").length},{Metric:"Out-of-place findings",Value:rr.filter(r=>r.type==="out_of_place").length},{Metric:"Resolved / verified",Value:rr.filter(r=>r.status==="resolved"||r.inventoryResult==="verified").length},{Metric:"Current open backlog",Value:open.length}];const detail=rr.map(r=>({"Date / Time":fmtDT(r.createdAt),Type:META[r.type]?.label||r.type,SKU:r.sku,Status:STATUS[r.status]||r.status,Quantity:r.quantity??"",Reason:r.reason||"",Disposition:r.disposition||"","System On Hand":r.systemInventory??"","Physical Qty":r.physicalQuantity??"",Variance:r.variance??"",Owner:r.owner||"",Reporter:r.by||"",Notes:r.note||""})),pending=open.map(r=>({Type:META[r.type]?.label||r.type,SKU:r.sku,Status:STATUS[r.status]||r.status,Age:ageText(r),Priority:autoPriority(r),Owner:r.owner||"Unassigned",Summary:reportSummary(r)})),rep=repeat.map(([sku,count])=>({SKU:sku,"Reports (7d)":count}));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(summary),"Summary");XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(detail),"Week Detail");XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(pending),"Open Carryover");XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rep),"Repeat SKUs");const d=new Date(),name=`Tarter_Yard_Weekly_Brief_${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}.xlsx`;XLSX.writeFile(wb,name)}
   document.addEventListener("click",e=>{const b=e.target.closest("#opsControlBtn");if(!b)return;e.preventDefault();e.stopImmediatePropagation();try{closeDrawer()}catch(x){}open();},true);
@@ -7371,7 +7426,7 @@ body.showqty .tile .qbadge{display:block}
     auditBtn.className = "dr-item";
     auditBtn.id = "auditBtn";
     auditBtn.innerHTML = `<span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.8v16.4M6.4 6.6h11.2"/><path d="m6.4 6.6-3 6.6a3 3 0 0 0 6 0Z"/><path d="m17.6 6.6-3 6.6a3 3 0 0 0 6 0Z"/><path d="M8.6 20.2h6.8"/></svg></span><span id="auditBtnText"></span>`;
-    auditBtn.onclick = () => { try { closeDrawer(); } catch(e){} openAudit(); };
+    auditBtn.onclick = () => { if(typeof canEdit==="function"&&!canEdit()){if(typeof toast==="function")toast("Admin only");return;} try { closeDrawer(); } catch(e){} openAudit(); };
 
     const status = document.getElementById("inventoryStatus");
     section.insertBefore(qtyBtn, status || null);
@@ -9547,6 +9602,8 @@ body.fieldmode .tnav-ico{width:27px;height:27px}
     "Severity":"Severidad","Info":"Info","Warning":"Advertencia","Urgent":"Urgente","Ends":"Termina",
     "Post announcement":"Publicar anuncio","All announcements":"Todos los anuncios","No announcements yet.":"Sin anuncios todavía.",
     "Live":"Activo","Scheduled":"Programado","Inactive":"Inactivo","Deactivate":"Desactivar","Activate":"Activar",
+    // Alerts bell panel action buttons
+    "Photo":"Foto","Email sent":"Correo enviado",
   };
 
   function swapAttr(root, attr) {
@@ -9574,7 +9631,7 @@ body.fieldmode .tnav-ico{width:27px;height:27px}
     swapAttr(root, "title");
   }
 
-  const ROOTS = ["opsCenter", "opsReportModal", "alertEmailModal"];
+  const ROOTS = ["opsCenter", "opsReportModal", "alertEmailModal", "alertsPanel"];
   let scheduled = false;
   const observers = [];
   function retranslateAll() {

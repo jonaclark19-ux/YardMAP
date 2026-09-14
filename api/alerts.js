@@ -125,22 +125,25 @@ async function handleRecurring(request) {
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+// Alert emails always render in English, regardless of which language the
+// sender has the app set to: the recipient is picked from an address book
+// of company contacts, not necessarily the sender's own language.
 const TYPE_LABEL = {
-  empty: "ESPACIO VACÍO",
-  damaged: "DAÑADO",
-  found: "FUERA DE LUGAR",
-  unknown: "CÓDIGO DESCONOCIDO",
-  low: "QUEDA POCO",
-  quality: "CALIDAD",
+  empty: "EMPTY SPOT",
+  damaged: "DAMAGED",
+  found: "FOUND OUT OF PLACE",
+  unknown: "UNKNOWN CODE",
+  low: "RUNNING LOW",
+  quality: "QUALITY",
   seconds: "SECONDS",
-  inventory: "INVENTARIO",
-  out_of_place: "FUERA DE LUGAR",
+  inventory: "INVENTORY",
+  out_of_place: "OUT OF PLACE",
 };
 
 function alertHtml(a, user, note) {
   const rows = [
-    ["Tipo", TYPE_LABEL[a.type] || a.type || "-"],
-    ["SKU / Código", a.sku || a.rawCode || "-"],
+    ["Type", TYPE_LABEL[a.type] || a.type || "-"],
+    ["SKU / Code", a.sku || a.rawCode || "-"],
   ];
   // The V2 report form (quality/seconds/inventory/out_of_place) carries
   // several type-specific fields inside the alert's payload -- without
@@ -148,52 +151,52 @@ function alertHtml(a, user, note) {
   // actual problem detail (reason, disposition, destination, variance...).
   if (a.type === "quality") {
     rows.push(
-      ["Cantidad", a.quantity ?? "-"],
-      ["Razón", a.reason || "-"],
-      ["Disposición", a.disposition ? String(a.disposition).replace(/_/g, " ") : "-"],
-      ["Destino", a.destination || "-"],
+      ["Quantity", a.quantity ?? "-"],
+      ["Reason", a.reason || "-"],
+      ["Disposition", a.disposition ? String(a.disposition).replace(/_/g, " ") : "-"],
+      ["Destination", a.destination || "-"],
     );
   } else if (a.type === "seconds") {
     rows.push(
-      ["Cantidad", a.quantity ?? "-"],
-      ["Razón", a.reason || "-"],
+      ["Quantity", a.quantity ?? "-"],
+      ["Reason", a.reason || "-"],
     );
   } else if (a.type === "inventory") {
     rows.push(
-      ["Sistema", a.systemInventory ?? "-"],
-      ["Físico", a.physicalQuantity ?? "-"],
-      ["Variación", a.variance ?? "-"],
-      ["Resultado", a.inventoryResult ? String(a.inventoryResult).replace(/_/g, " ") : "-"],
+      ["System", a.systemInventory ?? "-"],
+      ["Physical", a.physicalQuantity ?? "-"],
+      ["Variance", a.variance ?? "-"],
+      ["Result", a.inventoryResult ? String(a.inventoryResult).replace(/_/g, " ") : "-"],
     );
   } else if (a.type === "out_of_place") {
     rows.push(
-      ["Hallazgo", a.locationFinding === "additional_stock" ? "Stock adicional" : "Ubicación incorrecta"],
-      ["Cantidad", a.quantity ?? "-"],
-      ["Grupo asignado", a.homeGroup || "-"],
+      ["Finding", a.locationFinding === "additional_stock" ? "Additional stock" : "Wrong location"],
+      ["Quantity", a.quantity ?? "-"],
+      ["Assigned group", a.homeGroup || "-"],
     );
   }
   rows.push(
-    ["Prioridad", (a.priority || "normal").toUpperCase()],
-    ["Estado", (a.status || "new").toUpperCase()],
-    ["Reportado por", `${a.by || "-"}${a.role ? ` (${a.role})` : ""}`],
-    ["Fecha", a.createdAt ? new Date(a.createdAt).toLocaleString("es") : "-"],
-    ["Asignado a", a.assignedTo || "-"],
-    ["Nota", a.note || "-"],
+    ["Priority", (a.priority || "normal").toUpperCase()],
+    ["Status", (a.status || "new").toUpperCase()],
+    ["Reported by", `${a.by || "-"}${a.role ? ` (${a.role})` : ""}`],
+    ["Date", a.createdAt ? new Date(a.createdAt).toLocaleString("en-US") : "-"],
+    ["Assigned to", a.assignedTo || "-"],
+    ["Note", a.note || "-"],
   );
   const rowsHtml = rows.map(([k, v]) => `
     <tr>
       <td style="padding:6px 12px;border:1px solid #ddd;font-weight:600;background:#f4f4f4">${esc(k)}</td>
       <td style="padding:6px 12px;border:1px solid #ddd">${esc(v)}</td>
     </tr>`).join("");
-  const photo = a.photoUrl ? `<p><img src="cid:alertphoto" alt="foto" style="max-width:480px;border:1px solid #ddd;border-radius:6px"/></p>` : "";
-  const shared = note ? `<p style="color:#444"><strong>Mensaje de ${esc(user.name)}:</strong> ${esc(note)}</p>` : "";
+  const photo = a.photoUrl ? `<p><img src="cid:alertphoto" alt="photo" style="max-width:480px;border:1px solid #ddd;border-radius:6px"/></p>` : "";
+  const shared = note ? `<p style="color:#444"><strong>Message from ${esc(user.name)}:</strong> ${esc(note)}</p>` : "";
   return `
     <div style="font-family:Arial,Helvetica,sans-serif;color:#111">
-      <h2 style="margin:0 0 8px">Tarter Yard Map · Alerta</h2>
+      <h2 style="margin:0 0 8px">Tarter Yard Map · Alert</h2>
       ${shared}
       <table style="border-collapse:collapse;margin-top:8px">${rowsHtml}</table>
       ${photo}
-      <p style="color:#888;font-size:12px;margin-top:16px">Enviado por ${esc(user.name)} desde Tarter Yard Map.</p>
+      <p style="color:#888;font-size:12px;margin-top:16px">Sent by ${esc(user.name)} from Tarter Yard Map.</p>
     </div>`;
 }
 

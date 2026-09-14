@@ -3,12 +3,18 @@ import { alertToClient } from "./_lib/models.js";
 import { esc, parseRecipients, sendMail } from "./_lib/email.js";
 import { json, errorResponse, methodNotAllowed } from "./_lib/http.js";
 
+// Like the per-alert email, this always renders in English -- it goes to a
+// company distribution list, not necessarily the sender's own language.
 const TYPE_LABEL = {
-  empty: "ESPACIO VACÍO",
-  damaged: "DAÑADO",
-  found: "FUERA DE LUGAR",
-  unknown: "CÓDIGO DESCONOCIDO",
-  low: "QUEDA POCO",
+  empty: "EMPTY SPOT",
+  damaged: "DAMAGED",
+  found: "FOUND OUT OF PLACE",
+  unknown: "UNKNOWN CODE",
+  low: "RUNNING LOW",
+  quality: "QUALITY",
+  seconds: "SECONDS",
+  inventory: "INVENTORY",
+  out_of_place: "OUT OF PLACE",
 };
 
 function isAuthorized(request) {
@@ -34,27 +40,27 @@ function summaryHtml(items, sinceDate) {
       <td style="padding:4px 10px;border:1px solid #ddd">${esc(TYPE_LABEL[a.type] || a.type)}</td>
       <td style="padding:4px 10px;border:1px solid #ddd">${esc((a.priority || "normal").toUpperCase())}</td>
       <td style="padding:4px 10px;border:1px solid #ddd">${esc((a.status || "new").toUpperCase())}</td>
-      <td style="padding:4px 10px;border:1px solid #ddd">${a.createdAt ? new Date(a.createdAt).toLocaleDateString("es") : "-"}</td>
+      <td style="padding:4px 10px;border:1px solid #ddd">${a.createdAt ? new Date(a.createdAt).toLocaleDateString("en-US") : "-"}</td>
     </tr>`).join("");
   return `
     <div style="font-family:Arial,Helvetica,sans-serif;color:#111">
-      <h2 style="margin:0 0 4px">Tarter Yard Map · Resumen semanal de alertas</h2>
-      <p style="color:#555;margin-top:0">Desde ${esc(sinceDate.toLocaleDateString("es"))}</p>
-      <p><strong>Total:</strong> ${total} &nbsp; <strong>Abiertas:</strong> ${open} &nbsp; <strong>Resueltas:</strong> ${resolved}</p>
-      <h3 style="margin-bottom:4px">Por tipo</h3>
-      <table style="border-collapse:collapse">${typeRows || "<tr><td style=\"padding:4px 10px\">Sin alertas</td></tr>"}</table>
-      <h3 style="margin-bottom:4px;margin-top:16px">Detalle ${items.length > 50 ? "(primeras 50)" : ""}</h3>
+      <h2 style="margin:0 0 4px">Tarter Yard Map · Weekly alert summary</h2>
+      <p style="color:#555;margin-top:0">Since ${esc(sinceDate.toLocaleDateString("en-US"))}</p>
+      <p><strong>Total:</strong> ${total} &nbsp; <strong>Open:</strong> ${open} &nbsp; <strong>Resolved:</strong> ${resolved}</p>
+      <h3 style="margin-bottom:4px">By type</h3>
+      <table style="border-collapse:collapse">${typeRows || "<tr><td style=\"padding:4px 10px\">No alerts</td></tr>"}</table>
+      <h3 style="margin-bottom:4px;margin-top:16px">Detail ${items.length > 50 ? "(first 50)" : ""}</h3>
       <table style="border-collapse:collapse">
         <tr>
           <th style="padding:4px 10px;border:1px solid #ddd;background:#f4f4f4;text-align:left">SKU</th>
-          <th style="padding:4px 10px;border:1px solid #ddd;background:#f4f4f4;text-align:left">Tipo</th>
-          <th style="padding:4px 10px;border:1px solid #ddd;background:#f4f4f4;text-align:left">Prioridad</th>
-          <th style="padding:4px 10px;border:1px solid #ddd;background:#f4f4f4;text-align:left">Estado</th>
-          <th style="padding:4px 10px;border:1px solid #ddd;background:#f4f4f4;text-align:left">Fecha</th>
+          <th style="padding:4px 10px;border:1px solid #ddd;background:#f4f4f4;text-align:left">Type</th>
+          <th style="padding:4px 10px;border:1px solid #ddd;background:#f4f4f4;text-align:left">Priority</th>
+          <th style="padding:4px 10px;border:1px solid #ddd;background:#f4f4f4;text-align:left">Status</th>
+          <th style="padding:4px 10px;border:1px solid #ddd;background:#f4f4f4;text-align:left">Date</th>
         </tr>
         ${rows || ""}
       </table>
-      <p style="color:#888;font-size:12px;margin-top:16px">Resumen automático · Tarter Yard Map</p>
+      <p style="color:#888;font-size:12px;margin-top:16px">Automatic summary · Tarter Yard Map</p>
     </div>`;
 }
 
@@ -70,7 +76,7 @@ export default {
       const { data } = await rest("alerts", `created_at=gte.${encodeURIComponent(since.toISOString())}&select=*&order=created_at.desc&limit=500`);
       const items = (data || []).map((a) => alertToClient(a));
 
-      await sendMail({ to, subject: `[Tarter Yard Map] Resumen semanal de alertas (${items.length})`, html: summaryHtml(items, since) });
+      await sendMail({ to, subject: `[Tarter Yard Map] Weekly alert summary (${items.length})`, html: summaryHtml(items, since) });
       return json({ ok: true, count: items.length, to });
     } catch (error) { return errorResponse(error); }
   },
