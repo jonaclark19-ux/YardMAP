@@ -2260,8 +2260,16 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       // A 4xx here means the server rejected the payload itself (bad data,
       // not a connectivity blip) -- queuing it would just retry the same
       // rejection forever on every sync poll. Only a network failure
-      // (caught below) or a 5xx is worth retrying.
-      if (r.status >= 400 && r.status < 500) return { ok: false, rejected: true, alert: optimistic };
+      // (caught below) or a 5xx is worth retrying. The server will never
+      // learn about this optimistic entry, so drop it now instead of
+      // leaving an unresolvable phantom (fake local id, no server row)
+      // stuck in the list until the next full reload.
+      if (r.status >= 400 && r.status < 500) {
+        S.alerts = S.alerts.filter((a) => a.id !== optimistic.id);
+        lsSet(LS_ALERTS, { rev: S.alertsRev, items: S.alerts });
+        emit("alerts", S.alerts);
+        return { ok: false, rejected: true, alert: optimistic };
+      }
     } catch (e) { /* queue below */ }
 
     const q = queued(); q.push(input); setQueued(q);
@@ -6237,7 +6245,7 @@ boot();
       toast("Alert sent by email");
       closeAlertEmailModal();
     }catch(err){
-      toast(err.message==="invalid_recipients"?"Invalid email address":"Could not send the email");
+      toast(err.message==="invalid_recipients"?"Invalid email address":err.message==="not_found"?"This alert was not saved to the server and can't be emailed. Refresh the page and try again.":"Could not send the email");
     }finally{
       if(sendBtn){sendBtn.disabled=false; sendBtn.textContent="Send";}
     }
