@@ -9313,6 +9313,194 @@ body.fieldmode .tnav-ico{width:27px;height:27px}
 .hint.editmode,.hint.bgmode{display:inline-flex;align-items:center;gap:8px}
 
 </style>
+<script id="tarter-cc23-es-translate">
+/* Spanish translation pass for the Control Center, report modal, and email
+   modal -- these were built later as raw template-literal HTML (not the
+   data-i18n system the rest of the app uses), so retrofitting real i18n
+   into every string would mean touching hundreds of hand-built template
+   literals across several isolated IIFEs, with a high chance of breaking
+   one. Instead, this walks the *rendered* DOM and swaps known English
+   phrases for Spanish ones -- lower risk, and works regardless of which
+   internal function produced the markup. Domain values a user actually
+   picks from a list (defect reasons like "Bent", "Weld", disposition
+   codes) are deliberately left alone, since translating those would touch
+   what's actually stored, not just how it's displayed. */
+(function(){
+  "use strict";
+  const DICT = {
+    // Control Center nav + shell
+    "Yard Control Center":"Centro de Control del Yard","Workspace":"Espacio de trabajo","Overview":"Resumen",
+    "Action Queue":"Cola de acciones","Inventory":"Inventario","Quality":"Calidad","Locations":"Ubicaciones",
+    "Weekly Brief":"Resumen semanal","Activity":"Actividad","Data":"Datos","New report":"Nuevo reporte",
+    "Export":"Exportar","Export weekly brief":"Exportar resumen semanal","Today":"Hoy","Map":"Mapa",
+    // Overview / hero
+    "Yard status":"Estado del yard","Last 7 days":"Últimos 7 días","Open carryover":"Pendientes abiertos",
+    "Still needs action":"Aún necesita acción","No open carryover.":"No hay pendientes abiertos.",
+    "Reports by type":"Reportes por tipo","Resolution status":"Estado de resolución","Resolved":"Resuelto",
+    "Open":"Abierto","Open only":"Solo abiertos","All":"Todos","All report types":"Todos los tipos de reporte",
+    "Any age":"Cualquier antigüedad","Age":"Antigüedad","Status":"Estado","Priority":"Prioridad",
+    "High":"Alta","Normal":"Normal","New":"Nuevo","In progress":"En progreso","Acknowledged":"Reconocido",
+    "Search":"Buscar","Click a row for full report context":"Haz clic en una fila para ver el reporte completo",
+    // Metrics / summary
+    "Executive summary":"Resumen ejecutivo","Reports created":"Reportes creados",
+    "Resolved / verified":"Resueltos / verificados","Resolved / verified this week":"Resueltos / verificados esta semana",
+    "Closure rate":"Tasa de cierre","Quality issues reported":"Problemas de calidad reportados",
+    "Units sent to Seconds":"Unidades enviadas a Seconds","Inventory discrepancies":"Discrepancias de inventario",
+    "Inventory discrepancies in this period.":"Discrepancias de inventario en este período.",
+    "Out-of-place findings":"Hallazgos fuera de lugar","No repeat SKUs yet.":"Sin SKUs repetidos todavía.",
+    "No repeated SKUs this week.":"Sin SKUs repetidos esta semana.",
+    // Action queue / reports
+    "Owner":"Responsable","Owner & priority":"Responsable y prioridad","Assign me":"Asignarme",
+    "Assign to me":"Asignarme","Start":"Iniciar","Start work":"Iniciar trabajo","Resolve":"Resolver",
+    "Acknowledge":"Reconocer","Save owner / priority":"Guardar responsable / prioridad",
+    "Workflow":"Flujo de trabajo","Report context":"Contexto del reporte","Product context":"Contexto del producto",
+    "Reporter":"Reportado por","Created":"Creado","System On Hand":"Sistema","Product group":"Grupo de producto",
+    "Open product":"Abrir producto","Show on map":"Ver en el mapa","View photo":"Ver foto",
+    "Send by email":"Enviar por correo","Email":"Correo","SKU":"SKU","Type":"Tipo","Reported":"Reportado",
+    "Report":"Reporte","No workflow activity recorded yet.":"Sin actividad de flujo registrada todavía.",
+    // Inventory tab
+    "System":"Sistema","Physical":"Físico","Variance":"Variación",
+    "No inventory discrepancies in this period.":"Sin discrepancias de inventario en este período.",
+    // Quality tab
+    "Quality by reason":"Calidad por razón","Seconds by reason":"Seconds por razón","Units sent to Seconds":"Unidades enviadas a Seconds",
+    "No Quality reports in this period.":"Sin reportes de calidad en este período.",
+    "No Seconds activity.":"Sin actividad de Seconds.","No Quality activity.":"Sin actividad de calidad.",
+    "Recent Quality":"Calidad reciente","Quality dispositions":"Disposiciones de calidad",
+    "No dispositions yet.":"Sin disposiciones todavía.",
+    // Locations tab
+    "Secondary location observations":"Observaciones de ubicaciones secundarias",
+    "Approved secondary locations":"Ubicaciones secundarias aprobadas","Approve secondary":"Aprobar secundaria",
+    "Observed additional stock":"Stock adicional observado","No approved secondary locations yet.":"Sin ubicaciones secundarias aprobadas todavía.",
+    "Open wrong-location reports":"Reportes de ubicación incorrecta abiertos",
+    "No wrong-location reports are open.":"No hay reportes de ubicación incorrecta abiertos.",
+    // Weekly brief
+    "Automatic delivery is not connected yet":"El envío automático aún no está conectado",
+    "Weekly yard summary email":"Correo de resumen semanal del yard",
+    "Automatic FG email ingestion":"Recepción automática de correo FG",
+    "Automation roadmap":"Plan de automatización",
+    // Activity tab
+    "Report activity":"Actividad de reportes","No activity yet.":"Sin actividad todavía.",
+    // Data tab
+    "Current data sources":"Fuentes de datos actuales","FG inventory report":"Reporte de inventario FG",
+    "Official barcode list":"Lista oficial de códigos de barras","Load FG report":"Cargar reporte FG",
+    "Update inventory report":"Actualizar reporte de inventario","Update barcode list":"Actualizar lista de códigos",
+    "Current on this device":"Vigente en este dispositivo","Pending review":"Pendiente de revisión",
+    "Planned":"Planeado","Dismiss":"Descartar","Quality report email routing":"Envío de correo de reportes de calidad",
+    "Local pilot":"Piloto local",
+    // Report form (ops-v2-module)
+    "Control Center":"Centro de Control","Submit Report":"Enviar reporte","Report type":"Tipo de reporte",
+    "Report Issue":"Reportar problema","Evidence":"Evidencia","Take / Add Photo":"Tomar / Agregar foto",
+    "Notes (optional)":"Notas (opcional)","Scan":"Escanear","SKU or barcode":"SKU o código de barras",
+    "Select or scan a product.":"Selecciona o escanea un producto.",
+    "SKU/barcode not found in the current map list.":"SKU/código no encontrado en la lista actual del mapa.",
+    "Quantity found":"Cantidad encontrada","Quantity going to Seconds":"Cantidad que va a Seconds",
+    "Affected quantity":"Cantidad afectada","Physical quantity you see":"Cantidad física que ves",
+    "Reason":"Razón","Problem":"Problema","Result":"Resultado","Move primary here":"Mover principal aquí",
+    "Add secondary spot":"Agregar ubicación secundaria",
+    // Control Center legacy panel labels also present pre-cleanup
+    "Open Reports":"Reportes abiertos","Inventory Issues":"Problemas de inventario",
+    "Out of Place":"Fuera de lugar","Verified Today":"Verificado hoy","Resolved Today":"Resuelto hoy",
+    "Open / Priority Reports":"Reportes abiertos / prioritarios","Newest operational issues":"Problemas operativos más recientes",
+    "Quality Reports Today":"Reportes de calidad hoy","Quality Units Today":"Unidades de calidad hoy",
+    "Seconds Reports Today":"Reportes de Seconds hoy","Seconds Units Today":"Unidades de Seconds hoy",
+    "Activity Timeline":"Línea de tiempo de actividad","Data Sources":"Fuentes de datos",
+    "Inventory report not loaded on this device.":"Reporte de inventario no cargado en este dispositivo.",
+    "Load report":"Cargar reporte","Load barcode list":"Cargar lista de códigos","Close":"Cerrar",
+    "Photo storage":"Almacenamiento de fotos","Report persistence":"Persistencia de reportes","LOCAL":"LOCAL",
+    "No reports in this filter.":"Sin reportes con este filtro.","No repeated SKUs yet.":"Sin SKUs repetidos todavía.",
+    "No inventory discrepancies recorded.":"Sin discrepancias de inventario registradas.",
+    "No Quality reports yet.":"Sin reportes de calidad todavía.","No Seconds reports yet.":"Sin reportes de Seconds todavía.",
+    "System vs physical count":"Sistema vs conteo físico","System On Hand vs physical":"Sistema vs físico",
+    // Send-by-email modal
+    "Send to (comma-separated emails)":"Enviar a (correos separados por coma)",
+    "Message (optional)":"Mensaje (opcional)","Cancel":"Cancelar","Send":"Enviar","Sending…":"Enviando…",
+    "Email sent":"Correo enviado",
+    // Login self-signup
+    "New operator? Create an account":"¿Operador nuevo? Crea una cuenta",
+    "Already have an account? Sign in":"¿Ya tienes cuenta? Inicia sesión",
+    "Create account":"Crear cuenta",
+    // Overview hero card + metric tiles (extra pass -- not caught by the
+    // first extraction, since these come from a label/summary function
+    // rather than being embedded directly next to their own tag)
+    "Operational overview":"Resumen operativo",
+    "What needs attention now, plus the health of the yard workflow.":"Lo que necesita atención ahora, y el estado del flujo del yard.",
+    "No open issues":"Sin problemas abiertos",
+    "No unresolved operational reports are currently active.":"No hay reportes operativos sin resolver activos actualmente.",
+    "Open action queue →":"Abrir cola de acciones →",
+    "FG inventory not loaded":"Inventario FG no cargado",
+    "Load the current report before using system On Hand as a reference.":"Carga el reporte actual antes de usar el sistema como referencia.",
+    "No pending location reviews":"Sin revisiones de ubicación pendientes",
+    "Observed secondary locations require an administrator decision before becoming approved map locations.":"Las ubicaciones secundarias observadas requieren una decisión del administrador antes de aprobarse en el mapa.",
+    "Awaiting review":"Esperando revisión","Currently being worked":"En proceso","Active quality issues":"Problemas de calidad activos",
+    "Quality open":"Calidad abierta","Open reports":"Reportes abiertos","Inventory issues":"Problemas de inventario",
+    "Out of place":"Fuera de lugar","Seconds units today":"Unidades de Seconds hoy",
+    "Found out of place":"Encontrado fuera de lugar","Found Out of Place":"Encontrado fuera de lugar",
+    "Yard clear":"Yard despejado","Local mode":"Modo local",
+    "Changes stay on this device during the pilot.":"Los cambios permanecen en este dispositivo durante el piloto.",
+    "Data & automation":"Datos y automatización",
+    "What is local today, and what the production architecture will automate.":"Lo que hoy es local, y lo que la arquitectura de producción automatizará.",
+    "No report loaded on this device.":"Sin reporte cargado en este dispositivo.","MISSING":"FALTA",
+    "Not loaded; manual SKU entry remains available.":"No cargado; sigue disponible el ingreso manual de SKU.",
+    "OPTIONAL":"OPCIONAL","Operational reports":"Reportes operativos",
+    "Expected production path: mailbox flow → attachment validation → versioned inventory snapshot.":"Ruta esperada en producción: correo → validación de adjunto → snapshot de inventario con versión.",
+    // Report modal
+    "Scan or select a product, then choose the report type.":"Escanea o selecciona un producto, luego elige el tipo de reporte.",
+    "Quality Report":"Reporte de calidad","Report Seconds":"Reportar Seconds","Inventory Check":"Verificación de inventario",
+    "PRODUCT":"PRODUCTO","Collapse":"Contraer","Change":"Cambiar",
+  };
+
+  function swapAttr(root, attr) {
+    root.querySelectorAll?.(`[${attr}]`).forEach((el) => {
+      const cur = el.getAttribute(attr);
+      const hit = DICT[cur && cur.trim()];
+      if (hit != null) el.setAttribute(attr, hit);
+    });
+  }
+
+  function translateEs(root) {
+    if (!root || (window.I18N?.getLang?.() || "en") !== "es") return;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+    const nodes = [];
+    let n;
+    while ((n = walker.nextNode())) nodes.push(n);
+    nodes.forEach((node) => {
+      const raw = node.nodeValue;
+      const trimmed = raw.trim();
+      if (!trimmed) return;
+      const hit = DICT[trimmed];
+      if (hit != null && trimmed !== hit) node.nodeValue = raw.replace(trimmed, hit);
+    });
+    swapAttr(root, "placeholder");
+    swapAttr(root, "title");
+  }
+
+  const ROOTS = ["opsCenter", "opsReportModal", "alertEmailModal"];
+  let scheduled = false;
+  const observers = [];
+  function retranslateAll() {
+    if (scheduled) return;
+    scheduled = true;
+    requestAnimationFrame(() => {
+      scheduled = false;
+      observers.forEach((o) => o.disconnect());
+      ROOTS.forEach((id) => translateEs(document.getElementById(id)));
+      observers.forEach((o, i) => {
+        const el = document.getElementById(ROOTS[i]);
+        if (el) o.observe(el, { childList: true, subtree: true, characterData: true });
+      });
+    });
+  }
+
+  ROOTS.forEach(() => observers.push(new MutationObserver(retranslateAll)));
+  ROOTS.forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (el) observers[i].observe(el, { childList: true, subtree: true, characterData: true });
+  });
+
+  if (window.I18N) window.I18N.onLangChange(retranslateAll);
+  retranslateAll();
+})();
+</script>
 <script id="tarter-pwa">
 /* Installable + offline when served next to sw.js; a no-op from file://. */
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
