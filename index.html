@@ -1634,6 +1634,12 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "onboard.type.seconds": "Seconds — product downgraded and sent to Seconds",
       "onboard.type.inventory": "Inventory check — compare physical count to system",
       "onboard.type.outofplace": "Out of place — product found away from its spot",
+      "onboard.s3.title": "Scan a barcode",
+      "onboard.s3.body": "Tap Scan in the menu to use your camera, or type the code by hand. The app already knows the official Tarter barcode list.",
+      "onboard.s4.title": "Track active reports",
+      "onboard.s4.body": "The bell icon shows every open report. Tap one to see its status, or use Control Center for the full picture of the yard.",
+      "onboard.s5.title": "Editors: keep the map current",
+      "onboard.s5.body": "As an editor you can move, resize, add, or remove products directly on the map, and manage the yard from Control Center.",
       "onboard.help": "How to use",
     },
 
@@ -1987,6 +1993,12 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "onboard.type.seconds": "Segundas — producto degradado y enviado a Segundas",
       "onboard.type.inventory": "Chequeo de inventario — compara el conteo físico contra el sistema",
       "onboard.type.outofplace": "Fuera de lugar — producto encontrado lejos de su ubicación",
+      "onboard.s3.title": "Escanea un código de barras",
+      "onboard.s3.body": "Toca Escanear en el menú para usar la cámara, o escribe el código a mano. La app ya conoce la lista oficial de códigos de Tarter.",
+      "onboard.s4.title": "Sigue los reportes activos",
+      "onboard.s4.body": "El ícono de campana muestra todos los reportes abiertos. Toca uno para ver su estado, o usa el Centro de Control para ver todo el panorama del yard.",
+      "onboard.s5.title": "Editores: mantengan el mapa al día",
+      "onboard.s5.body": "Como editor puedes mover, redimensionar, agregar o quitar productos directamente en el mapa, y administrar el yard desde el Centro de Control.",
       "onboard.help": "Cómo usar la app",
     },
   };
@@ -9999,6 +10011,9 @@ body.fieldmode .tnav-ico{width:27px;height:27px}
   const ICO = {
     search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m15.8 15.8 4.4 4.4"/></svg>',
     report: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.1 2.8 19.5h18.4Z"/><path d="M12 10.2v4M12 17.3h.01"/></svg>',
+    scan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8V5.6A2.6 2.6 0 0 1 5.6 3H8M16 3h2.4A2.6 2.6 0 0 1 21 5.6V8M21 16v2.4a2.6 2.6 0 0 1-2.6 2.6H16M8 21H5.6A2.6 2.6 0 0 1 3 18.4V16"/><path d="M7.4 8.6v6.8M10.6 8.6v6.8M13.4 8.6v6.8M16.6 8.6v6.8"/></svg>',
+    bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
+    edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16.4 3.9a2.1 2.1 0 0 1 3 3L8.2 18.1l-4 1 1-4Z"/><path d="m14.4 5.9 3 3"/></svg>',
   };
   const TYPE_ICO = {
     quality: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 22 12 12 22 2 12"/></svg>',
@@ -10010,10 +10025,16 @@ body.fieldmode .tnav-ico{width:27px;height:27px}
   const STEPS = [
     { ico: ICO.search, title: "onboard.s1.title", body: "onboard.s1.body" },
     { ico: ICO.report, title: "onboard.s2.title", body: "onboard.s2.body", typeList: true },
+    { ico: ICO.scan,   title: "onboard.s3.title", body: "onboard.s3.body" },
+    { ico: ICO.bell,   title: "onboard.s4.title", body: "onboard.s4.body" },
+    { ico: ICO.edit,   title: "onboard.s5.title", body: "onboard.s5.body", editorOnly: true },
   ];
   let idx = 0, steps = STEPS;
 
-  function activeSteps(){ return STEPS; }
+  function activeSteps(){
+    try{ return STEPS.filter(s => !s.editorOnly || (typeof canEdit === "function" && canEdit())); }
+    catch(e){ return STEPS.filter(s => !s.editorOnly); }
+  }
 
   function renderStep(){
     const s = steps[idx];
