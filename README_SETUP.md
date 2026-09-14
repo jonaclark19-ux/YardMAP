@@ -1203,3 +1203,64 @@ Las ubicaciones exactas de algunos botones pueden cambiar ligeramente con actual
 - Vercel Environment Variables: https://vercel.com/docs/environment-variables
 - GitHub Upload Files: https://docs.github.com/en/repositories/working-with-files/managing-files/adding-a-file-to-a-repository
 
+---
+
+# CORREO AUTOMÁTICO (alertas y resumen semanal)
+
+Para que funcione el botón "Enviar por correo" de cada alerta y el resumen
+semanal automático, agregá estas Environment Variables en Vercel (además de
+las 5 ya existentes):
+
+- `SMTP_HOST` — servidor SMTP de tu correo corporativo (ej. `smtp.office365.com`)
+- `SMTP_PORT` — normalmente `587`
+- `SMTP_USER` — la cuenta de correo que va a enviar (ej. `alertas@tuempresa.com`)
+- `SMTP_PASS` — la contraseña o "app password" de esa cuenta
+- `SMTP_FROM` — opcional; si no se pone, se usa `SMTP_USER`
+- `ALERT_SUMMARY_RECIPIENTS` — correos que reciben el resumen semanal, separados por coma
+- `CRON_SECRET` — una clave larga cualquiera que vos inventes; protege que solo Vercel Cron pueda disparar el resumen
+
+El resumen semanal se envía automáticamente todos los lunes (configurado en
+`vercel.json`, se puede cambiar el horario ahí). El botón de enviar una
+alerta por correo aparece dentro de cada tarjeta de alerta en el panel de
+"Active reports".
+
+## Importación diaria del inventario (TGU FG Report)
+
+Ya está construido `/api/inventory` (POST). Usa las mismas columnas que ya
+reconoce el importador manual de la app (hojas "TGU FG Report" / "Worksheet",
+columnas `FG`/`Total Inventory On Hand` o `Part`/`On Hand`), así que el
+resultado es idéntico a subir el Excel a mano — pero queda guardado en
+Supabase y se comparte automáticamente entre todos los dispositivos (se
+sincroniza solo cada 5 minutos, sin tener que tocar nada).
+
+Si un SKU del Excel no está todavía como tile en el mapa, se guarda igual en
+el catálogo de inventario (para búsquedas, tarjetas de producto, etc.) pero
+no se crea ni se mueve ningún tile — eso lo sigue haciendo un editor a mano.
+
+### Configuración
+
+1. Agregá la Environment Variable `INVENTORY_IMPORT_SECRET` en Vercel — una
+   clave larga que vos inventes (por ejemplo, generada con un gestor de
+   contraseñas). Es la que va a usar Power Automate para autenticarse.
+2. En Power Automate, creá un flujo:
+   - Disparador: "Cuando llega un correo nuevo" (Office 365 Outlook),
+     filtrado por remitente/asunto del TGU FG Report.
+   - Acción: "Obtener el contenido del adjunto" del correo.
+   - Acción: HTTP POST a `https://TU-DOMINIO.vercel.app/api/inventory`
+     con:
+     - Header `Content-Type: application/json`
+     - Header `x-import-secret: <el mismo valor de INVENTORY_IMPORT_SECRET>`
+     - Body JSON:
+       ```json
+       {
+         "fileName": "@{triggerOutputs()?['body/attachments'][0]?['name']}",
+         "fileBase64": "@{triggerOutputs()?['body/attachments'][0]?['contentBytes']}"
+       }
+       ```
+       (Power Automate ya entrega el adjunto en base64 en `contentBytes`,
+       así que no hace falta convertir nada.)
+
+La respuesta indica cuántas filas se importaron (`rowCount`) y si hubo
+conflictos entre hojas (`conflicts`), útil para armar una alerta en el
+propio flujo de Power Automate si algo sale raro.
+

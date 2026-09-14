@@ -5375,10 +5375,32 @@ boot();
   try { if(I18N && typeof I18N.onLangChange === "function") I18N.onLangChange(refreshInventoryUI); } catch(e){}
 
   // Small public surface for future email/automation integration.
+  /* Applies a report already parsed server-side (Power Automate -> the daily
+     import endpoint) the same way a locally picked file would be applied,
+     so every device sees the shared report without a manual file pick. */
+  function applyServerInventoryState(serverRev, serverState) {
+    if (!serverState || typeof serverState !== "object") return false;
+    if (inventoryState && inventoryState.serverRev === serverRev) return false;
+    const photos = (inventoryState && inventoryState.photos) || {};
+    Object.keys(photos).forEach(sku => { if (serverState.items[sku]) serverState.items[sku].img = photos[sku]; });
+    const coverage = fixedMapCoverage(serverState.items);
+    const state = Object.assign({}, serverState, {
+      serverRev,
+      photos,
+      matchedFixedTiles: coverage.matched,
+      totalFixedTiles: coverage.total,
+      history: nextHistory(serverState.reportDate, serverState.items),
+    });
+    saveInventoryState(state);
+    refreshInventoryUI();
+    return true;
+  }
+
   window.YardInventory = {
     get: inventoryForSku,
     getState: () => inventoryState,
     importFile: importInventoryFile,
+    applyServerState: applyServerInventoryState,
     refresh: refreshInventoryUI,
     storageKey: STORAGE_KEY,
     // Catalog surface used by the SKU picker, tile badges and the audit panel.

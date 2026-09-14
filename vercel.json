@@ -15,5 +15,24 @@
         { "key": "Service-Worker-Allowed", "value": "/" }
       ]
     }
+  ],
+  "crons": [
+    { "path": "/api/alerts-weekly-summary", "schedule": "0 12 * * 1" }
+  ],
+  "rewrites": [
+    { "source": "/api/login", "destination": "/api/auth?route=login" },
+    { "source": "/api/logout", "destination": "/api/auth?route=logout" },
+    { "source": "/api/me", "destination": "/api/auth?route=me" },
+    { "source": "/api/users", "destination": "/api/auth?route=users" },
+    { "source": "/api/recurring", "destination": "/api/alerts?route=recurring" },
+    { "source": "/api/alert-email", "destination": "/api/alerts?route=email" },
+    { "source": "/api/history", "destination": "/api/state?route=history" },
+    { "source": "/api/lock", "destination": "/api/state?route=lock" },
+    { "source": "/api/sync", "destination": "/api/state?route=sync" },
+    { "source": "/api/announcements", "destination": "/api/ops?route=announcements" },
+    { "source": "/api/handoff", "destination": "/api/ops?route=handoff" },
+    { "source": "/api/zones", "destination": "/api/ops?route=zones" },
+    { "source": "/api/ops-summary", "destination": "/api/ops?route=summary" },
+    { "source": "/api/audit", "destination": "/api/ops?route=audit" }
   ]
 }
