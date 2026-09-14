@@ -21,6 +21,7 @@
   ],
   "rewrites": [
     { "source": "/api/login", "destination": "/api/auth?route=login" },
+    { "source": "/api/signup", "destination": "/api/auth?route=signup" },
     { "source": "/api/logout", "destination": "/api/auth?route=logout" },
     { "source": "/api/me", "destination": "/api/auth?route=me" },
     { "source": "/api/users", "destination": "/api/auth?route=users" },

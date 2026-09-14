@@ -2,6 +2,7 @@ import { createSession, hashAccessCode, normalizeUsername, requireEditor, requir
 import { rest } from "./_lib/db.js";
 import { audit } from "./_lib/audit.js";
 import { json, readJson, errorResponse, methodNotAllowed } from "./_lib/http.js";
+import { esc, parseRecipients, sendMail } from "./_lib/email.js";
 
 /* This file combines login, logout, me and users -- four small, related
    auth endpoints -- into one Vercel Function. The Hobby plan caps a
@@ -46,6 +47,46 @@ async function handleLogin(request) {
   await rest("yard_users", `id=eq.${encodeURIComponent(user.id)}`, { method: "PATCH", body: { last_login_at: new Date().toISOString() }, headers: { prefer: "return=minimal" } });
   const token = createSession(user);
   await audit({ name: user.display_name || user.username, role: user.role }, "login", "session", user.id);
+  return json({ role: user.role, name: user.display_name || user.username }, 200, { "set-cookie": sessionCookie(token) });
+}
+
+// Self-signup, always as "viewer" -- editor accounts stay admin-created
+// (via handleUsers) so only the people already trusted with reviewing and
+// emailing alerts can hand that access to someone else. A viewer can file
+// reports but nothing that requireEditor gates (resolve, email, users...).
+async function handleSignup(request) {
+  if (request.method !== "POST") return methodNotAllowed(["POST"]);
+  if (!backendReady()) return json({ error: "backend_not_configured" }, 503);
+  const body = await readJson(request, 20_000);
+  const name = String(body.name || "").trim().slice(0, 160);
+  const code = String(body.code || "");
+  if (!name) return json({ error: "missing_name" }, 400);
+  if (code.length < 4) return json({ error: "code_too_short" }, 400);
+  const username = normalizeUsername(name);
+  const { data: existing } = await rest("yard_users", `username=eq.${encodeURIComponent(username)}&select=id&limit=1`);
+  if (Array.isArray(existing) && existing.length) return json({ error: "name_taken" }, 409);
+
+  const { data } = await rest("yard_users", "", {
+    method: "POST",
+    body: { username, display_name: name, access_code_hash: hashAccessCode(code), role: "viewer", active: true },
+    headers: { prefer: "return=representation" },
+  });
+  const user = data?.[0];
+  if (!user) return json({ error: "signup_failed" }, 500);
+  await audit({ name, role: "viewer" }, "user_signed_up", "user", user.id);
+
+  try {
+    const to = parseRecipients(process.env.ALERT_SUMMARY_RECIPIENTS);
+    if (to.length) {
+      await sendMail({
+        to,
+        subject: `[Tarter Yard Map] Nuevo operador registrado: ${name}`,
+        html: `<p><strong>${esc(name)}</strong> se registró como operador (rol: viewer) en Tarter Yard Map. Puede reportar problemas del yard, pero no puede resolver alertas, enviarlas por correo ni administrar usuarios.</p>`,
+      });
+    }
+  } catch (e) { /* the account exists either way -- the notification is best-effort */ }
+
+  const token = createSession(user);
   return json({ role: user.role, name: user.display_name || user.username }, 200, { "set-cookie": sessionCookie(token) });
 }
 
@@ -117,6 +158,7 @@ export default {
     try {
       const route = new URL(request.url).searchParams.get("route") || "login";
       if (route === "login") return await handleLogin(request);
+      if (route === "signup") return await handleSignup(request);
       if (route === "logout") return await handleLogout(request);
       if (route === "me") return await handleMe(request);
       if (route === "users") return await handleUsers(request);
