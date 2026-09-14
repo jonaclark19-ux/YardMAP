@@ -210,7 +210,7 @@ async function photoAttachment(photoUrl) {
 
 async function handleEmail(request) {
   if (request.method !== "POST") return methodNotAllowed(["POST"]);
-  const user = await requireUser(request);
+  const user = await requireEditor(request);
   const body = await readJson(request, 20_000);
   const id = String(body.id || "");
   if (!id) return json({ error: "missing_id" }, 400);
