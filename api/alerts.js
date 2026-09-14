@@ -144,7 +144,7 @@ function alertHtml(a, user, note) {
       <td style="padding:6px 12px;border:1px solid #ddd;font-weight:600;background:#f4f4f4">${esc(k)}</td>
       <td style="padding:6px 12px;border:1px solid #ddd">${esc(v)}</td>
     </tr>`).join("");
-  const photo = a.photoUrl ? `<p><img src="${esc(a.photoUrl)}" alt="foto" style="max-width:480px;border:1px solid #ddd;border-radius:6px"/></p>` : "";
+  const photo = a.photoUrl ? `<p><img src="cid:alertphoto" alt="foto" style="max-width:480px;border:1px solid #ddd;border-radius:6px"/></p>` : "";
   const shared = note ? `<p style="color:#444"><strong>Mensaje de ${esc(user.name)}:</strong> ${esc(note)}</p>` : "";
   return `
     <div style="font-family:Arial,Helvetica,sans-serif;color:#111">
@@ -154,6 +154,22 @@ function alertHtml(a, user, note) {
       ${photo}
       <p style="color:#888;font-size:12px;margin-top:16px">Enviado por ${esc(user.name)} desde Tarter Yard Map.</p>
     </div>`;
+}
+
+// Reports carry photoUrl as a link to Supabase storage; embedding it by
+// reference alone gets stripped by most mail clients' remote-image blocking,
+// so fetch it once and attach the bytes with a cid the html can reference.
+async function photoAttachment(photoUrl) {
+  if (!photoUrl) return [];
+  try {
+    const res = await fetch(photoUrl);
+    if (!res.ok) return [];
+    const contentType = res.headers.get("content-type") || "image/jpeg";
+    if (!contentType.startsWith("image/")) return [];
+    const buf = Buffer.from(await res.arrayBuffer());
+    if (buf.length > 8_000_000) return [];
+    return [{ filename: "foto.jpg", content: buf, contentType, cid: "alertphoto" }];
+  } catch { return []; }
 }
 
 async function handleEmail(request) {
@@ -173,7 +189,8 @@ async function handleEmail(request) {
   const alert = alertToClient(row);
 
   const subject = `[Tarter Yard Map] Alerta ${TYPE_LABEL[alert.type] || alert.type}: ${alert.sku || alert.rawCode || id}`;
-  await sendMail({ to, subject, html: alertHtml(alert, user, note) });
+  const attachments = await photoAttachment(alert.photoUrl);
+  await sendMail({ to, subject, html: alertHtml(alert, user, note), attachments });
   await audit(user, "alert_emailed", "alert", id, { to, count: to.length });
   return json({ ok: true, to });
 }
