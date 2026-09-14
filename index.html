@@ -6049,6 +6049,10 @@ boot();
     const res=await Sync.addAlert(payload); const alert=res&&res.alert;
     if(alert&&selectedPhotoFile){
       try{await PhotoStore.put(alert.id,selectedPhotoFile);alert.hasPhoto=true;}catch(e){console.error(e);alert.hasPhoto=false;toast("Report saved, but the photo could not be stored on this device.");}
+      // Also push the photo to cloud storage so it survives on other devices
+      // and can be attached to "send by email" -- PhotoStore alone only
+      // keeps it on the device that took it.
+      if(Sync.mode==="remote") uploadAlertPhoto(alert.id,selectedPhotoFile,sku).catch(()=>{});
     }
     // A matching inventory count is a verification event, not an open problem.
     if(alert&&type==="inventory"&&payload.inventoryResult==="verified"){
@@ -6219,6 +6223,38 @@ boot();
       body.innerHTML=list.map(a=>{const done=a.status==="resolved";const canGo=!!(a.foundAt&&a.foundAt.x!=null)||!!findTileBySku(a.sku);const label=alertTypeLabel(a.type);return `<div class="alert-item ${done?"done":""}" data-aid="${escOps(a.id)}"><div class="atitle"><span class="atype ${escOps(a.type)}">${escOps(label)}</span><span>${escOps(a.sku||a.rawCode||"?")}</span></div><div class="amsg">${escOps(alertMessage(a))}${a.note?" · "+escOps(a.note):""}</div><div class="ameta">${escOps(fmtDateTime(a.createdAt))} · ${escOps(a.by||"—")} · ${escOps(STATUS_LABEL[a.status]||a.status||"New")}${a.hasPhoto?" · 📷":""}</div><div class="aacts">${canGo?`<button data-act="go">Show on map</button>`:""}${a.hasPhoto?`<button data-act="photo">Photo</button>`:""}<button data-act="email">Send by email</button>${(!done&&canEdit())?`<button data-act="resolve">Resolve</button>`:""}</div></div>`;}).join("");
       body.querySelectorAll(".alert-item").forEach(item=>{const id=item.dataset.aid,a=ALERTS.find(x=>x.id===id);item.querySelectorAll("[data-act]").forEach(btn=>btn.onclick=e=>{e.stopPropagation();if(btn.dataset.act==="go")focusAlert(a);else if(btn.dataset.act==="resolve")setDetailedStatus(id,"resolved");else if(btn.dataset.act==="photo")showPhoto(id);else if(btn.dataset.act==="email")openAlertEmailModal(id);});item.onclick=()=>focusAlert(a);});
     };
+  }
+
+  // Shrinks the photo before it leaves the device -- camera photos routinely
+  // run 5-15MB, well past what the upload endpoint (and a reasonable email
+  // attachment) will accept.
+  function photoToDataUrl(file, maxDim, quality){
+    maxDim=maxDim||1600; quality=quality||0.82;
+    return new Promise((resolve,reject)=>{
+      const img=new Image(); const url=URL.createObjectURL(file);
+      img.onload=()=>{
+        URL.revokeObjectURL(url);
+        let w=img.naturalWidth,h=img.naturalHeight;
+        if(w>maxDim||h>maxDim){const s=maxDim/Math.max(w,h);w=Math.round(w*s);h=Math.round(h*s);}
+        const canvas=document.createElement("canvas"); canvas.width=w; canvas.height=h;
+        canvas.getContext("2d").drawImage(img,0,0,w,h);
+        resolve(canvas.toDataURL("image/jpeg",quality));
+      };
+      img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error("image_decode_failed"));};
+      img.src=url;
+    });
+  }
+  // Uploads the report photo to cloud storage and records the public URL on
+  // the alert, so it's visible from any device and can be attached to
+  // "send by email" -- PhotoStore (IndexedDB) alone only keeps it locally.
+  async function uploadAlertPhoto(alertId, file, sku){
+    try{
+      const dataUrl=await photoToDataUrl(file);
+      const up=await Sync.api("upload",{method:"POST",body:JSON.stringify({dataUrl,sku})});
+      if(!up.ok||!up.body.url) return null;
+      await Sync.api("alerts",{method:"PATCH",body:JSON.stringify({id:alertId,photoUrl:up.body.url})});
+      return up.body.url;
+    }catch(e){console.error(e);return null;}
   }
 
   // In-app modal for the "Send by email" action, replacing the browser prompt().
