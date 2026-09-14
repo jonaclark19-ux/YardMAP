@@ -6215,30 +6215,32 @@ boot();
     const modal=document.getElementById("alertEmailModal"); if(modal)modal.classList.remove("show");
     alertEmailTargetId=null;
   }
-  (function initAlertEmailModal(){
-    const modal=document.getElementById("alertEmailModal"); if(!modal)return;
-    document.getElementById("alertEmailCancel").onclick=closeAlertEmailModal;
-    modal.addEventListener("click",e=>{if(e.target===modal)closeAlertEmailModal();});
+  async function sendAlertEmail(){
     const sendBtn=document.getElementById("alertEmailSend");
-    sendBtn.onclick=async ()=>{
-      const id=alertEmailTargetId; if(!id)return;
-      const to=(document.getElementById("alertEmailTo").value||"").trim();
-      const note=(document.getElementById("alertEmailNote").value||"").trim();
-      if(!to){toast("Enter at least one email address");return;}
-      sendBtn.disabled=true; sendBtn.textContent="Sending…";
-      try{
-        const r=await api("alerts?route=email",{method:"POST",body:JSON.stringify({id,to,note})});
-        if(!r.ok)throw new Error(r.body.error||"send_failed");
-        try{localStorage.setItem("tarterYardLastEmailTo",to);}catch(e){}
-        toast("Alert sent by email");
-        closeAlertEmailModal();
-      }catch(err){
-        toast(err.message==="invalid_recipients"?"Invalid email address":"Could not send the email");
-      }finally{
-        sendBtn.disabled=false; sendBtn.textContent="Send";
-      }
-    };
-  })();
+    const id=alertEmailTargetId; if(!id)return;
+    const to=(document.getElementById("alertEmailTo").value||"").trim();
+    const note=(document.getElementById("alertEmailNote").value||"").trim();
+    if(!to){toast("Enter at least one email address");return;}
+    if(sendBtn){sendBtn.disabled=true; sendBtn.textContent="Sending…";}
+    try{
+      const r=await api("alerts?route=email",{method:"POST",body:JSON.stringify({id,to,note})});
+      if(!r.ok)throw new Error(r.body.error||"send_failed");
+      try{localStorage.setItem("tarterYardLastEmailTo",to);}catch(e){}
+      toast("Alert sent by email");
+      closeAlertEmailModal();
+    }catch(err){
+      toast(err.message==="invalid_recipients"?"Invalid email address":"Could not send the email");
+    }finally{
+      if(sendBtn){sendBtn.disabled=false; sendBtn.textContent="Send";}
+    }
+  }
+  // Delegated on document (not the specific buttons) so this keeps working
+  // regardless of exactly when the modal's markup lands in the DOM.
+  document.addEventListener("click",e=>{
+    if(e.target && e.target.id==="alertEmailCancel") closeAlertEmailModal();
+    else if(e.target && e.target.id==="alertEmailSend") sendAlertEmail();
+    else if(e.target && e.target.id==="alertEmailModal") closeAlertEmailModal();
+  });
 
   // Out-of-place reports render as pins instead of only badging the home tile.
   if(typeof renderAlertPins==="function"){
