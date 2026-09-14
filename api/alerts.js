@@ -57,6 +57,7 @@ async function handleAlerts(request) {
     const body = await readJson(request, 50_000);
     const id = String(body.id || "");
     if (!id) return json({ error: "missing_id" }, 400);
+    if (!UUID_RE.test(id)) return json({ error: "not_found" }, 404);
 
     if (body.remove) {
       await rest("alerts", `id=eq.${encodeURIComponent(id)}`, { method: "DELETE", headers: { prefer: "return=minimal" } });
@@ -117,6 +118,8 @@ async function handleRecurring(request) {
   return json({ days, items: (rows || []).filter((r) => Number(r.report_count || 0) >= 2).slice(0, 50) });
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const TYPE_LABEL = {
   empty: "ESPACIO VACÍO",
   damaged: "DAÑADO",
@@ -159,6 +162,7 @@ async function handleEmail(request) {
   const body = await readJson(request, 20_000);
   const id = String(body.id || "");
   if (!id) return json({ error: "missing_id" }, 400);
+  if (!UUID_RE.test(id)) return json({ error: "not_found" }, 404);
   const to = parseRecipients(body.to);
   if (!to.length) return json({ error: "invalid_recipients" }, 400);
   const note = String(body.note || "").trim().slice(0, 1000);
