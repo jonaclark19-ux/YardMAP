@@ -2133,6 +2133,7 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
     mode: "unknown",     // "remote" | "local"
     role: "local",       // "editor" | "viewer" | "local"
     name: "",
+    onboarded: false,    // account-level, synced from the server for remote accounts
     stateRev: 0,
     alertsRev: 0,
     alerts: [],
@@ -2178,7 +2179,7 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
     try {
       const r = await api("me");
       if (r.ok && r.body.role) {
-        S.mode = "remote"; S.role = r.body.role; S.name = r.body.name || "";
+        S.mode = "remote"; S.role = r.body.role; S.name = r.body.name || ""; S.onboarded = !!r.body.onboarded;
         return { mode: "remote", authed: true, role: S.role, name: S.name };
       }
       if (r.status === 401) {
@@ -2201,7 +2202,7 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
   async function login(name, code) {
     const r = await api("login", { method: "POST", body: JSON.stringify({ name, code }) });
     if (r.ok) {
-      S.mode = "remote"; S.role = r.body.role; S.name = r.body.name || name;
+      S.mode = "remote"; S.role = r.body.role; S.name = r.body.name || name; S.onboarded = !!r.body.onboarded;
       try { localStorage.setItem(LS_NAME, S.name); } catch (e) {}
       return { ok: true, role: S.role, name: S.name };
     }
@@ -2211,11 +2212,17 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
   async function signup(name, code) {
     const r = await api("signup", { method: "POST", body: JSON.stringify({ name, code }) });
     if (r.ok) {
-      S.mode = "remote"; S.role = r.body.role; S.name = r.body.name || name;
+      S.mode = "remote"; S.role = r.body.role; S.name = r.body.name || name; S.onboarded = !!r.body.onboarded;
       try { localStorage.setItem(LS_NAME, S.name); } catch (e) {}
       return { ok: true, role: S.role, name: S.name };
     }
     return { ok: false, status: r.status, error: r.body.error || "unknown" };
+  }
+
+  async function markOnboarded() {
+    S.onboarded = true;
+    if (S.mode !== "remote") return;
+    try { await api("me", { method: "PATCH", body: JSON.stringify({ onboarded: true }) }); } catch (e) {}
   }
 
   async function logout() {
@@ -2573,7 +2580,7 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
   global.Sync = {
     state: S,
     api,
-    probe, login, signup, logout, useLocalMode,
+    probe, login, signup, logout, useLocalMode, markOnboarded,
     loadState, pushState, pushStateNow, flush,
     loadAlerts, addAlert, setAlertStatus, patchAlert, pollOnce, startPolling, stopPolling,
     onState: (fn) => listeners.state.push(fn),
@@ -2582,6 +2589,7 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
     get role() { return S.role; },
     get name() { return S.name; },
     get mode() { return S.mode; },
+    get onboarded() { return S.onboarded; },
     canEdit: () => S.role === "editor" || S.role === "local",
     rememberedName: () => lsGet(LS_NAME, ""),
     clearLocalState: () => { try { localStorage.removeItem(LS_STATE); } catch (e) {} },
@@ -10154,9 +10162,21 @@ body.fieldmode .tnav-ico{width:27px;height:27px}
   function closeOnboarding(){
     document.getElementById("onboardModal")?.classList.remove("show");
     try{ localStorage.setItem(SEEN_KEY, "1"); }catch(e){}
+    try{ window.Sync?.markOnboarded?.(); }catch(e){}
   }
 
+  // For a real account (Sync.mode === "remote") whether the guide has been
+  // seen is tracked server-side on the user row, so it follows the account
+  // across devices instead of just the browser that happened to see it
+  // first. Local/offline mode has no account to attach that to, so it
+  // falls back to the per-device flag.
   function maybeShowOnboarding(){
+    try{
+      if(window.Sync && Sync.mode === "remote"){
+        if(!Sync.onboarded) openOnboarding();
+        return;
+      }
+    }catch(e){}
     let seen = false;
     try{ seen = localStorage.getItem(SEEN_KEY) === "1"; }catch(e){}
     if(!seen) openOnboarding();
