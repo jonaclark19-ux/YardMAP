@@ -1083,17 +1083,26 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
   <div class="dr-sec editor-only">
     <div class="dr-label" data-i18n="role.editor">Editor</div>
     <button class="dr-item" id="editBtn"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16.4 3.9a2.1 2.1 0 0 1 3 3L8.2 18.1l-4 1 1-4Z"/><path d="m14.4 5.9 3 3"/></svg></span><span data-i18n="tool.edit">Edit Products</span></button>
-    <button class="dr-item" id="addBtn"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.6" y="3.6" width="16.8" height="16.8" rx="3"/><path d="M12 8.4v7.2M8.4 12h7.2"/></svg></span><span data-i18n="tool.add">Add</span></button>
     <button class="dr-item" id="bgBtn"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4.4 3.6 6.7v12.9L9 17.3l4.2 1.6"/><path d="M9 4.4v12.9"/><path d="M20.4 20.4l-1.9-1.9M14.6 14.6l3.9-3.9a1.7 1.7 0 0 1 2.4 2.4l-3.9 3.9-3 .6Z"/></svg></span><span data-i18n="tool.editMap">Edit Map</span></button>
     <button class="dr-item" id="mtoBtn"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3.8 2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.8Z"/></svg></span><span data-i18n="tool.mto">MTO Zones</span></button>
   </div>
 
-  <div class="dr-sec editor-only">
+  <div class="dr-sec editor-only" id="drSecProducts">
+    <div class="dr-label" data-i18n="tool.sectionProducts">Products</div>
+    <button class="dr-item" id="addBtn"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.6" y="3.6" width="16.8" height="16.8" rx="3"/><path d="M12 8.4v7.2M8.4 12h7.2"/></svg></span><span data-i18n="tool.add">Add</span></button>
     <button class="dr-item" id="xlsBtn"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3.4H7a1.8 1.8 0 0 0-1.8 1.8v13.6A1.8 1.8 0 0 0 7 20.6h10a1.8 1.8 0 0 0 1.8-1.8V8.2Z"/><path d="M14 3.4v4.8h4.8"/><path d="m9.4 12 5.2 5.2M14.6 12l-5.2 5.2"/></svg></span><span data-i18n="tool.excel">Import Excel</span></button>
+  </div>
+
+  <div class="dr-sec editor-only">
+    <div class="dr-label" data-i18n="tool.sectionPhotos">Photos</div>
     <button class="dr-item" id="photoTplBtn"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3.4H7a1.8 1.8 0 0 0-1.8 1.8v13.6A1.8 1.8 0 0 0 7 20.6h10a1.8 1.8 0 0 0 1.8-1.8V8.2Z"/><path d="M14 3.4v4.8h4.8"/><path d="M8.8 12.6h6.4M8.8 16.2h4.2"/></svg></span><span data-i18n="tool.photoTemplate">Photo sheet</span></button>
     <button class="dr-item" id="photoXlsBtn"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.4" y="5.2" width="17.2" height="13.6" rx="2.2"/><circle cx="9" cy="10" r="1.7"/><path d="m4.2 17 4.6-4.4 3.1 3 2.9-2.6 5 4.6"/></svg></span><span data-i18n="tool.photoImport">Load photos</span></button>
-    <button class="dr-item" id="importBtn"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15.6V4.2M12 4.2 7.9 8.3M12 4.2l4.1 4.1"/><path d="M4.2 15v3.4a1.8 1.8 0 0 0 1.8 1.8h12a1.8 1.8 0 0 0 1.8-1.8V15"/></svg></span><span data-i18n="tool.import">Import</span></button>
+  </div>
+
+  <div class="dr-sec editor-only">
+    <div class="dr-label" data-i18n="tool.sectionData">Data</div>
     <button class="dr-item" id="exportBtn"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.2v11.4M12 15.6 7.9 11.5M12 15.6l4.1-4.1"/><path d="M4.2 15v3.4a1.8 1.8 0 0 0 1.8 1.8h12a1.8 1.8 0 0 0 1.8-1.8V15"/></svg></span><span data-i18n="tool.export">Export</span></button>
+    <button class="dr-item" id="importBtn"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15.6V4.2M12 4.2 7.9 8.3M12 4.2l4.1 4.1"/><path d="M4.2 15v3.4a1.8 1.8 0 0 0 1.8 1.8h12a1.8 1.8 0 0 0 1.8-1.8V15"/></svg></span><span data-i18n="tool.import">Import</span></button>
     <button class="dr-item danger" id="resetBtn"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 5.6v5h5"/><path d="M4.7 14a8 8 0 1 0 1.3-6.6L3.6 10.6"/></svg></span><span data-i18n="tool.reset">Reset</span></button>
   </div>
 
@@ -1378,6 +1387,9 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "tool.editTitle": "Edit mode: move freely, multi-select, add, rename, delete",
       "tool.add": "Add",
       "tool.addTitle": "Add a product tile",
+      "tool.sectionProducts": "Products",
+      "tool.sectionPhotos": "Photos",
+      "tool.sectionData": "Data",
       "tool.editMap": "Edit Map",
       "tool.editMapTitle": "Edit the background: move/resize structures, draw shapes, edit labels",
       "tool.legend": "Legend",
@@ -1759,6 +1771,9 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "tool.editTitle": "Modo edición: mover libremente, multi-selección, agregar, renombrar, borrar",
       "tool.add": "Agregar",
       "tool.addTitle": "Agregar una ficha de producto",
+      "tool.sectionProducts": "Productos",
+      "tool.sectionPhotos": "Fotos",
+      "tool.sectionData": "Datos",
       "tool.editMap": "Editar Mapa",
       "tool.editMapTitle": "Editar el fondo: mover/redimensionar estructuras, dibujar formas, editar etiquetas",
       "tool.legend": "Leyenda",
@@ -5802,8 +5817,7 @@ boot();
   }
 
   function installUi(){
-    const scanBtn = document.getElementById("drScan");
-    const section = scanBtn && scanBtn.closest(".dr-sec");
+    const section = document.getElementById("drSecProducts");
     if(section && !document.getElementById("inventoryBtn")){
       const btn = document.createElement("button");
       btn.className = "dr-item";
