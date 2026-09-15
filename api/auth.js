@@ -47,7 +47,7 @@ async function handleLogin(request) {
   await rest("yard_users", `id=eq.${encodeURIComponent(user.id)}`, { method: "PATCH", body: { last_login_at: new Date().toISOString() }, headers: { prefer: "return=minimal" } });
   const token = createSession(user);
   await audit({ name: user.display_name || user.username, role: user.role }, "login", "session", user.id);
-  return json({ role: user.role, name: user.display_name || user.username }, 200, { "set-cookie": sessionCookie(token) });
+  return json({ role: user.role, name: user.display_name || user.username, onboarded: !!user.onboarded_at }, 200, { "set-cookie": sessionCookie(token) });
 }
 
 // Self-signup, always as "viewer" -- editor accounts stay admin-created
@@ -87,7 +87,7 @@ async function handleSignup(request) {
   } catch (e) { /* the account exists either way -- the notification is best-effort */ }
 
   const token = createSession(user);
-  return json({ role: user.role, name: user.display_name || user.username }, 200, { "set-cookie": sessionCookie(token) });
+  return json({ role: user.role, name: user.display_name || user.username, onboarded: false }, 200, { "set-cookie": sessionCookie(token) });
 }
 
 async function handleLogout(request) {
@@ -98,10 +98,20 @@ async function handleLogout(request) {
 }
 
 async function handleMe(request) {
-  if (request.method !== "GET") return methodNotAllowed(["GET"]);
   if (!backendReady()) return json({ error: "backend_not_configured" }, 503);
-  const user = await requireUser(request);
-  return json({ role: user.role, name: user.name });
+  if (request.method === "GET") {
+    const user = await requireUser(request);
+    return json({ role: user.role, name: user.name, onboarded: !!user.onboarded });
+  }
+  if (request.method === "PATCH") {
+    const user = await requireUser(request);
+    const body = await readJson(request, 5_000);
+    if (body.onboarded === true) {
+      await rest("yard_users", `id=eq.${encodeURIComponent(user.uid)}`, { method: "PATCH", body: { onboarded_at: new Date().toISOString() }, headers: { prefer: "return=minimal" } });
+    }
+    return json({ ok: true });
+  }
+  return methodNotAllowed(["GET", "PATCH"]);
 }
 
 const safeUser = (u) => ({ id: u.id, username: u.username, name: u.display_name || u.username, role: u.role, active: u.active, lastLoginAt: u.last_login_at, createdAt: u.created_at });

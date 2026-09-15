@@ -68,10 +68,10 @@ export function clearSessionCookie() {
 export async function requireUser(request) {
   const session = readSession(request);
   if (!session) throw Object.assign(new Error("unauthorized"), { status: 401 });
-  const { data } = await rest("yard_users", `id=eq.${encodeURIComponent(session.uid)}&active=eq.true&select=id,username,display_name,role,active`, {});
+  const { data } = await rest("yard_users", `id=eq.${encodeURIComponent(session.uid)}&active=eq.true&select=id,username,display_name,role,active,onboarded_at`, {});
   const user = Array.isArray(data) ? data[0] : null;
   if (!user) throw Object.assign(new Error("unauthorized"), { status: 401 });
-  return { ...session, name: user.display_name || user.username, role: user.role };
+  return { ...session, name: user.display_name || user.username, role: user.role, onboarded: !!user.onboarded_at };
 }
 
 export async function requireEditor(request) {
