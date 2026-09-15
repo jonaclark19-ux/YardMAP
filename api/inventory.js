@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
-import { requireUser } from "./_lib/auth.js";
+import { requireUser, requireEditor } from "./_lib/auth.js";
 import { rest } from "./_lib/db.js";
+import { audit } from "./_lib/audit.js";
 import { parseInventoryWorkbook } from "./_lib/inventoryParse.js";
 import { json, readJson, errorResponse, methodNotAllowed } from "./_lib/http.js";
 
@@ -60,12 +61,32 @@ async function handleImport(request) {
   });
 }
 
+// Session-authenticated counterpart to handleImport: an editor uploading
+// the FG report from the browser (Control Center / drawer "Load inventory
+// report") doesn't hold the Power Automate shared secret, so this lets that
+// same already-parsed state become the shared server copy every device
+// picks up, instead of staying stuck on whichever single device loaded it.
+async function handlePut(request) {
+  const editor = await requireEditor(request);
+  const body = await readJson(request, 20_000_000);
+  if (!body.data || typeof body.data !== "object" || !body.data.items) return json({ error: "invalid_data" }, 400);
+  const rev = (await currentRev()) + 1;
+  await rest("inventory_state", "id=eq.yard", {
+    method: "PATCH",
+    body: { rev, data: body.data, updated_at: new Date().toISOString() },
+    headers: { prefer: "return=minimal" },
+  });
+  await audit(editor, "inventory_synced", "inventory", "yard", { rev, rowCount: body.data.rowCount, fileName: body.data.fileName });
+  return json({ ok: true, rev });
+}
+
 export default {
   async fetch(request) {
     try {
       if (request.method === "GET") return await handleGet(request);
       if (request.method === "POST") return await handleImport(request);
-      return methodNotAllowed(["GET", "POST"]);
+      if (request.method === "PUT") return await handlePut(request);
+      return methodNotAllowed(["GET", "POST", "PUT"]);
     } catch (error) { return errorResponse(error); }
   },
 };
