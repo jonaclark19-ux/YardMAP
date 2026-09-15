@@ -115,9 +115,12 @@
   
   .tile .ren{position:absolute;bottom:-8px;left:-8px;width:18px;height:18px;border-radius:50%;background:var(--blue);
     color:#fff;border:2px solid var(--bg2);font-size:11px;line-height:1;display:none;place-items:center;cursor:pointer;z-index:7}
+  .tile .shp{position:absolute;bottom:-8px;right:-8px;width:18px;height:18px;border-radius:50%;background:var(--panel);
+    color:var(--ink);border:2px solid var(--bg2);font-size:10.5px;line-height:1;display:none;place-items:center;cursor:pointer;z-index:7}
   body.editing .tile:hover .colorchip, body.editing .tile.sel .colorchip{display:block}
   body.editing .tile:hover .rz, body.editing .tile.sel .rz{display:block}
   body.editing .tile:hover .ren, body.editing .tile.sel .ren{display:grid}
+  body.editing .tile:hover .shp, body.editing .tile.sel .shp{display:grid}
 
   .badge{background:var(--red);color:#fff;font-size:11px;font-weight:700;padding:2px 6px;border-radius:10px;margin-left:4px;display:none}
   .badge.show{display:inline-block}
@@ -250,6 +253,11 @@
   .bgbar .hintx{font-size:12.5px;color:var(--muted);max-width:240px;line-height:1.25}
   .bgbar .grp{display:flex;gap:4px;align-items:center}
   .bgbar button.sh{min-width:34px;font-size:15.5px;padding:7px 8px}
+  .stamp-picker{position:absolute;top:calc(100% + 6px);left:50%;transform:translateX(-50%);display:grid;
+    grid-template-columns:repeat(3,1fr);gap:4px;background:rgba(24,29,37,.96);border:1px solid var(--line2);
+    border-radius:10px;padding:6px;box-shadow:var(--shadow);z-index:28}
+  .stamp-picker button{min-width:38px;padding:7px;display:flex;align-items:center;justify-content:center}
+  .stamp-picker svg{width:20px;height:20px}
 
   /* Shape inspector */
   .insp{position:absolute;right:12px;top:56px;z-index:27;width:258px;background:rgba(24,29,37,.92);
@@ -288,9 +296,11 @@
   body.bgedit #bg{pointer-events:auto}
   body.bgedit #bg .bgi{pointer-events:all;cursor:move}
   body.bgedit #bg .bgh{pointer-events:all;cursor:nwse-resize}
+  body.bgedit #bg .bglabel{pointer-events:all;cursor:move}
   body.bgedit .stage{cursor:crosshair}
   #bg .bgi{pointer-events:none}
   #bg .bgh{pointer-events:none}
+  #bg .bglabel{pointer-events:none}
 
   .seltool{position:absolute;left:50%;bottom:56px;transform:translateX(-50%);z-index:26;display:none;gap:4px;align-items:center;
     background:rgba(24,29,37,.92);border:1px solid var(--line2);border-radius:12px;padding:6px 9px;box-shadow:var(--shadow);flex-wrap:wrap;max-width:94vw; backdrop-filter:blur(10px)}
@@ -925,6 +935,12 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
         <button class="sh" data-tool="line" data-i18n-title="bg.line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.6 19.4 19.4 4.6"/><circle cx="4.6" cy="19.4" r="1.7"/><circle cx="19.4" cy="4.6" r="1.7"/></svg></button>
         <button class="sh" data-tool="label" data-i18n-title="bg.label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6.4V4.6h14v1.8M12 4.6v14.8M9.4 19.4h5.2"/></svg></button>
         <button class="sh" data-tool="door" data-i18n-title="bg.door"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.6h9.4a1.6 1.6 0 0 1 1.6 1.6v13.6a1.6 1.6 0 0 1-1.6 1.6H6Z"/><circle cx="13.4" cy="12" r="1"/><path d="M19.4 20.4h1.2M3.4 20.4h1.2"/></svg></button>
+        <button class="sh" data-tool="road" data-i18n-title="bg.road"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 20.4 12 4.6l8.4 15.8"/><path d="M12 9.6v3M12 15v1.6" stroke-dasharray="2 2.4"/></svg></button>
+      </span>
+      <span class="sep"></span>
+      <span class="grp" id="stampGrp" style="position:relative">
+        <button class="sh" id="stampBtn" data-i18n-title="bg.stamp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.8 18.4h2.6M5.4 18.4V8.6m0 9.8h5.6m0 0V4.2h3.4l2.6 3.4h3.2v4h-1.8m-1.6 6.8a1.8 1.8 0 1 1 0-3.6 1.8 1.8 0 0 1 0 3.6Zm-8 0a1.8 1.8 0 1 1 0-3.6 1.8 1.8 0 0 1 0 3.6Z"/></svg></button>
+        <div class="stamp-picker" id="stampPicker" hidden></div>
       </span>
       <span class="sep"></span>
       <button id="bgPropBtn" class="lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.6 14.6a1.6 1.6 0 0 0 .32 1.76l.06.06a1.9 1.9 0 1 1-2.7 2.7l-.06-.06a1.6 1.6 0 0 0-1.76-.32 1.6 1.6 0 0 0-.97 1.47v.17a1.9 1.9 0 1 1-3.8 0v-.09a1.6 1.6 0 0 0-1.05-1.47 1.6 1.6 0 0 0-1.76.32l-.06.06a1.9 1.9 0 1 1-2.7-2.7l.06-.06a1.6 1.6 0 0 0 .32-1.76 1.6 1.6 0 0 0-1.47-.97H3.7a1.9 1.9 0 1 1 0-3.8h.09a1.6 1.6 0 0 0 1.47-1.05 1.6 1.6 0 0 0-.32-1.76l-.06-.06a1.9 1.9 0 1 1 2.7-2.7l.06.06a1.6 1.6 0 0 0 1.76.32h.08A1.6 1.6 0 0 0 10.45 4V3.7a1.9 1.9 0 1 1 3.8 0v.09a1.6 1.6 0 0 0 .97 1.47 1.6 1.6 0 0 0 1.76-.32l.06-.06a1.9 1.9 0 1 1 2.7 2.7l-.06.06a1.6 1.6 0 0 0-.32 1.76v.08a1.6 1.6 0 0 0 1.47.97h.17a1.9 1.9 0 1 1 0 3.8h-.09a1.6 1.6 0 0 0-1.47.97Z"/></svg><span data-i18n="bg.props">Properties</span></button>
@@ -981,6 +997,12 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
           </div>
           <div class="irow" id="rowTsize"><span class="lb" data-i18n="insp.textSize">Text sz</span>
             <input type="range" id="iTs" min="8" max="60" value="20" /><span class="val" id="iTsV">20</span>
+          </div>
+          <div class="irow" id="rowDoorLen"><span class="lb" data-i18n="insp.doorLen">Length</span>
+            <input type="number" id="iDoorLen" min="20" max="600" step="1" />
+          </div>
+          <div class="irow" id="rowLabelOff"><span class="lb" data-i18n="insp.labelPos">Label pos</span>
+            <button id="iLabelReset" data-i18n="insp.labelReset">Center</button>
           </div>
           <div class="acts">
             <button id="iDup" data-i18n="insp.duplicate">⧉ Duplicate</button>
@@ -1396,6 +1418,7 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "tile.changeColor": "Change colour",
       "tile.editSku": "Edit SKU",
       "tile.resize": "Drag to resize",
+      "tile.shape": "Toggle shape (square/round)",
       "tile.remove": "Remove",
       "tile.renamePrompt": "Edit the product SKU:",
       "tile.skuEmpty": "The SKU cannot be empty",
@@ -1450,6 +1473,15 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "bg.line": "Line",
       "bg.label": "Text label",
       "bg.door": "Door",
+      "bg.road": "Road / path",
+      "bg.stamp": "Stamps (forklift, etc.)",
+      "bg.stampIcon.forklift": "Forklift",
+      "bg.stampIcon.person": "Person",
+      "bg.stampIcon.pallet": "Pallet",
+      "bg.stampIcon.truck": "Truck",
+      "bg.stampIcon.cone": "Safety cone",
+      "bg.stampIcon.extinguisher": "Fire extinguisher",
+      "bg.labelReset": "Label centered again",
       "bg.props": "Properties",
       "bg.delete": "Delete",
       "bg.reset": "Reset bg",
@@ -1476,6 +1508,9 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "insp.size": "Size",
       "insp.text": "Text",
       "insp.textSize": "Text sz",
+      "insp.doorLen": "Length",
+      "insp.labelPos": "Label pos",
+      "insp.labelReset": "Center",
       "insp.labelPh": "Label…",
       "insp.duplicate": "⧉ Duplicate",
       "insp.toFront": "↑ Front",
@@ -1757,6 +1792,7 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "tile.changeColor": "Cambiar color",
       "tile.editSku": "Editar SKU",
       "tile.resize": "Arrastra para redimensionar",
+      "tile.shape": "Cambiar forma (cuadrado/redondo)",
       "tile.remove": "Quitar",
       "tile.renamePrompt": "Editar el SKU del producto:",
       "tile.skuEmpty": "El SKU no puede quedar vacío",
@@ -1811,6 +1847,15 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "bg.line": "Línea",
       "bg.label": "Etiqueta de texto",
       "bg.door": "Puerta",
+      "bg.road": "Camino / vía",
+      "bg.stamp": "Sellos (montacargas, etc.)",
+      "bg.stampIcon.forklift": "Montacargas",
+      "bg.stampIcon.person": "Persona",
+      "bg.stampIcon.pallet": "Tarima",
+      "bg.stampIcon.truck": "Camión",
+      "bg.stampIcon.cone": "Cono de seguridad",
+      "bg.stampIcon.extinguisher": "Extintor",
+      "bg.labelReset": "Etiqueta centrada de nuevo",
       "bg.props": "Propiedades",
       "bg.delete": "Eliminar",
       "bg.reset": "Restaurar fondo",
@@ -1837,6 +1882,9 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "insp.size": "Tamaño",
       "insp.text": "Texto",
       "insp.textSize": "Tam. texto",
+      "insp.doorLen": "Largo",
+      "insp.labelPos": "Pos. etiqueta",
+      "insp.labelReset": "Centrar",
       "insp.labelPh": "Etiqueta…",
       "insp.duplicate": "⧉ Duplicar",
       "insp.toFront": "↑ Frente",
@@ -3009,8 +3057,9 @@ function itemBox(it){
   if(it.type==="rect") return {x:it.x,y:it.y,w:it.w,h:it.h};
   if(it.type==="line") return {x:Math.min(it.x1,it.x2),y:Math.min(it.y1,it.y2),w:Math.abs(it.x2-it.x1),h:Math.abs(it.y2-it.y1)};
   if(it.type==="circle") return {x:it.cx-it.r,y:it.cy-it.r,w:it.r*2,h:it.r*2};
-  if(it.type==="door") return {x:it.x-26,y:it.y-26,w:52,h:52};
+  if(it.type==="door"){ const half=(it.len||52)/2; return it.vert? {x:it.x-26,y:it.y-half,w:52,h:half*2} : {x:it.x-half,y:it.y-26,w:half*2,h:52}; }
   if(it.type==="label") return {x:it.x-40,y:it.y-12,w:80,h:24};
+  if(it.type==="stamp") return {x:it.x-18,y:it.y-18,w:36,h:36};
   if(it.type==="poly"){ const xs=it.pts.map(p=>p[0]),ys=it.pts.map(p=>p[1]);
     return {x:Math.min(...xs),y:Math.min(...ys),w:Math.max(...xs)-Math.min(...xs),h:Math.max(...ys)-Math.min(...ys)}; }
   return {x:0,y:0,w:0,h:0};
@@ -3029,6 +3078,22 @@ function svgel(tag,attrs,txt){ const n=document.createElementNS(SVGNS,tag);
 function bgLabel(x,y,t,size,col,weight){ return svgel("text",{x,y,fill:col||"#7c8896",
   "font-family":"Barlow Semi Condensed, sans-serif","font-size":size||20,"font-weight":weight||700,
   "text-anchor":"middle","dominant-baseline":"middle","letter-spacing":.5},t); }
+
+const STAMP_ICONS={
+  forklift:'<path d="M2.8 18.4h2.6M5.4 18.4V8.6m0 9.8h5.6m0 0V4.2h3.4l2.6 3.4h3.2v4h-1.8m-1.6 6.8a1.8 1.8 0 1 1 0-3.6 1.8 1.8 0 0 1 0 3.6Zm-8 0a1.8 1.8 0 1 1 0-3.6 1.8 1.8 0 0 1 0 3.6Z"/>',
+  person:'<circle cx="12" cy="6" r="3"/><path d="M6 21v-5a6 6 0 0 1 12 0v5"/>',
+  pallet:'<rect x="3" y="9" width="18" height="4"/><path d="M5 13v6M19 13v6M12 13v6"/>',
+  truck:'<rect x="2" y="9" width="12" height="7"/><path d="M14 12h4l3 3v4h-2"/><circle cx="6" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/>',
+  cone:'<path d="M12 3 18 19H6Z"/><path d="M8.4 14h7.2M7 17h10"/>',
+  extinguisher:'<path d="M8 8h8v12H8zM9 5h6v3H9zM10 3h4v2h-4z"/><path d="M6 9l2 1M15 8l3-2"/>'
+};
+function stampNode(icon,x,y,size){
+  const s=size||36;
+  const g=svgel("g",{transform:`translate(${x-s/2},${y-s/2})`});
+  const inner=`<svg xmlns="${SVGNS}" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="#cfd6dc" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${STAMP_ICONS[icon]||STAMP_ICONS.forklift}</svg>`;
+  g.innerHTML=inner;
+  return g;
+}
 
 function kindStyle(k){
   if(k==="flex")        return {fill:"rgba(255,192,46,.06)",stroke:"#C98A2E",sw:2.5,rx:14,dash:"14 9",lsize:19,lcol:"#E0A93E",lw:800,ltop:true};
@@ -3072,13 +3137,21 @@ function renderBgItem(it,idx,frag){
   if(it.type==="poly"){
     const pts=it.pts.map(p=>p.join(",")).join(" ");
     if(it.closed) g.appendChild(hit(svgel("polygon",{points:pts,fill:it.fill||"rgba(255,255,255,.015)",stroke:it.stroke||"#3a4657","stroke-width":it.sw||3,...(s.dash?{"stroke-dasharray":s.dash}:{})})));
+    else if(it.kind==="road"){
+      g.appendChild(hit(svgel("polyline",{points:pts,fill:"none",stroke:it.stroke||"#565c63","stroke-width":it.sw||22,"stroke-linecap":"round","stroke-linejoin":"round"})));
+      g.appendChild(svgel("polyline",{points:pts,fill:"none",stroke:"#d8c56a","stroke-width":2,"stroke-dasharray":"14 10","stroke-linecap":"round"}));
+    }
     else g.appendChild(hit(svgel("polyline",{points:pts,fill:"none",stroke:it.stroke||it.color||"#2f5d86","stroke-width":it.sw||5,"stroke-linecap":"round",opacity:it.op!=null?it.op:.7,...(s.dash?{"stroke-dasharray":s.dash}:{})})));
   } else if(it.type==="rect"){
     const k=it.kind||"box";
     g.appendChild(hit(shapeNode(it,s)));
     if(k==="grid"){ for(let i=1;i<5;i++) g.appendChild(svgel("line",{x1:it.x+i*it.w/5,y1:it.y,x2:it.x+i*it.w/5,y2:it.y+it.h,stroke:s.stroke,"stroke-width":1}));
       for(let j=1;j<3;j++) g.appendChild(svgel("line",{x1:it.x,y1:it.y+j*it.h/3,x2:it.x+it.w,y2:it.y+j*it.h/3,stroke:s.stroke,"stroke-width":1})); }
-    if(it.label) g.appendChild(bgLabel(it.x+it.w/2, s.ltop?it.y+22:it.y+it.h/2, it.label, s.lsize, it.lcol||s.lcol, s.lw));
+    if(it.label){
+      const lx=it.x+it.w/2+(it.labelDx||0), ly=(s.ltop?it.y+22:it.y+it.h/2)+(it.labelDy||0);
+      const lbl=bgLabel(lx, ly, it.label, s.lsize, it.lcol||s.lcol, s.lw);
+      lbl.setAttribute("data-lbl",idx); lbl.classList.add("bglabel"); g.appendChild(lbl);
+    }
     if(k==="flex"){
       const n=(it.skus||[]).length;
       g.appendChild(bgLabel(it.x+it.w/2, it.y+44, t("bg.flexCount",{n}), 13, "#b8863a", 600));
@@ -3090,12 +3163,14 @@ function renderBgItem(it,idx,frag){
   } else if(it.type==="circle"){
     g.appendChild(hit(svgel("circle",{cx:it.cx,cy:it.cy,r:it.r,fill:it.fill||"rgba(255,255,255,.02)",stroke:it.stroke||"#3f4a58","stroke-width":it.sw||2,...(s.dash?{"stroke-dasharray":s.dash}:{})})));
   } else if(it.type==="door"){
-    const col=it.stroke||"#37C871", dw=it.sw||6;
-    if(it.vert) g.appendChild(hit(svgel("line",{x1:it.x,y1:it.y-26,x2:it.x,y2:it.y+26,stroke:col,"stroke-width":dw,"stroke-linecap":"round"})));
-    else g.appendChild(hit(svgel("line",{x1:it.x-26,y1:it.y,x2:it.x+26,y2:it.y,stroke:col,"stroke-width":dw,"stroke-linecap":"round"})));
+    const col=it.stroke||"#37C871", dw=it.sw||6, half=(it.len||52)/2;
+    if(it.vert) g.appendChild(hit(svgel("line",{x1:it.x,y1:it.y-half,x2:it.x,y2:it.y+half,stroke:col,"stroke-width":dw,"stroke-linecap":"round"})));
+    else g.appendChild(hit(svgel("line",{x1:it.x-half,y1:it.y,x2:it.x+half,y2:it.y,stroke:col,"stroke-width":dw,"stroke-linecap":"round"})));
     if(it.label) g.appendChild(bgLabel(it.vert?it.x+(it.x<1000?38:-38):it.x, it.vert?it.y:it.y-16, "DOOR "+it.label, it.lsize||12, "#6f8f78", 700));
   } else if(it.type==="label"){
     g.appendChild(hit(bgLabel(it.x,it.y,it.text,it.size||20,it.stroke||it.color||"#7c8896",700)));
+  } else if(it.type==="stamp"){
+    g.appendChild(hit(stampNode(it.icon,it.x,it.y)));
   }
 }
 
@@ -3111,6 +3186,11 @@ function bgHandles(it,frag){
     r.setAttribute("data-h",name); r.setAttribute("class","bgh"); g.appendChild(r); };
   g.appendChild(svgel("rect",{x:b.x-3,y:b.y-3,width:b.w+6,height:b.h+6,fill:"none",stroke:"#FFC02E","stroke-width":lwv,"stroke-dasharray":`${8/view.k} ${6/view.k}`}));
   if(it.type==="line"){ mk(it.x1,it.y1,"p1"); mk(it.x2,it.y2,"p2"); return; }
+  if(it.type==="door"){
+    const half=(it.len||52)/2;
+    if(it.vert){ mk(it.x,it.y-half,"p1"); mk(it.x,it.y+half,"p2"); } else { mk(it.x-half,it.y,"p1"); mk(it.x+half,it.y,"p2"); }
+    return;
+  }
   if(it.type==="rect"||it.type==="circle"){
     mk(b.x,b.y,"nw");        mk(b.x+b.w/2,b.y,"n");      mk(b.x+b.w,b.y,"ne");
     mk(b.x,b.y+b.h/2,"w");                                mk(b.x+b.w,b.y+b.h/2,"e");
@@ -3129,6 +3209,10 @@ function drawBackground(){
     if(bgDraw.tool==="rect") frag.appendChild(svgel("rect",{x:Math.min(bgDraw.x0,bgDraw.x),y:Math.min(bgDraw.y0,bgDraw.y),
       width:Math.abs(bgDraw.x-bgDraw.x0),height:Math.abs(bgDraw.y-bgDraw.y0),rx:6,fill:"rgba(255,192,46,.08)",stroke:"#FFC02E","stroke-width":2,"stroke-dasharray":"6 5"}));
     else frag.appendChild(svgel("line",{x1:bgDraw.x0,y1:bgDraw.y0,x2:bgDraw.x,y2:bgDraw.y,stroke:"#FFC02E","stroke-width":3,"stroke-dasharray":"6 5"}));
+  }
+  if(roadDraft && roadDraft.length){
+    frag.appendChild(svgel("polyline",{points:roadDraft.map(p=>p.join(",")).join(" "),fill:"none",stroke:"#d8c56a","stroke-width":3,"stroke-dasharray":"8 6"}));
+    roadDraft.forEach(p=>frag.appendChild(svgel("circle",{cx:p[0],cy:p[1],r:5/view.k,fill:"#FFC02E",stroke:"#221a02","stroke-width":1.2/view.k})));
   }
   if(bgGuides && bgGuides.length){
     const gw=Math.max(1,1.4/view.k), dash=`${7/view.k} ${5/view.k}`;
@@ -3149,18 +3233,20 @@ function renderTiles(){
   const frag=document.createDocumentFragment();
   // Resolved up front: inside the loop `t` is the tile, not the translator.
   const LBL={color:esc(t("tile.changeColor")), sku:esc(t("tile.editSku")),
-             size:esc(t("tile.resize")), del:esc(t("tile.remove"))};
+             size:esc(t("tile.resize")), del:esc(t("tile.remove")), shape:esc(t("tile.shape"))};
   data.tiles.forEach((t,i)=>{
     const d=document.createElement("div");
     d.className="tile"; d.dataset.i=i;
     const tc=t.c||color(t.g);
-    d.style.cssText=`left:${t.x}px;top:${t.y}px;width:${t.w||TW}px;height:${t.h||TH}px;background:${tc}`;
+    const rad = t.shape==="circle" ? "border-radius:50%!important;" : "";
+    d.style.cssText=`left:${t.x}px;top:${t.y}px;width:${t.w||TW}px;height:${t.h||TH}px;background:${tc};${rad}`;
     d.title=t.sku+"  ·  "+groupName(t.g);
     d.innerHTML=`<span>${hl(t.sku,q)}</span>`+
       `<div class="abadge"></div>`+
       `<input type="color" class="colorchip" value="${tc}" title="${LBL.color}" />`+
       `<div class="ren" title="${LBL.sku}">✎</div>`+
       `<div class="rz" title="${LBL.size}"></div>`+
+      `<div class="shp" title="${LBL.shape}">${t.shape==="circle"?"◯":"▢"}</div>`+
       `<div class="del" title="${LBL.del}">×</div>`;
     if(selection.has(i)) d.classList.add("sel");
     frag.appendChild(d);
@@ -3198,6 +3284,7 @@ let pointers=new Map(), pinch=0;
 let panning=false, panStart=null, didPan=false;
 let tileDrag=null, bandDrag=null, resizeDrag=null;
 let bgEditing=false, bgTool="select", bgSel=null, bgDraw=null, bgMove=null, bgResize=null, bgRotate=null;
+let pendingStampIcon="forklift";
 let flashFlex=null;
 const flexZones=()=>(data.bg||[]).map((it,idx)=>({it,idx})).filter(o=>o.it.kind==="flex");
 const SHAPE_TOOLS=["rect","ellipse","diamond","triangle"];
@@ -3208,7 +3295,7 @@ function cen2(){const p=[...pointers.values()];return{x:(p[0].x+p[1].x)/2,y:(p[0
 
 stage.addEventListener("pointerdown",e=>{
   pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
-  if(pointers.size===2){ pinch=dist2(); panning=false; tileDrag=null; bandDrag=null; resizeDrag=null; bgDraw=bgMove=bgResize=bgRotate=null; return; }
+  if(pointers.size===2){ pinch=dist2(); panning=false; tileDrag=null; bandDrag=null; resizeDrag=null; bgDraw=bgMove=bgResize=bgRotate=bgLabelMove=null; return; }
   if(bgEditing){ bgPointerDown(e); return; }
   
   if(e.target.closest(".colorchip")) return;
@@ -3374,6 +3461,11 @@ function sameSizeSel(){ if(selection.size<2) return; const ids=[...selection]; c
 canvas.addEventListener("click",e=>{
   const ren=e.target.closest(".ren");
   if(ren){ e.stopPropagation(); if(!canEdit()) return; renameTile(+ren.closest(".tile").dataset.i); return; }
+  const shp=e.target.closest(".shp");
+  if(shp){ e.stopPropagation(); if(!canEdit()) return;
+    const i=+shp.closest(".tile").dataset.i, tile=data.tiles[i];
+    tile.shape = tile.shape==="circle" ? "square" : "circle";
+    save(); renderTiles(); paintSelection(); return; }
   const del=e.target.closest(".del");
   if(del){
     e.stopPropagation(); if(!canEdit()) return;
@@ -3400,6 +3492,7 @@ function renameTile(i){
   toast(t("tile.skuSet",{sku})+(dup?t("tile.skuDup"):""));
 }
 canvas.addEventListener("dblclick",e=>{
+  if(bgEditing && bgTool==="road"){ finishRoad(); return; }
   if(bgEditing){ const h=e.target.closest("[data-bi]"); if(h){ editBgLabel(+h.dataset.bi); } return; }
   if(!editing || !canEdit()) return; const tile=e.target.closest(".tile"); if(!tile) return;
   renameTile(+tile.dataset.i);
@@ -3419,14 +3512,28 @@ document.addEventListener("keydown",e=>{
     data.bg[bgSel]=translateItem(data.bg[bgSel],dx,dy,true); save(); drawBackground(); updateInspector(); return;
   }
   if(bgEditing && bgSel!=null && (e.key==="d"||e.key==="D") && (e.ctrlKey||e.metaKey)){ e.preventDefault(); duplicateBg(); return; }
+  if(bgEditing && bgTool==="road" && roadDraft){
+    if(e.key==="Enter"){ e.preventDefault(); finishRoad(); return; }
+    if(e.key==="Escape"){ e.preventDefault(); cancelRoad(); return; }
+  }
   if(e.key==="Escape"){ if(bgEditing){ bgSel=null; drawBackground(); updateInspector(); } clearSelection(); }
 });
 
+let roadDraft=null, bgLabelMove=null;
 function bgPointerDown(e){
   const w=toCanvas(e.clientX,e.clientY);
   if(bgTool==="label"){ const txt=prompt(t("bg.labelPrompt")); if(txt&&txt.trim()){ data.bg.push({type:"label",x:Math.round(w.x),y:Math.round(w.y),text:txt.trim(),size:22}); bgSel=data.bg.length-1; save(); drawBackground(); } return; }
-  if(bgTool==="door"){ const lb=prompt(t("bg.doorPrompt"),"#"); data.bg.push({type:"door",x:Math.round(w.x),y:Math.round(w.y),label:(lb||"").replace(/^DOOR\s*/i,"")||"#",vert:false}); bgSel=data.bg.length-1; save(); drawBackground(); return; }
+  if(bgTool==="door"){ const lb=prompt(t("bg.doorPrompt"),"#"); data.bg.push({type:"door",x:Math.round(w.x),y:Math.round(w.y),label:(lb||"").replace(/^DOOR\s*/i,"")||"#",vert:false,len:52}); bgSel=data.bg.length-1; save(); drawBackground(); return; }
+  if(bgTool==="stamp"){ data.bg.push({type:"stamp",x:Math.round(w.x),y:Math.round(w.y),icon:pendingStampIcon||"forklift",rot:0}); bgSel=data.bg.length-1; save(); drawBackground(); return; }
+  if(bgTool==="road"){
+    if(!roadDraft) roadDraft=[[Math.round(w.x),Math.round(w.y)]];
+    else roadDraft.push([Math.round(w.x),Math.round(w.y)]);
+    drawBackground(); return;
+  }
   if(SHAPE_TOOLS.includes(bgTool)||bgTool==="line"){ bgDraw={tool:bgTool,x0:w.x,y0:w.y,x:w.x,y:w.y}; stage.setPointerCapture(e.pointerId); return; }
+  const lblHit=e.target.closest("[data-lbl]");
+  if(lblHit){ bgSel=+lblHit.dataset.lbl; bgLabelMove={start:w, orig:JSON.parse(JSON.stringify(data.bg[bgSel]))};
+    showInspector(true); drawBackground(); updateInspector(); stage.setPointerCapture(e.pointerId); return; }
   const hEl=e.target.closest("[data-h]");
   if(hEl && bgSel!=null){
     const orig=JSON.parse(JSON.stringify(data.bg[bgSel]));
@@ -3443,6 +3550,12 @@ function bgPointerDown(e){
 function bgPointerMove(e){
   const w=toCanvas(e.clientX,e.clientY);
   if(bgDraw){ bgDraw.x=w.x; bgDraw.y=w.y; drawBackground(); return; }
+  if(bgLabelMove){
+    const it=JSON.parse(JSON.stringify(bgLabelMove.orig));
+    it.labelDx=(bgLabelMove.orig.labelDx||0)+(w.x-bgLabelMove.start.x);
+    it.labelDy=(bgLabelMove.orig.labelDy||0)+(w.y-bgLabelMove.start.y);
+    data.bg[bgSel]=it; drawBackground(); return;
+  }
   if(bgRotate){ data.bg[bgSel]=rotateItem(bgRotate.orig,w.x,w.y,e.shiftKey); drawBackground(); updateInspector(); return; }
   if(bgMove){
     const dx=w.x-bgMove.start.x, dy=w.y-bgMove.start.y;
@@ -3462,17 +3575,26 @@ function bgPointerUp(e){
     }
     drawBackground(); updateInspector(); return;
   }
+  if(bgLabelMove){ bgLabelMove=null; save(); drawBackground(); updateInspector(); }
   if(bgMove){ bgMove=null; bgGuides=[]; save(); drawBackground(); updateInspector(); }
   if(bgResize){ bgResize=null; save(); updateInspector(); }
   if(bgRotate){ bgRotate=null; save(); updateInspector(); }
 }
+function finishRoad(){
+  if(roadDraft && roadDraft.length>1){
+    data.bg.push({type:"poly",pts:roadDraft,closed:false,kind:"road"});
+    bgSel=data.bg.length-1; save(); setBgTool("select");
+  }
+  roadDraft=null; drawBackground(); updateInspector();
+}
+function cancelRoad(){ roadDraft=null; drawBackground(); }
 function translateItem(o,dx,dy,raw){ const it=JSON.parse(JSON.stringify(o));
   if(snap && !raw){ dx=Math.round(dx/12)*12; dy=Math.round(dy/12)*12; }
   dx=Math.round(dx); dy=Math.round(dy);
   if(it.type==="rect"){ it.x+=dx; it.y+=dy; }
   else if(it.type==="line"){ it.x1+=dx; it.y1+=dy; it.x2+=dx; it.y2+=dy; }
   else if(it.type==="circle"){ it.cx+=dx; it.cy+=dy; }
-  else if(it.type==="door"||it.type==="label"){ it.x+=dx; it.y+=dy; }
+  else if(it.type==="door"||it.type==="label"||it.type==="stamp"){ it.x+=dx; it.y+=dy; }
   else if(it.type==="poly"){ it.pts=it.pts.map(p=>[p[0]+dx,p[1]+dy]); }
   return it;
 }
@@ -3482,6 +3604,18 @@ function resizeItem(o,handle,wx,wy){
     let x=Math.round(wx), y=Math.round(wy);
     if(snap){ x=Math.round(x/12)*12; y=Math.round(y/12)*12; }
     if(handle==="p1"){ it.x1=x; it.y1=y; } else if(handle==="p2"){ it.x2=x; it.y2=y; }
+    return it;
+  }
+  if(it.type==="door"){
+    const half=(o.len||52)/2;
+    const other = o.vert
+      ? (handle==="p1"? o.y+half : o.y-half)
+      : (handle==="p1"? o.x+half : o.x-half);
+    let moving = o.vert? wy : wx;
+    if(snap) moving=Math.round(moving/12)*12;
+    const len=Math.max(20, Math.round(Math.abs(moving-other)));
+    it.len=len;
+    if(o.vert) it.y=Math.round((moving+other)/2); else it.x=Math.round((moving+other)/2);
     return it;
   }
   const b=itemBox(o);
@@ -3542,7 +3676,8 @@ function editBgLabel(idx){ const it=data.bg[idx]; if(!it) return; bgSel=idx;
   if(it.type==="label") it.text=v.trim()||"label"; else if(it.type==="door") it.label=v.trim().replace(/^DOOR\s*/i,"")||"#"; else it.label=v.trim();
   save(); drawBackground();
 }
-function setBgTool(t){ bgTool=t; document.querySelectorAll(".bgbar [data-tool]").forEach(b=>b.classList.toggle("on",b.dataset.tool===t)); }
+function setBgTool(tool){ if(bgTool==="road" && tool!=="road") roadDraft=null;
+  bgTool=tool; document.querySelectorAll(".bgbar [data-tool]").forEach(b=>b.classList.toggle("on",b.dataset.tool===tool)); drawBackground(); }
 
 const SHAPE_LABEL={rect:"Rectangle",ellipse:"Ellipse",diamond:"Diamond",triangle:"Triangle"};
 function rgbaToHex(c){
@@ -3564,9 +3699,10 @@ function updateInspector(){
   $("#iForm").style.display  = it? "block":"none";
   if(!it) { $("#iTitle").textContent="Shape"; $("#iKind").textContent="—"; return; }
   const isBox = it.type==="rect", isLine=it.type==="line", isText=it.type==="label",
-        isDoor= it.type==="door", isCirc=it.type==="circle", isPoly=it.type==="poly";
+        isDoor= it.type==="door", isCirc=it.type==="circle", isPoly=it.type==="poly",
+        isStamp=it.type==="stamp", isZoneLabel=isBox && !!it.label;
   $("#iTitle").textContent = isBox? (SHAPE_LABEL[it.shape||"rect"]) :
-    isLine?"Line": isText?"Text": isDoor?"Door": isCirc?"Circle":"Outline";
+    isLine?"Line": isText?"Text": isDoor?"Door": isCirc?"Circle": isStamp?"Stamp": (it.kind==="road"?"Road":"Outline");
   $("#iKind").textContent = it.kind||it.type;
   const s=styleFor(it);
   const show=(id,v)=>{ const el=$(id); if(el) el.style.display = v? "flex":"none"; };
@@ -3577,9 +3713,12 @@ function updateInspector(){
   show("#rowRx",    isBox && (it.shape||"rect")==="rect");
   show("#rowRot",   !isLine && !isPoly);
   show("#rowSize",  isBox||isCirc);
-  show("#rowLabel", !isPoly);
+  show("#rowLabel", !isPoly && !isStamp);
   show("#rowTsize", isText||isBox||isDoor);
-  
+  show("#rowDoorLen", isDoor);
+  show("#rowLabelOff", isZoneLabel);
+  if(isDoor) $("#iDoorLen").value = it.len||52;
+
   document.querySelectorAll("#shapeChips button").forEach(b=>b.classList.toggle("on", isBox && (it.shape||"rect")===b.dataset.shape));
   const fhex=rgbaToHex(it.fill!=null?it.fill:s.fill)||"#2b3542";
   $("#iFill").value=fhex;
@@ -3643,6 +3782,8 @@ function bindInsp(){
     inspSet(it=>{ if(it.type==="label") it.text=v; else if(it.type==="door") it.label=v.replace(/^DOOR\s*/i,""); else it.label=v; }); });
   $("#iTs").addEventListener("input",()=>{ const v=+$("#iTs").value; $("#iTsV").textContent=v;
     inspSet(it=>{ if(it.type==="label") it.size=v; else it.lsize=v; }); });
+  $("#iDoorLen").addEventListener("change",()=>{ const v=Math.max(20,+$("#iDoorLen").value||52); inspSet(it=>it.len=Math.round(v)); updateInspector(); });
+  $("#iLabelReset").onclick=()=>{ inspSet(it=>{ it.labelDx=0; it.labelDy=0; }); toast(t("bg.labelReset")); };
   $("#iDup").onclick=()=>duplicateBg();
   $("#iFront").onclick=()=>zOrder(1);
   $("#iBack").onclick=()=>zOrder(-1);
@@ -3780,6 +3921,16 @@ function setBgEditing(on){
 }
 $("#bgBtn").onclick=()=>{ if(!canEdit()){ toast(t("session.noPermission")); return; } setBgEditing(!bgEditing); closeDrawer(); };
 document.querySelectorAll(".bgbar [data-tool]").forEach(b=>b.onclick=()=>setBgTool(b.dataset.tool));
+(function initStampPicker(){
+  const pk=$("#stampPicker"), btn=$("#stampBtn");
+  const ICONS=Object.keys(STAMP_ICONS);
+  pk.innerHTML=ICONS.map(k=>`<button type="button" data-icon="${k}" title="${esc(t("bg.stampIcon."+k))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${STAMP_ICONS[k]}</svg></button>`).join("");
+  pk.querySelectorAll("button").forEach(b=>b.onclick=e=>{
+    e.stopPropagation(); pendingStampIcon=b.dataset.icon; setBgTool("stamp"); pk.hidden=true;
+  });
+  btn.onclick=e=>{ e.stopPropagation(); pk.hidden=!pk.hidden; };
+  document.addEventListener("click",e=>{ if(!e.target.closest("#stampGrp")) pk.hidden=true; });
+})();
 $("#bgDelBtn").onclick=()=>{ if(bgSel!=null){ data.bg.splice(bgSel,1); bgSel=null; save(); drawBackground(); updateInspector(); toast(t("bg.deleted")); } else toast(t("bg.selectFirst")); };
 $("#bgResetBtn").onclick=()=>{ if(!confirm(t("bg.resetConfirm"))) return; data.bg=DEFAULT_BG(); bgSel=null; save(); drawBackground(); updateInspector(); toast(t("bg.wasReset")); };
 
