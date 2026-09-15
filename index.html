@@ -1627,7 +1627,7 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "onboard.done": "Get started",
       "onboard.step": "Step {n} of {total}",
       "onboard.s1.title": "Find any product",
-      "onboard.s1.body": "Use the search bar at the top to find a SKU. Tap a tile on the map to see the product's details, photo, and current reports.",
+      "onboard.s1.body": "Use the search bar at the top to find a SKU. Tap a tile on the map to see the product's details, photo, and current reports. Turn on \"Show quantity\" in the menu to see inventory on-hand right on each tile.",
       "onboard.s2.title": "4 report types keep the yard organized",
       "onboard.s2.body": "Tap Report and choose the type that fits what you found:",
       "onboard.type.quality": "Quality — flag a defect or problem on a product",
@@ -1640,6 +1640,8 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "onboard.s4.body": "The bell icon shows every open report. Tap one to see its status, or use Control Center for the full picture of the yard.",
       "onboard.s5.title": "Editors: keep the map current",
       "onboard.s5.body": "As an editor you can move, resize, add, or remove products directly on the map, and manage the yard from Control Center.",
+      "onboard.s6.title": "Working under the sun",
+      "onboard.s6.body": "Tap the sun icon at the top (or Field mode in the menu) for a high-contrast view with bigger controls, built for using the app outdoors on the yard.",
       "onboard.help": "How to use",
     },
 
@@ -1986,7 +1988,7 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "onboard.done": "Comenzar",
       "onboard.step": "Paso {n} de {total}",
       "onboard.s1.title": "Encuentra cualquier producto",
-      "onboard.s1.body": "Usa la barra de búsqueda arriba para encontrar un SKU. Toca una casilla en el mapa para ver los detalles del producto, su foto y los reportes activos.",
+      "onboard.s1.body": "Usa la barra de búsqueda arriba para encontrar un SKU. Toca una casilla en el mapa para ver los detalles del producto, su foto y los reportes activos. Activa \"Mostrar cantidad\" en el menú para ver el inventario disponible directamente en cada casilla.",
       "onboard.s2.title": "4 tipos de reporte para organizar la yarda",
       "onboard.s2.body": "Toca Reportar y elige el tipo que corresponda a lo que encontraste:",
       "onboard.type.quality": "Calidad — marca un defecto o problema en un producto",
@@ -1999,6 +2001,8 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "onboard.s4.body": "El ícono de campana muestra todos los reportes abiertos. Toca uno para ver su estado, o usa el Centro de Control para ver todo el panorama del yard.",
       "onboard.s5.title": "Editores: mantengan el mapa al día",
       "onboard.s5.body": "Como editor puedes mover, redimensionar, agregar o quitar productos directamente en el mapa, y administrar el yard desde el Centro de Control.",
+      "onboard.s6.title": "Trabajar bajo el sol",
+      "onboard.s6.body": "Toca el ícono de sol arriba (o Modo campo en el menú) para una vista de alto contraste y controles más grandes, pensada para usar la app afuera en la yarda.",
       "onboard.help": "Cómo usar la app",
     },
   };
@@ -4999,6 +5003,8 @@ async function startApp(){
   if(canEdit()) checkNewSignups();
   loadAnnounceBar();
   setInterval(loadAnnounceBar, 5*60*1000);
+  try{ window.YardInventory?.loadServer?.(); }catch(e){}
+  setInterval(() => { try{ window.YardInventory?.loadServer?.(); }catch(e){} }, 5*60*1000);
 
   // Flush any queued remote update as soon as the user stops dragging.
   stage.addEventListener("pointerup", () => {
@@ -5381,7 +5387,24 @@ boot();
     };
     saveInventoryState(state);
     refreshInventoryUI();
+    pushServerInventory(state);
     return state;
+  }
+
+  // Uploading the report locally only ever helped the device that did the
+  // upload -- push it to the server too so every other device picks it up
+  // on its own next refresh, the same way editors already expect map edits
+  // and alerts to show up everywhere.
+  async function pushServerInventory(state){
+    try{
+      if(!window.Sync || typeof Sync.api !== "function") return;
+      if(typeof canEdit === "function" && !canEdit()) return;
+      const r = await Sync.api("inventory", {method:"PUT", body: JSON.stringify({data: state})});
+      if(r.ok && r.body && typeof r.body.rev === "number"){
+        state.serverRev = r.body.rev;
+        saveInventoryState(state);
+      }
+    }catch(e){}
   }
 
   /** Stores SKU→image-URL pairs on the catalog so they outlive report imports. */
@@ -5651,11 +5674,31 @@ boot();
     return true;
   }
 
+  // The server-side inventory endpoint (api/inventory.js) and
+  // applyServerInventoryState() above both already existed, built for a
+  // future Power Automate daily import -- but nothing ever actually called
+  // GET /api/inventory, so every device stayed on whatever file someone
+  // happened to upload locally, or nothing at all. This is the missing
+  // glue: fetch the shared snapshot and apply it if there is one, so a
+  // fresh device sees the same on-hand quantities as everyone else without
+  // an admin re-uploading the report there by hand. A manually-loaded local
+  // file still shows immediately; this just overlays the shared one once
+  // it's fetched (or leaves the local file alone if nothing has been
+  // imported to the server yet).
+  async function loadServerInventory(){
+    try{
+      if(!window.Sync || typeof Sync.api !== "function") return;
+      const r = await Sync.api("inventory");
+      if(r.ok && r.body && r.body.data) applyServerInventoryState(r.body.rev, r.body.data);
+    }catch(e){}
+  }
+
   window.YardInventory = {
     get: inventoryForSku,
     getState: () => inventoryState,
     importFile: importInventoryFile,
     applyServerState: applyServerInventoryState,
+    loadServer: loadServerInventory,
     refresh: refreshInventoryUI,
     storageKey: STORAGE_KEY,
     // Catalog surface used by the SKU picker, tile badges and the audit panel.
@@ -10014,6 +10057,7 @@ body.fieldmode .tnav-ico{width:27px;height:27px}
     scan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8V5.6A2.6 2.6 0 0 1 5.6 3H8M16 3h2.4A2.6 2.6 0 0 1 21 5.6V8M21 16v2.4a2.6 2.6 0 0 1-2.6 2.6H16M8 21H5.6A2.6 2.6 0 0 1 3 18.4V16"/><path d="M7.4 8.6v6.8M10.6 8.6v6.8M13.4 8.6v6.8M16.6 8.6v6.8"/></svg>',
     bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
     edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16.4 3.9a2.1 2.1 0 0 1 3 3L8.2 18.1l-4 1 1-4Z"/><path d="m14.4 5.9 3 3"/></svg>',
+    sun: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.6M12 18.8v2.6M21.4 12h-2.6M5.2 12H2.6M18.6 5.4l-1.8 1.8M7.2 16.8l-1.8 1.8M18.6 18.6l-1.8-1.8M7.2 7.2 5.4 5.4"/></svg>',
   };
   const TYPE_ICO = {
     quality: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 22 12 12 22 2 12"/></svg>',
@@ -10027,6 +10071,7 @@ body.fieldmode .tnav-ico{width:27px;height:27px}
     { ico: ICO.report, title: "onboard.s2.title", body: "onboard.s2.body", typeList: true },
     { ico: ICO.scan,   title: "onboard.s3.title", body: "onboard.s3.body" },
     { ico: ICO.bell,   title: "onboard.s4.title", body: "onboard.s4.body" },
+    { ico: ICO.sun,    title: "onboard.s6.title", body: "onboard.s6.body" },
     { ico: ICO.edit,   title: "onboard.s5.title", body: "onboard.s5.body", editorOnly: true },
   ];
   let idx = 0, steps = STEPS;
