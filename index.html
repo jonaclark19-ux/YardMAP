@@ -1660,10 +1660,11 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "photos.colGroup": "Group",
       "photos.colSearch": "Find photo (click)",
       "photos.colImage": "Image — paste the URL here",
-      "photos.groupPrompt": "Which group do you want the photo sheet for?\nLeave it blank for the whole map.\n\nGroups: {groups}",
+      "photos.groupPrompt": "Which product group do you want the photo sheet for?\nLeave it blank for the whole report.\n\nGroups: {groups}",
       "photos.groupUnknown": "No group matches “{q}”",
       "photos.templateReady": "Sheet downloaded — {n} products still need a photo",
       "photos.allDone": "Every product already has a photo",
+      "photos.noReport": "Load the TGU FG Report first — the photo sheet lists every product from it.",
       "photos.noRows": "No rows with a product and an image URL were found",
       "photos.imported": "{n} photos loaded",
       "photos.alreadySet": "Nothing to change — those {n} products already had that photo",
@@ -2044,10 +2045,11 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "photos.colGroup": "Grupo",
       "photos.colSearch": "Buscar foto (clic)",
       "photos.colImage": "Imagen — pega aquí la URL",
-      "photos.groupPrompt": "¿De qué grupo quieres la hoja de fotos?\nDéjalo vacío para todo el mapa.\n\nGrupos: {groups}",
+      "photos.groupPrompt": "¿De qué grupo de producto quieres la hoja de fotos?\nDéjalo vacío para todo el reporte.\n\nGrupos: {groups}",
       "photos.groupUnknown": "Ningún grupo coincide con “{q}”",
       "photos.templateReady": "Hoja descargada — {n} productos sin foto",
       "photos.allDone": "Todos los productos ya tienen foto",
+      "photos.noReport": "Carga primero el TGU FG Report — la hoja de fotos lista cada producto que aparece ahí.",
       "photos.noRows": "No se encontraron filas con producto y URL de imagen",
       "photos.imported": "{n} fotos cargadas",
       "photos.alreadySet": "No había nada que cambiar — esos {n} productos ya tenían esa foto",
@@ -4190,35 +4192,44 @@ $("#xlsFile").onchange=e=>{
   rd.readAsArrayBuffer(f); e.target.value="";
 };
 
-/* ===== Fotos en lote: plantilla de Excel + carga masiva por SKU ===== */
+/* ===== Fotos en lote: plantilla de Excel + carga masiva por SKU =====
+   The sheet lists every SKU from the loaded TGU FG Report (the catalog),
+   not just products already placed on the map -- so it grows on its own
+   the next time someone loads a newer report, instead of staying stuck
+   at whatever was on the map the day it was generated. Photo URLs are
+   stored on the catalog itself (YardInventory.mergePhotos), keyed by SKU,
+   so they survive future report imports even for products with no tile. */
 
-/** One row per distinct SKU. `onlyMissing` skips products that already have a photo. */
-function photoRows(onlyMissing, gid){
-  const seen=new Set(), rows=[];
-  data.tiles.forEach(t=>{
-    if(gid && t.g!==gid) return;
-    const sku=String(t.sku||"").trim(); if(!sku) return;
-    const k=normCode(sku); if(!k || seen.has(k)) return; seen.add(k);
-    if(onlyMissing && t.img) return;
-    rows.push([sku, groupName(t.g)||t.g||"", imageSearchUrl(sku), t.img||""]);
+/** One row per catalog SKU. `onlyMissing` skips products that already have a photo. */
+function photoRows(onlyMissing, productGroup){
+  const cat=window.YardInventory, state=cat&&cat.getState&&cat.getState();
+  const items=(state&&state.items)||{};
+  const rows=[];
+  Object.keys(items).forEach(sku=>{
+    const it=items[sku]||{};
+    if(productGroup && (it.productGroup||"").toLowerCase()!==productGroup.toLowerCase()) return;
+    if(onlyMissing && it.img) return;
+    rows.push([sku, it.productGroup||it.description||"", imageSearchUrl(sku), it.img||""]);
   });
   return rows.sort((a,b)=>a[0].localeCompare(b[0],undefined,{numeric:true}));
 }
 
-/** Ask which group to export; blank means the whole map. Matches by name or id. */
+/** Ask which product group to export; blank means the whole report. */
 function askPhotoGroup(){
-  const names=(data.groups||[]).map(g=>g.name).filter(Boolean).join(", ");
-  const v=prompt(t("photos.groupPrompt",{groups:names}), "");
+  const cat=window.YardInventory, state=cat&&cat.getState&&cat.getState();
+  const items=(state&&state.items)||{};
+  const groups=[...new Set(Object.values(items).map(it=>it.productGroup).filter(Boolean))].sort();
+  const v=prompt(t("photos.groupPrompt",{groups:groups.join(", ")}), "");
   if(v==null) return undefined;                       // cancelled
   const q=v.trim(); if(!q) return null;               // all groups
-  const g=(data.groups||[]).find(x=>
-    x.id.toLowerCase()===q.toLowerCase() ||
-    (x.name||"").toLowerCase().includes(q.toLowerCase()));
+  const g=groups.find(x=>x.toLowerCase()===q.toLowerCase() || x.toLowerCase().includes(q.toLowerCase()));
   if(!g){ toast(t("photos.groupUnknown",{q})); return undefined; }
-  return g.id;
+  return g;
 }
 
 function downloadPhotoTemplate(){
+  const cat=window.YardInventory, state=cat&&cat.getState&&cat.getState();
+  if(!state||!state.items||!Object.keys(state.items).length){ toast(t("photos.noReport")); return; }
   const gid=askPhotoGroup(); if(gid===undefined) return;
   const rows=photoRows(true, gid);
   if(!rows.length){ toast(t("photos.allDone")); return; }
