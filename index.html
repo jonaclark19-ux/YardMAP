@@ -3882,6 +3882,10 @@ $("#mtoPickOk").onclick=()=>{
   cb(bi);
 };
 
+/* Baseline "Add" handler -- the tarter-catalog-ux-js script below replaces
+   this with a searchable SKU picker once it loads; this bare-prompt version
+   only runs if that script is ever missing. Both paths share
+   confirmNotDuplicate/openMtoPick above. */
 $("#addBtn").onclick=()=>{
   if(!canEdit()){ toast(t("session.noPermission")); return; }
   const v=prompt(t("tile.addPrompt")); if(!v) return;
@@ -7578,6 +7582,7 @@ ${bodyHtml}
       continue: "Add it anyway",
       cancel: "Cancel",
       onMap: "already on the map",
+      inMto: "in MTO: {zone}",
       onHand: "On hand",
       noQty: "no quantity in this report",
       badges: "On-hand badges",
@@ -7608,6 +7613,7 @@ ${bodyHtml}
       continue: "Agregarlo de todos modos",
       cancel: "Cancelar",
       onMap: "ya está en el mapa",
+      inMto: "en MTO: {zone}",
       onHand: "Inventario",
       noQty: "sin cantidad en este reporte",
       badges: "Mostrar inventario",
@@ -7664,6 +7670,7 @@ ${bodyHtml}
 .skup-row .tag{display:inline-block;margin-left:7px;padding:1px 6px;border-radius:9px;font-size:9.5px;
   font-weight:800;letter-spacing:.4px;background:var(--panel2);color:var(--muted2);border:1px solid var(--line)}
 .skup-row .tag.here{color:var(--amber);border-color:rgba(255,192,46,.4);background:var(--amber-soft)}
+.skup-row .tag.mto{color:#C98A2E;border-color:rgba(201,138,46,.4);background:rgba(201,138,46,.14)}
 .skup-row .qty{margin-left:auto;flex:none;text-align:right;font-family:var(--display);
   font-size:21px;font-weight:800;line-height:1}
 .skup-row .qty small{display:block;font-family:var(--body);font-size:9.5px;font-weight:700;
@@ -7780,6 +7787,12 @@ body.showqty .tile .qbadge{display:block}
 
     const rows = search(raw);
     const placed = tileSkus();
+    const mtoZoneOf = sku => {
+      try {
+        for(const z of flexZones()){ if((z.it.skus||[]).some(s => norm(s) === norm(sku))) return z.it.label || "MTO"; }
+      } catch(e){}
+      return null;
+    };
     /* The escape hatch only appears once the typed code is genuinely a dead
        end. While it is still the prefix of a real SKU the operator is midway
        through typing, and offering to invent a code there is a trap. */
@@ -7792,9 +7805,11 @@ body.showqty .tile .qbadge{display:block}
     }
     list.innerHTML = rows.map(r => {
       const here = placed.has(norm(r.sku));
+      const mtoZone = mtoZoneOf(r.sku);
       const tags = [
         r.abc ? `<span class="tag">${escC(r.abc)}</span>` : "",
-        here ? `<span class="tag here">${escC(tx("onMap"))}</span>` : ""
+        here ? `<span class="tag here">${escC(tx("onMap"))}</span>` : "",
+        mtoZone ? `<span class="tag mto">${escC(tx("inMto",{zone:mtoZone}))}</span>` : ""
       ].join("");
       return `<button class="skup-row" data-sku="${escC(r.sku)}">
         <div><div class="sk">${escC(r.sku)}${tags}</div>
@@ -7891,6 +7906,17 @@ body.showqty .tile .qbadge{display:block}
       openSkuPicker({
         title: tx("addTitle"),
         onPick: sku => {
+          if(typeof confirmNotDuplicate === "function" && !confirmNotDuplicate(sku)) return;
+          if(typeof openMtoPick === "function" && confirm(t("tile.addAskMto", {sku}))){
+            openMtoPick(sku, bi => {
+              const zone = data.bg[bi]; zone.skus = zone.skus || [];
+              if(!zone.skus.includes(sku)) zone.skus.push(sku);
+              save(); drawBackground();
+              try { rebuildSkuList(); } catch(e){}
+              say(t("mto.added", {n: 1, zone: zone.label || "MTO"}));
+            });
+            return;
+          }
           const r = stage.getBoundingClientRect();
           const c = toCanvas(r.left + r.width / 2, r.top + r.height / 2);
           data.tiles.push({sku, x: Math.round(c.x - TW / 2), y: Math.round(c.y - TH / 2), g: "X"});
