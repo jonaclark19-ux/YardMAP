@@ -5757,6 +5757,13 @@ boot();
 .ops-field input,.ops-field select,.ops-field textarea{width:100%;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);padding:10px 11px;font-size:17px;font-family:var(--body);outline:none}
 .ops-field textarea{min-height:76px;resize:vertical}
 .ops-field input:focus,.ops-field select:focus,.ops-field textarea:focus{border-color:var(--amber);box-shadow:0 0 0 3px var(--amber-soft)}
+.ops-field.field-invalid label{color:#e33a32}
+.ops-field.field-invalid input,.ops-field.field-invalid select,.ops-field.field-invalid textarea,.fld.field-invalid input{border-color:#e33a32!important;background:#fff3f2!important;box-shadow:0 0 0 3px rgba(227,58,50,.18)!important}
+.ops-field .field-invalid-msg,.fld .field-invalid-msg{display:none;font-size:12px;font-weight:700;color:#e33a32;margin-top:2px}
+.ops-field.field-invalid .field-invalid-msg,.fld.field-invalid .field-invalid-msg{display:block}
+.ops-location.field-invalid{border-color:#e33a32;background:#fff3f2;color:#e33a32}
+@keyframes fieldShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-4px)}40%{transform:translateX(4px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+.field-invalid input,.field-invalid select{animation:fieldShake .32s}
 .ops-scan-btn{height:43px;min-width:104px;border:1px solid var(--amber);border-radius:10px;background:rgba(255,190,54,.1);color:var(--amber);font-weight:800;padding:0 12px}
 .ops-sku-status{border:1px solid var(--line);border-radius:11px;background:var(--panel);padding:10px 12px;font-size:13.5px;line-height:1.5;color:var(--muted2)}
 .ops-sku-status strong{color:var(--ink)}
@@ -6278,9 +6285,33 @@ boot();
     }
   }
 
+  function clearFieldInvalid(el){
+    if(!el)return;
+    const wrap=el.closest?el.closest(".ops-field,.fld,.ops-location"):null;
+    if(wrap)wrap.classList.remove("field-invalid");
+  }
+  function markFieldInvalid(el,msg){
+    if(!el)return;
+    const wrap=(el.closest?el.closest(".ops-field,.fld,.ops-location"):null)||el;
+    wrap.classList.add("field-invalid");
+    let m=wrap.querySelector?wrap.querySelector(".field-invalid-msg"):null;
+    if(!m&&wrap.appendChild){m=document.createElement("div");m.className="field-invalid-msg";wrap.appendChild(m);}
+    if(m)m.textContent=msg;
+    if(el.addEventListener){
+      const clear=()=>{wrap.classList.remove("field-invalid");el.removeEventListener("input",clear);el.removeEventListener("change",clear);};
+      el.addEventListener("input",clear);el.addEventListener("change",clear);
+    }
+  }
+  function clearAllFieldInvalid(root){
+    (root||document).querySelectorAll(".field-invalid").forEach(el=>el.classList.remove("field-invalid"));
+  }
+
   async function submitOpsReport(){
+    clearAllFieldInvalid(document.getElementById("opsReportModal"));
     if(!reportCtxV2||!reportCtxV2.type){toast("Choose a report type.");return;}
-    const raw=document.getElementById("opsSkuInput").value.trim(); if(!raw){toast("Scan or enter a SKU.");return;}
+    const skuEl=document.getElementById("opsSkuInput");
+    const raw=skuEl.value.trim();
+    if(!raw){markFieldInvalid(skuEl,"Required — scan or enter a SKU.");skuEl.focus();skuEl.scrollIntoView({behavior:"smooth",block:"center"});toast("Scan or enter a SKU.");return;}
     const r=resolveSku(raw); const sku=r.found?r.sku:raw.toUpperCase(); const type=reportCtxV2.type;
     const system=inventorySystemQty(sku); const info=mapInfoForSku(sku); const now=new Date().toISOString();
     const payload={
@@ -6291,15 +6322,25 @@ boot();
       timeline:[{status:"new",at:now,by:currentUser()}],hasPhoto:!!selectedPhotoFile
     };
     if(type==="quality"||type==="seconds"||type==="out_of_place"){
-      const q=num(document.getElementById("opsQty")?.value); if(q==null||q<=0){toast("Enter a quantity greater than 0.");return;} payload.quantity=q;
+      const qtyEl=document.getElementById("opsQty");
+      const q=num(qtyEl?.value);
+      if(q==null||q<=0){markFieldInvalid(qtyEl,"Required — enter a quantity greater than 0.");qtyEl.focus();qtyEl.scrollIntoView({behavior:"smooth",block:"center"});toast("Enter a quantity greater than 0.");return;}
+      payload.quantity=q;
     }
     if(type==="quality"||type==="seconds") payload.reason=document.getElementById("opsReason")?.value||"Other";
     if(type==="inventory"){
-      const physical=num(document.getElementById("opsPhysicalQty")?.value); if(physical==null||physical<0){toast("Enter the physical quantity.");return;}
+      const physEl=document.getElementById("opsPhysicalQty");
+      const physical=num(physEl?.value);
+      if(physical==null||physical<0){markFieldInvalid(physEl,"Required — enter the physical quantity.");physEl.focus();physEl.scrollIntoView({behavior:"smooth",block:"center"});toast("Enter the physical quantity.");return;}
       const c=classifyInventory(system,physical); payload.physicalQuantity=physical; payload.variance=c?.variance??null; payload.variancePercent=c?.pct??null; payload.inventoryResult=c?.code||"reported";
       payload.priority=(c&&c.variance!=null&&Math.abs(c.variance)>=50)?"high":(c&&c.variance!=null&&Math.abs(c.variance)>=11)?"normal":"low";
     }
-    if(type==="out_of_place"&&!payload.foundAt){toast("Pick the location where you found the product.");return;}
+    if(type==="out_of_place"&&!payload.foundAt){
+      const locEl=document.getElementById("opsFoundLocation");
+      markFieldInvalid(locEl,"Required — pick the location on the map.");
+      locEl?.scrollIntoView({behavior:"smooth",block:"center"});
+      toast("Pick the location where you found the product.");return;
+    }
 
     const res=await Sync.addAlert(payload); const alert=res&&res.alert;
     if(alert&&selectedPhotoFile){
