@@ -33,14 +33,30 @@ async function handleGet(request) {
   return json({ rev: Number(row?.rev || 0), data: row?.data || null, updatedAt: row?.updated_at || null });
 }
 
+// xlsx files are zip archives, so a correctly-decoded one always starts
+// with the "PK" local-file-header signature.
+function isZipBuffer(buffer) {
+  return buffer.length > 4 && buffer[0] === 0x50 && buffer[1] === 0x4b;
+}
+
 async function handleImport(request) {
   checkImportSecret(request);
   const body = await readJson(request, 25_000_000);
   const fileName = String(body.fileName || "inventory.xlsx").slice(0, 200);
   const base64 = String(body.fileBase64 || body.dataBase64 || "");
   if (!base64) return json({ error: "missing_file" }, 400);
-  const buffer = Buffer.from(base64, "base64");
+  let buffer = Buffer.from(base64, "base64");
   if (buffer.length > 20_000_000) return json({ error: "file_too_large" }, 413);
+
+  // Some automation tools (observed with Power Automate's HTTP action
+  // against certain attachment expressions) end up base64-encoding the
+  // already-base64 text a second time instead of the raw file bytes. That
+  // still decodes to *something*, just not a zip -- so if the first pass
+  // doesn't look like one, try unwrapping it once more before giving up.
+  if (!isZipBuffer(buffer)) {
+    const doubleDecoded = Buffer.from(buffer.toString("utf8"), "base64");
+    if (isZipBuffer(doubleDecoded)) buffer = doubleDecoded;
+  }
 
   const state = parseInventoryWorkbook(buffer, fileName);
   const rev = (await currentRev()) + 1;
