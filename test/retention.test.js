@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
    Getting one of those wrong deletes the wrong rows, which is the failure
    that matters and the one a live test could not safely reproduce. */
 
-const RESOLVED_DAYS = 21;
+const RESOLVED_DAYS = 30;
 const daysAgo = (n) => new Date(Date.now() - n * 86400000).toISOString();
 
 test("the resolved-alert sweep filters on resolved AND older than the window", () => {
@@ -19,12 +19,15 @@ test("the resolved-alert sweep filters on resolved AND older than the window", (
   assert.doesNotMatch(query, /status=eq\.(new|acknowledged|in_progress)/);
 });
 
-test("the window boundary lands where three weeks says it should", () => {
+test("the window boundary lands where thirty days says it should", () => {
   const cutoff = new Date(daysAgo(RESOLVED_DAYS)).getTime();
-  const twentyDaysOld = Date.now() - 20 * 86400000;
-  const twentyTwoDaysOld = Date.now() - 22 * 86400000;
-  assert.ok(twentyDaysOld > cutoff, "a 20-day-old resolved report is kept");
-  assert.ok(twentyTwoDaysOld < cutoff, "a 22-day-old resolved report is purged");
+  const twentyNineDaysOld = Date.now() - 29 * 86400000;
+  const thirtyOneDaysOld = Date.now() - 31 * 86400000;
+  assert.ok(twentyNineDaysOld > cutoff, "a 29-day-old resolved report is kept");
+  assert.ok(thirtyOneDaysOld < cutoff, "a 31-day-old resolved report is purged");
+  // The window has to cover repeatedSkus(days=30) or a SKU resolved early in
+  // the month stops counting toward its own repeat detection.
+  assert.ok(RESOLVED_DAYS >= 30, "must not fall below the repeat-SKU window");
 });
 
 test("photo paths are recovered from the public URL the report stored", () => {

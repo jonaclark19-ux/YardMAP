@@ -81,9 +81,12 @@ function summaryHtml(items, sinceDate) {
    and by recency, whichever is more generous, so a heavy editing day never
    eats the previous week's restore points.
 
-   Every window is env-tunable. Defaults match what the yard asked for:
-   three weeks for resolved reports and for the audit trail. */
-const RESOLVED_DAYS = Math.max(1, Number(process.env.RETENTION_RESOLVED_DAYS || 21));
+   Every window is env-tunable. Resolved reports are kept 30 days rather
+   than the three weeks first asked for, because repeat-SKU detection runs
+   on a 30-day window: at 21 days a SKU resolved on day 1 and reported
+   again on day 25 would stop being flagged as repeating. The audit trail
+   has no such reader, so it keeps the three weeks. */
+const RESOLVED_DAYS = Math.max(1, Number(process.env.RETENTION_RESOLVED_DAYS || 30));
 const AUDIT_DAYS = Math.max(1, Number(process.env.RETENTION_AUDIT_DAYS || 21));
 const HISTORY_KEEP = Math.max(20, Number(process.env.RETENTION_HISTORY_KEEP || 100));
 const HISTORY_DAYS = Math.max(1, Number(process.env.RETENTION_HISTORY_DAYS || 30));
