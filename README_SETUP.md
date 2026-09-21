@@ -32,6 +32,25 @@ No subas claves, contraseñas o secretos a GitHub.
 Nunca debes pegar en GitHub ni dentro de `index.html` valores como:
 
 - `SUPABASE_SECRET_KEY`
+
+### Retención de datos (opcional)
+
+La limpieza automática corre todos los días a las 7:00 UTC y usa estos
+valores por defecto. Solo necesitas definirlos si quieres cambiarlos:
+
+- `RETENTION_RESOLVED_DAYS` — días que se conserva un reporte **resuelto**
+  antes de borrarse, junto con su foto. Por defecto `30`. Los reportes
+  abiertos o sin resolver **nunca** se borran, sin importar su antigüedad.
+  No conviene bajarlo de 30: la detección de SKUs repetidos usa una ventana
+  de 30 días, y por debajo de eso deja de marcar productos que se vuelven
+  a reportar dentro del mismo mes.
+- `RETENTION_AUDIT_DAYS` — días que se conserva el registro de auditoría.
+  Por defecto `21`.
+- `RETENTION_HISTORY_KEEP` — cuántas revisiones del mapa se conservan
+  siempre, para poder restaurar. Por defecto `100`.
+- `RETENTION_HISTORY_DAYS` — días que se conserva una revisión del mapa
+  aunque ya no esté entre las últimas `RETENTION_HISTORY_KEEP`. Por
+  defecto `30`. Una revisión se borra solo si cumple **ambas** condiciones.
 - `SESSION_SECRET`
 - `BOOTSTRAP_ADMIN_CODE`
 
