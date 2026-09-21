@@ -235,6 +235,24 @@ Si existen las tablas y el bucket, Supabase está preparado.
 
 No debería ser un problema. El archivo está diseñado para poder volver a ejecutarse sin recrear las tablas existentes.
 
+## Paso 3.5 — Ejecutar las migraciones
+
+Además de `schema.sql`, la carpeta `supabase/` trae migraciones que agregan
+funciones nuevas sobre ese esquema base. Ejecútalas en el mismo SQL Editor,
+una por una, con el mismo procedimiento de copiar y pegar:
+
+```text
+supabase/migration-ops-v2.sql
+supabase/migration-inventory.sql
+supabase/migration-email-groups.sql
+```
+
+Cada una se puede volver a ejecutar sin problema si tienes dudas de si ya
+la corriste. `migration-email-groups.sql` crea la tabla `email_groups`, que
+es la que guarda los grupos de correo del Centro de Control; sin ella, la
+sección **Datos → Grupos de correo** aparecerá vacía y los envíos seguirán
+funcionando solo con correos escritos a mano.
+
 ---
 
 # PARTE 4 — OBTENER LOS DATOS DE SUPABASE QUE NECESITA VERCEL

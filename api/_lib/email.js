@@ -1,6 +1,9 @@
 import nodemailer from "nodemailer";
+import { rest } from "./db.js";
 
 let cachedTransporter = null;
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function config() {
   const host = process.env.SMTP_HOST || "";
@@ -36,6 +39,30 @@ export function parseRecipients(raw, max = 20) {
     .map((s) => s.trim())
     .filter((s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s))
     .slice(0, max);
+}
+
+/* Resolving a saved group's addresses on the server, rather than letting the
+   client post the addresses it happens to be showing, means a group edited a
+   minute ago still sends to the right people, and a stale tab cannot mail a
+   member who was just removed. Unknown ids are ignored: a group deleted while
+   someone had the modal open should not fail their send. */
+export async function recipientsFromGroups(groupIds, max = 100) {
+  const ids = (Array.isArray(groupIds) ? groupIds : [groupIds])
+    .map((id) => String(id || "").trim())
+    .filter((id) => UUID_RE.test(id))
+    .slice(0, 20);
+  if (!ids.length) return [];
+  const filter = `id=in.(${ids.map(encodeURIComponent).join(",")})`;
+  const { data } = await rest("email_groups", `${filter}&select=emails&limit=20`);
+  const flat = (data || []).flatMap((row) => (Array.isArray(row.emails) ? row.emails : []));
+  return parseRecipients(flat.join(","), max);
+}
+
+/* One place to turn "whatever the send modal posted" into a recipient list:
+   the groups the user ticked, plus any addresses they typed by hand. */
+export async function resolveRecipients({ to, groupIds }, max = 100) {
+  const merged = [...(await recipientsFromGroups(groupIds, max)), ...parseRecipients(to, max)];
+  return [...new Set(merged.map((e) => e.toLowerCase()))].slice(0, max);
 }
 
 export async function sendMail({ to, subject, html, text, attachments }) {
