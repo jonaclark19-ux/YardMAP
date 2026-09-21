@@ -2,7 +2,7 @@ import { requireEditor, requireUser } from "./_lib/auth.js";
 import { getMeta, rest, rpc } from "./_lib/db.js";
 import { audit } from "./_lib/audit.js";
 import { alertToClient, mapAlertInput, mergePayload } from "./_lib/models.js";
-import { esc, parseRecipients, sendMail } from "./_lib/email.js";
+import { esc, resolveRecipients, sendMail } from "./_lib/email.js";
 import { json, readJson, errorResponse, methodNotAllowed } from "./_lib/http.js";
 
 /* Combines the alerts CRUD endpoint with the recurring-issues report and
@@ -123,6 +123,11 @@ async function handleRecurring(request) {
   return json({ days, items: (rows || []).filter((r) => Number(r.report_count || 0) >= 2).slice(0, 50) });
 }
 
+// Rendered width of the report photo inside the email body. Small enough
+// that the details table above it stays the focus of the message, and
+// still legible for the defect it documents.
+const PHOTO_EMAIL_WIDTH = 300;
+
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // Alert emails always render in English, regardless of which language the
@@ -188,7 +193,14 @@ function alertHtml(a, user, note) {
       <td style="padding:6px 12px;border:1px solid #ddd;font-weight:600;background:#f4f4f4">${esc(k)}</td>
       <td style="padding:6px 12px;border:1px solid #ddd">${esc(v)}</td>
     </tr>`).join("");
-  const photo = a.photoUrl ? `<p><img src="cid:alertphoto" alt="photo" style="max-width:480px;border:1px solid #ddd;border-radius:6px"/></p>` : "";
+  // Outlook (and several mobile clients) ignore CSS max-width on images and
+  // paint them at their natural size -- a phone camera shot then fills the
+  // whole message. The width *attribute* is the one sizing hint every client
+  // honours, so it carries the real constraint and the CSS only keeps the
+  // image from overflowing a narrow screen.
+  const photo = a.photoUrl
+    ? `<p><img src="cid:alertphoto" alt="photo" width="${PHOTO_EMAIL_WIDTH}" style="width:${PHOTO_EMAIL_WIDTH}px;max-width:100%;height:auto;border:1px solid #ddd;border-radius:6px"/></p>`
+    : "";
   const shared = note ? `<p style="color:#444"><strong>Message from ${esc(user.name)}:</strong> ${esc(note)}</p>` : "";
   return `
     <div style="font-family:Arial,Helvetica,sans-serif;color:#111">
@@ -223,7 +235,7 @@ async function handleEmail(request) {
   const id = String(body.id || "");
   if (!id) return json({ error: "missing_id" }, 400);
   if (!UUID_RE.test(id)) return json({ error: "not_found" }, 404);
-  const to = parseRecipients(body.to);
+  const to = await resolveRecipients({ to: body.to, groupIds: body.groupIds });
   if (!to.length) return json({ error: "invalid_recipients" }, 400);
   const note = String(body.note || "").trim().slice(0, 1000);
 

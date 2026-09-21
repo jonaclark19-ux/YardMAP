@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { esc, parseRecipients } from "../api/_lib/email.js";
+import { esc, parseRecipients, recipientsFromGroups, resolveRecipients } from "../api/_lib/email.js";
 
 test("parseRecipients accepts comma, semicolon, or whitespace separated addresses", () => {
   assert.deepEqual(
@@ -32,4 +32,36 @@ test("esc coerces non-string input instead of throwing", () => {
   assert.equal(esc(null), "");
   assert.equal(esc(undefined), "");
   assert.equal(esc(42), "42");
+});
+
+test("recipientsFromGroups short-circuits on ids that are not uuids", async () => {
+  // Nothing plausible to look up means no database round trip at all, which
+  // is also what keeps this assertion from needing Supabase configured.
+  assert.deepEqual(await recipientsFromGroups([]), []);
+  assert.deepEqual(await recipientsFromGroups(["", "not-a-uuid", 42]), []);
+  assert.deepEqual(await recipientsFromGroups(undefined), []);
+});
+
+test("resolveRecipients returns the hand-typed addresses when no group is picked", async () => {
+  assert.deepEqual(
+    await resolveRecipients({ to: "a@x.com, b@x.com", groupIds: [] }),
+    ["a@x.com", "b@x.com"],
+  );
+});
+
+test("resolveRecipients lowercases and de-duplicates", async () => {
+  assert.deepEqual(
+    await resolveRecipients({ to: "A@x.com, a@X.com, b@x.com" }),
+    ["a@x.com", "b@x.com"],
+  );
+});
+
+test("resolveRecipients drops garbage the same way parseRecipients does", async () => {
+  assert.deepEqual(await resolveRecipients({ to: "nope, a@x.com, @x.com" }), ["a@x.com"]);
+  assert.deepEqual(await resolveRecipients({}), []);
+});
+
+test("resolveRecipients caps the merged list at the given max", async () => {
+  const many = Array.from({ length: 30 }, (_, i) => `u${i}@x.com`).join(",");
+  assert.equal((await resolveRecipients({ to: many }, 5)).length, 5);
 });

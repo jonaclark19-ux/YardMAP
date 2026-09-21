@@ -1160,7 +1160,8 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
   <div class="ops-v2-box" style="max-width:480px">
     <div class="ops-v2-head"><h2>Send by email</h2></div>
     <div class="ops-v2-body" id="alertEmailForm">
-      <label class="ops-field"><span>Send to (comma-separated emails)</span><input id="alertEmailTo" type="text" placeholder="name@company.com"></label>
+      <div class="ops-field"><span>Send to</span><div class="eg-picker" id="alertEmailGroups"></div></div>
+      <label class="ops-field"><span>Other addresses (optional)</span><input id="alertEmailTo" type="text" placeholder="name@company.com"></label>
       <label class="ops-field"><span>Message (optional)</span><textarea id="alertEmailNote" placeholder="Optional note..."></textarea></label>
     </div>
     <div class="ops-v2-body" id="alertEmailDone" hidden style="align-items:center;text-align:center;gap:10px">
@@ -1181,7 +1182,8 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
   <div class="ops-v2-box" style="max-width:480px">
     <div class="ops-v2-head"><h2 id="reportEmailTitle">Send report by email</h2></div>
     <div class="ops-v2-body" id="reportEmailForm">
-      <label class="ops-field"><span>Send to (comma-separated emails)</span><input id="reportEmailTo" type="text" placeholder="name@company.com"></label>
+      <div class="ops-field"><span>Send to</span><div class="eg-picker" id="reportEmailGroups"></div></div>
+      <label class="ops-field"><span>Other addresses (optional)</span><input id="reportEmailTo" type="text" placeholder="name@company.com"></label>
     </div>
     <div class="ops-v2-body" id="reportEmailDone" hidden style="align-items:center;text-align:center;gap:10px">
       <div style="width:56px;height:56px;border-radius:14px;background:#1e9e5a;display:flex;align-items:center;justify-content:center;margin:8px auto">
@@ -1717,6 +1719,11 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "onboard.s6.title": "Working under the sun",
       "onboard.s6.body": "Tap the sun icon at the top (or Field mode in the menu) for a high-contrast view with bigger controls, built for using the app outdoors on the yard.",
       "onboard.help": "How to use",
+
+      /* ---- operational report entry points ---- */
+      "ops.newReport": "New Operational Report",
+      "ops.newReportTitle": "New Operational Report · Quality / Seconds / Inventory / Out of Place",
+      "ops.drReportTitle": "Quality Report · Report Seconds · Inventory Check · Found Out of Place",
     },
 
     es: {
@@ -2103,6 +2110,11 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "onboard.s6.title": "Trabajar bajo el sol",
       "onboard.s6.body": "Toca el ícono de sol arriba (o Modo campo en el menú) para una vista de alto contraste y controles más grandes, pensada para usar la app afuera en la yarda.",
       "onboard.help": "Cómo usar la app",
+
+      /* ---- operational report entry points ---- */
+      "ops.newReport": "Nuevo reporte operativo",
+      "ops.newReportTitle": "Nuevo reporte operativo · Calidad / Seconds / Inventario / Fuera de lugar",
+      "ops.drReportTitle": "Reporte de calidad · Reportar Seconds · Revisión de inventario · Encontrado fuera de lugar",
     },
   };
 
@@ -6036,6 +6048,26 @@ boot();
 .ops-field input,.ops-field select,.ops-field textarea{width:100%;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);padding:10px 11px;font-size:17px;font-family:var(--body);outline:none}
 .ops-field textarea{min-height:76px;resize:vertical}
 .ops-field input:focus,.ops-field select:focus,.ops-field textarea:focus{border-color:var(--amber);box-shadow:0 0 0 3px var(--amber-soft)}
+
+/* ---- email group picker (send modals) --------------------------------- */
+/* Scrolls rather than growing: the modal must stay usable on a phone once a
+   yard has a dozen distribution lists. */
+.eg-picker{display:flex;flex-direction:column;gap:4px;max-height:200px;overflow:auto;
+  border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:6px}
+.eg-picker .eg-row{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:9px;
+  padding:9px 10px;border-radius:9px;border:1px solid transparent;cursor:pointer;
+  font-size:15px;color:var(--ink);min-height:44px}
+.eg-picker .eg-row:hover{background:var(--panel2)}
+.eg-picker .eg-row.on{background:var(--amber-soft);border-color:var(--amber)}
+.eg-picker .eg-row input{width:18px;height:18px;margin:0;accent-color:var(--amber);flex:none}
+.eg-picker .eg-name{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.eg-picker .eg-count{font-size:12px;color:var(--muted2);font-family:var(--mono);white-space:nowrap}
+/* A group with nothing in it cannot be a recipient, so it reads as unavailable
+   instead of silently sending to no one. */
+.eg-picker .eg-row:has(input:disabled){opacity:.5;cursor:default}
+.eg-picker .eg-note{padding:10px;font-size:13px;color:var(--muted2);line-height:1.45}
+.eg-picker .eg-total{padding:6px 10px 2px;font-size:12px;color:var(--muted2)}
+.eg-picker .eg-total:empty{display:none}
 .ops-field.field-invalid label{color:#e33a32}
 .ops-field.field-invalid input,.ops-field.field-invalid select,.ops-field.field-invalid textarea,.fld.field-invalid input{border-color:#e33a32!important;background:#fff3f2!important;box-shadow:0 0 0 3px rgba(227,58,50,.18)!important}
 .ops-field .field-invalid-msg,.fld .field-invalid-msg{display:none;font-size:12px;font-weight:700;color:#e33a32;margin-top:2px}
@@ -6459,19 +6491,24 @@ boot();
     };
 
     // Replace the old generic Report button with the new operational flow.
+    // These three labels used to be assigned as literal English and, in the
+    // drawer's case, had their data-i18n binding stripped -- so they stayed
+    // English in Spanish mode and no language switch could reach them. Point
+    // them at real keys instead and let applyI18n own the text from here on.
     const rb=document.getElementById("reportBtn");
     if(rb){
       rb.onclick=()=>openOpsReport({});
-      rb.title="New Operational Report · Quality / Seconds / Inventory / Out of Place";
-      rb.setAttribute("aria-label","New Operational Report");
+      rb.setAttribute("data-i18n-title","ops.newReportTitle");
+      rb.setAttribute("data-i18n-aria","ops.newReport");
     }
     const dr=document.getElementById("drReport");
     if(dr){
       dr.onclick=()=>{closeDrawer();openOpsReport({});};
-      dr.title="Quality Report · Report Seconds · Inventory Check · Found Out of Place";
+      dr.setAttribute("data-i18n-title","ops.drReportTitle");
       const lab=dr.querySelector("span:last-child");
-      if(lab){ lab.removeAttribute("data-i18n"); lab.textContent="New Operational Report"; }
+      if(lab) lab.setAttribute("data-i18n","ops.newReport");
     }
+    try{ window.I18N?.applyI18n?.(document); }catch(e){}
   }
 
   /* ------------------------------ report modal */
@@ -6840,9 +6877,12 @@ boot();
     const modal=document.getElementById("alertEmailModal"); if(!modal)return;
     clearTimeout(alertEmailCloseTimer);
     const toField=document.getElementById("alertEmailTo"), noteField=document.getElementById("alertEmailNote");
-    let lastTo=""; try{lastTo=localStorage.getItem("tarterYardLastEmailTo")||"";}catch(e){}
-    if(toField)toField.value=lastTo;
+    // The manual field is now the exception, not the default: it starts empty
+    // so a remembered address cannot quietly ride along with a picked group.
+    if(toField)toField.value="";
     if(noteField)noteField.value="";
+    const picker=document.getElementById("alertEmailGroups");
+    if(picker){picker._egSelected=null;window.YardEmailGroups?.renderPicker?.(picker);}
     document.getElementById("alertEmailForm").hidden=false;
     document.getElementById("alertEmailDone").hidden=true;
     document.getElementById("alertEmailFoot").hidden=false;
@@ -6859,12 +6899,12 @@ boot();
     const id=alertEmailTargetId; if(!id)return;
     const to=(document.getElementById("alertEmailTo").value||"").trim();
     const note=(document.getElementById("alertEmailNote").value||"").trim();
-    if(!to){toast("Enter at least one email address");return;}
+    const groupIds=window.YardEmailGroups?.selection?.(document.getElementById("alertEmailGroups"))||[];
+    if(!to&&!groupIds.length){toast(window.YardEmailGroups?.tx?.("needOne")||"Pick a group or type an address.");return;}
     if(sendBtn){sendBtn.disabled=true; sendBtn.textContent="Sending…";}
     try{
-      const r=await Sync.api("alerts?route=email",{method:"POST",body:JSON.stringify({id,to,note})});
+      const r=await Sync.api("alerts?route=email",{method:"POST",body:JSON.stringify({id,to,groupIds,note})});
       if(!r.ok)throw new Error(r.body.error||"send_failed");
-      try{localStorage.setItem("tarterYardLastEmailTo",to);}catch(e){}
       // Record that this alert was emailed so the UI can show "Email sent"
       // instead of the plain action everywhere the alert appears.
       try{
@@ -7205,6 +7245,37 @@ boot();
 .cc23-location-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:11px;border:1px solid #2b3946;background:#151f29;border-radius:12px;margin-bottom:7px}.cc23-location-card b{font-family:var(--mono);font-size:12.5px}.cc23-location-card small{display:block;color:#748391;font-size:10.5px;margin-top:4px;line-height:1.4}.cc23-location-actions{display:flex;gap:5px;align-items:flex-start}.cc23-location-actions button{height:30px;border-radius:8px;border:1px solid #344452;background:#111a22;color:#a4b0bb;font-size:10px;font-weight:800;padding:0 8px}.cc23-location-actions button.primary{border-color:rgba(72,199,122,.38);color:#79dc9b;background:rgba(72,199,122,.07)}
 .cc23-activity{display:flex;flex-direction:column}.cc23-event{display:grid;grid-template-columns:80px 13px 1fr;gap:8px;min-height:48px}.cc23-event .time{text-align:right;color:#657482;font-size:9.5px;padding-top:2px}.cc23-event .rail{position:relative}.cc23-event .rail:before{content:"";position:absolute;left:6px;top:9px;bottom:-8px;width:1px;background:#2e3b47}.cc23-event:last-child .rail:before{display:none}.cc23-event .rail i{position:absolute;left:3px;top:5px;width:7px;height:7px;border-radius:50%;background:#6f7d8b;box-shadow:0 0 0 3px #111922}.cc23-event .text{font-size:11px;color:#8c99a5;line-height:1.45}.cc23-event .text b{color:#dfe5ea}.cc23-event .text .comment{color:#697887}
 .cc23-data-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:11px 2px;border-bottom:1px solid #273440}.cc23-data-row:last-child{border-bottom:0}.cc23-data-row b{display:block;font-size:12.5px}.cc23-data-row small{display:block;margin-top:3px;color:#6e7d8a;font-size:10.5px;line-height:1.4}.cc23-data-badge{padding:5px 7px;border-radius:999px;border:1px solid #344453;color:#8997a4;font-size:9px;font-weight:900;text-transform:uppercase}.cc23-data-badge.good{color:#79dc9b;border-color:rgba(72,199,122,.32)}.cc23-data-badge.warn{color:#ffd16a;border-color:rgba(255,191,39,.32)}
+
+/* ---- email groups (Data tab) ------------------------------------------ */
+.cc23-eg-new{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) auto;gap:8px;align-items:center;padding:0 0 12px;border-bottom:1px solid #273440;margin-bottom:10px}
+.cc23-eg-new input{min-width:0;border:1px solid #303d4b;border-radius:10px;background:#151e28;color:#e9eef3;padding:9px 10px;font-size:13px;font-family:var(--body);outline:none}
+.cc23-eg-new input:focus{border-color:var(--cc-brand)}
+.cc23-eg-card{padding:11px 0;border-bottom:1px solid #24313c}
+.cc23-eg-card:last-child{border-bottom:0}
+.cc23-eg-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.cc23-eg-head b{font-size:13px;color:#e9eef3}
+.cc23-eg-head small{color:#6e7d8a;font-size:10.5px;font-family:var(--mono)}
+.cc23-eg-head-actions{margin-left:auto;display:flex;gap:6px}
+.cc23-eg-head-actions button{border:1px solid #344453;border-radius:8px;background:#19222d;color:#9eabb8;
+  padding:5px 9px;font-size:11px;font-weight:800;font-family:var(--body);min-height:30px}
+.cc23-eg-head-actions button:hover{color:#e9eef3;border-color:#44556a}
+.cc23-eg-head-actions button.danger:hover{color:#ff8179;border-color:rgba(255,107,99,.45)}
+.cc23-eg-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.cc23-eg-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 6px 4px 9px;border-radius:999px;
+  border:1px solid #344453;background:#151f29;color:#aab5bf;font-size:11px;font-family:var(--mono)}
+.cc23-eg-chip button{width:18px;height:18px;border:0;border-radius:50%;background:#26323e;color:#8997a4;
+  font-size:12px;line-height:1;display:grid;place-items:center;padding:0}
+.cc23-eg-chip button:hover{background:#3a2626;color:#ff8179}
+.cc23-eg-none{color:#6e7d8a;font-size:11px}
+.cc23-eg-add{display:flex;gap:7px;margin-top:9px}
+.cc23-eg-add input{flex:1;min-width:0;border:1px solid #303d4b;border-radius:9px;background:#151e28;color:#e9eef3;
+  padding:8px 10px;font-size:12.5px;font-family:var(--body);outline:none}
+.cc23-eg-add input:focus{border-color:var(--cc-brand)}
+.cc23-eg-add button{border:1px solid #344453;border-radius:9px;background:#19222d;color:#9eabb8;
+  padding:0 12px;font-size:11.5px;font-weight:800;font-family:var(--body);min-height:34px;white-space:nowrap}
+.cc23-eg-add button:hover{color:#e9eef3;border-color:#44556a}
+/* On a phone the three-across create row has nowhere to go but down. */
+@media(max-width:760px){.cc23-eg-new{grid-template-columns:1fr}.cc23-eg-head-actions{margin-left:0;width:100%}}
 /* detail drawer */
 .cc23-detail-scrim{position:fixed;inset:0;z-index:1810;background:rgba(2,6,9,.45);opacity:0;pointer-events:none;transition:.18s}.cc23-detail-scrim.show{opacity:1;pointer-events:auto}.cc23-detail{position:fixed;z-index:1811;top:50%;left:50%;width:min(640px,94vw);max-height:min(90vh,860px);background:linear-gradient(180deg,#151f29,#0d141b);border:1px solid #33424f;border-radius:16px;box-shadow:0 24px 70px rgba(0,0,0,.5);transform:translate(-50%,-50%) scale(.96);opacity:0;pointer-events:none;transition:transform .22s cubic-bezier(.16,1,.3,1),opacity .18s;display:flex;flex-direction:column}.cc23-detail.show{transform:translate(-50%,-50%) scale(1);opacity:1;pointer-events:auto}.cc23-detail-head{display:flex;align-items:center;gap:10px;padding:14px 15px;border-bottom:1px solid #2b3945}.cc23-detail-title{min-width:0}.cc23-detail-title h3{margin:0;font-family:var(--display);font-size:19px}.cc23-detail-title small{display:block;margin-top:3px;color:#72818f;font-size:10.5px}.cc23-detail-x{margin-left:auto;width:34px;height:34px;border:1px solid #334250;border-radius:10px;background:#18222c;color:#b6c0ca;font-size:19px}.cc23-detail-body{padding:13px 15px 20px;overflow:auto;display:flex;flex-direction:column;gap:10px}.cc23-detail-block{border:1px solid #2c3a47;background:#121b24;border-radius:13px;overflow:hidden}.cc23-detail-block h5{margin:0;padding:9px 11px;border-bottom:1px solid #273440;color:#6f7e8c;font-size:9.5px;text-transform:uppercase;letter-spacing:.55px}.cc23-detail-grid{display:grid;grid-template-columns:1fr 1fr}.cc23-detail-kv{padding:10px 11px;border-right:1px solid #273440;border-bottom:1px solid #273440;min-width:0}.cc23-detail-kv:nth-child(2n){border-right:0}.cc23-detail-kv span{display:block;color:#657482;font-size:9.5px;text-transform:uppercase;font-weight:900}.cc23-detail-kv b{display:block;margin-top:4px;color:#e3e9ee;font-size:12px;white-space:normal;overflow-wrap:anywhere}.cc23-detail-copy{padding:10px 11px;color:#9aa7b3;font-size:11px;line-height:1.5}.cc23-detail-actions{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}.cc23-detail-actions button{height:39px;border:1px solid #344351;border-radius:10px;background:#151f29;color:#c8d1d9;font-size:11px;font-weight:900}.cc23-detail-actions button.primary{background:var(--cc-action);border-color:var(--cc-action);color:#211800}.cc23-detail-actions button.ok{border-color:rgba(72,199,122,.38);color:#7bdd9e;background:rgba(72,199,122,.07)}.cc23-detail-actions button[disabled]{opacity:.4}.cc23-owner-row{display:grid;grid-template-columns:1fr auto;gap:6px}.cc23-owner-row input{height:38px;border:1px solid #344351;border-radius:10px;background:#101820;color:#e6ecf0;padding:0 10px;font-size:12px}.cc23-owner-row button{height:38px;border:1px solid #344351;border-radius:10px;background:#17212b;color:#b9c4cd;padding:0 10px;font-size:10px;font-weight:800}.cc23-detail-note{width:100%;min-height:62px;border:1px solid #344351;border-radius:10px;background:#101820;color:#e6ecf0;padding:9px 10px;font-size:12px;resize:vertical}.cc23-inline-actions{display:flex;gap:6px;flex-wrap:wrap}.cc23-inline-actions button{height:32px;border:1px solid #344351;border-radius:8px;background:#16202a;color:#acb8c2;padding:0 9px;font-size:10px;font-weight:800}
 @media(max-width:1150px){.cc23-metrics{grid-template-columns:repeat(3,1fr)}.cc23-grid2{grid-template-columns:1fr}.cc23-status-hero{grid-template-columns:1fr}.cc23-toolbar{grid-template-columns:1fr 1fr}.cc23-nav{width:auto}.cc23-main{grid-template-columns:176px minmax(0,1fr)}}
@@ -7335,8 +7406,100 @@ boot();
   function donutChart(resolved,open){const total=resolved+open||1,r=42,c=2*Math.PI*r,resolvedLen=c*(resolved/total),pct=Math.round(resolved/total*100);return `<svg class="cc23-donut" viewBox="0 0 100 100" width="132" height="132" role="img" aria-label="${pct}% resolved"><circle cx="50" cy="50" r="${r}" fill="none" stroke="#22303c" stroke-width="12"/>${open>0?`<circle cx="50" cy="50" r="${r}" fill="none" stroke="#ff6a63" stroke-width="12" stroke-dasharray="${c} ${c}" transform="rotate(-90 50 50)" stroke-linecap="round"/>`:""}${resolved>0?`<circle cx="50" cy="50" r="${r}" fill="none" stroke="#4ecb8a" stroke-width="12" stroke-dasharray="${resolvedLen} ${c-resolvedLen}" transform="rotate(-90 50 50)" stroke-linecap="round"/>`:""}<text x="50" y="47" text-anchor="middle" font-size="20" font-weight="900" fill="#e6ecf0">${pct}%</text><text x="50" y="63" text-anchor="middle" font-size="7.5" fill="#8997a4" letter-spacing="0.5">RESOLVED</text></svg>`}
   function weeklyPage(){const old=state.range;state.range="7d";const rr=rangeReports();state.range=old;const open=reports().filter(openReport),q=rr.filter(r=>r.type==="quality"),s=rr.filter(r=>r.type==="seconds"),inv=rr.filter(r=>r.type==="inventory"&&r.inventoryResult!=="verified"),oop=rr.filter(r=>r.type==="out_of_place"),resolved=rr.filter(r=>r.status==="resolved"||r.inventoryResult==="verified"),seconds=s.reduce((a,r)=>a+(num(r.quantity)||0),0),repeat=repeatedSkus(7);const typeBars=barChart([{label:"Quality",val:q.length,color:"#ffc767"},{label:"Seconds",val:s.length,color:"#ff918a"},{label:"Inventory",val:inv.length,color:"#7ebcff"},{label:"Out of place",val:oop.length,color:"#bda0ff"}]);return `${pageHeader("Weekly yard brief","Everything from the last 7 days, ready to export or email.",`<button class="cc23-btn" id="cc23WeeklyExport">Export weekly brief</button><button class="cc23-btn primary" id="cc23WeeklyEmail">Send by email</button>`)}<div class="cc23-status-hero"><div class="cc23-hero-main"><div><div class="cc23-kicker">Last 7 days</div><div class="cc23-hero-number">${rr.length} operational event${rr.length===1?"":"s"}</div><div class="cc23-hero-sub">${resolved.length} resolved / verified · ${open.length} currently open · ${repeat.length} repeat SKU${repeat.length===1?"":"s"}</div></div></div><div class="cc23-hero-side"><div class="cc23-source"><span class="dot"></span><div><b>Send this brief by email</b><small>Sends the summary below, plus the detail tables, to whoever you enter.</small></div></div></div></div><div class="cc23-metrics">${metric("Quality",q.length,"Reports")}${metric("Seconds",seconds,"Units")}${metric("Inventory",inv.length,"Discrepancies")}${metric("Out of place",oop.length,"Findings")}${metric("Resolved",resolved.length,"Reports / checks","green")}${metric("Still open",open.length,"Current backlog",open.length?"alert":"")}</div><div class="cc23-grid2"><div class="cc23-panel"><div class="cc23-panel-head"><h4>Reports by type</h4><small>Last 7 days</small></div><div class="cc23-panel-body">${typeBars}</div></div><div class="cc23-panel"><div class="cc23-panel-head"><h4>Resolution status</h4><small>Last 7 days</small></div><div class="cc23-panel-body cc23-donut-wrap"><div>${donutChart(resolved.length,open.length)}</div><div class="cc23-donut-legend"><div><i style="background:#4ecb8a"></i>Resolved · ${resolved.length}</div><div><i style="background:#ff6a63"></i>Open · ${open.length}</div></div></div></div></div><div class="cc23-grid2"><div><div class="cc23-panel"><div class="cc23-panel-head"><h4>Executive summary</h4></div><div class="cc23-panel-body"><div class="cc23-pulse-row"><span>Quality issues reported</span><b>${q.length}</b></div><div class="cc23-pulse-row"><span>Units sent to Seconds</span><b>${seconds}</b></div><div class="cc23-pulse-row"><span>Inventory discrepancies</span><b>${inv.length}</b></div><div class="cc23-pulse-row"><span>Out-of-place findings</span><b>${oop.length}</b></div><div class="cc23-pulse-row"><span>Resolved / verified this week</span><b>${resolved.length}</b></div></div></div><div class="cc23-panel"><div class="cc23-panel-head"><h4>Repeat products · 7 days</h4></div><div class="cc23-panel-body"><div class="cc23-repeat-list">${repeat.length?repeat.slice(0,12).map(([sku,c])=>`<span class="cc23-repeat"><b>${esc(sku)}</b> · ${c}</span>`).join(""):'<span class="cc23-empty" style="padding:8px">No repeated SKUs this week.</span>'}</div></div></div></div><div><div class="cc23-panel"><div class="cc23-panel-head"><h4>Open carryover</h4><small>Still needs action</small></div><div class="cc23-panel-body"><div class="cc23-queue">${open.length?open.slice().sort((a,b)=>priorityScore(b)-priorityScore(a)||dateMs(a.createdAt)-dateMs(b.createdAt)).slice(0,8).map(r=>qRow(r,false)).join(""):'<div class="cc23-empty">No open carryover.</div>'}</div></div></div></div></div>`}
   function activityPage(){const ev=[];reports().forEach(r=>{const arr=Array.isArray(r.timeline)&&r.timeline.length?r.timeline:[{status:r.status||"new",at:r.createdAt,by:r.by,comment:"Created"}];arr.forEach(x=>ev.push({at:x.at||r.createdAt,sku:r.sku,type:r.type,status:x.status||r.status,by:x.by||r.by,comment:x.comment||""}))});ev.sort((a,b)=>dateMs(b.at)-dateMs(a.at));return `${pageHeader("Activity","Audit-style history of who did what and when.")}<div class="cc23-panel"><div class="cc23-panel-head"><h4>Report activity</h4><small>${ev.length} events</small></div><div class="cc23-panel-body"><div class="cc23-activity">${ev.length?ev.slice(0,300).map(e=>`<div class="cc23-event"><div class="time">${esc(fmtDT(e.at))}</div><div class="rail"><i></i></div><div class="text"><b>${esc(e.by||"—")}</b> · ${esc(META[e.type]?.label||e.type||"Report")} · <b>${esc(e.sku||"?")}</b><br>${esc(STATUS[e.status]||e.status||"")}${e.comment?` <span class="comment">· ${esc(e.comment)}</span>`:""}</div></div>`).join(""):'<div class="cc23-empty">No activity yet.</div>'}</div></div></div>`}
-  function dataPage(){const inv=inventoryState(),bc=barcodeState(),defBc=window.YardOpsV2?.getDefaultBarcodes?.(),loc=locationState(),all=reports();return `${pageHeader("Data & automation","What is local today, and what the production architecture will automate.",`<button class="cc23-btn" id="cc23LoadInvData">Update inventory report</button><button class="cc23-btn primary" id="cc23LoadBarcode">Update barcode list</button>`)}<div class="cc23-grid2"><div><div class="cc23-panel"><div class="cc23-panel-head"><h4>Current data sources</h4></div><div class="cc23-panel-body"><div class="cc23-data-row"><div><b>FG inventory report</b><small>${inv?`${esc(inv.fileName||"Inventory report")} · ${esc(inv.rowCount||0)} SKUs · ${esc(fmtDT(inv.importedAt))}`:"No report loaded on this device."}</small></div><span class="cc23-data-badge ${inv?"good":"warn"}">${inv?"Loaded":"Missing"}</span></div><div class="cc23-data-row"><div><b>Official barcode list</b><small>${bc?`Device override: ${esc(bc.fileName||"Barcode list")} · ${esc(bc.count||0)} barcodes`:(defBc?`Built-in Tarter list · ${esc(defBc.count||0)} barcodes`:"Loading the built-in barcode list…")}</small></div><span class="cc23-data-badge good">${bc?"Device override":"Built-in"}</span></div><div class="cc23-data-row"><div><b>Operational reports</b><small>${all.length} local reports · workflow, timestamps, quantities and notes.</small></div><span class="cc23-data-badge warn">Local pilot</span></div><div class="cc23-data-row"><div><b>Secondary location observations</b><small>${loc.length} location records stored on this device.</small></div><span class="cc23-data-badge warn">Local pilot</span></div></div></div></div><div><div class="cc23-panel"><div class="cc23-panel-head"><h4>Automation roadmap</h4></div><div class="cc23-panel-body"><div class="cc23-data-row"><div><b>Automatic FG email ingestion</b><small>Expected production path: mailbox flow → attachment validation → versioned inventory snapshot.</small></div><span class="cc23-data-badge warn">Planned</span></div><div class="cc23-data-row"><div><b>Quality report email routing</b><small>Backend event → recipient rules by report type / disposition → email notification.</small></div><span class="cc23-data-badge warn">Planned</span></div><div class="cc23-data-row"><div><b>Weekly yard summary email</b><small>The Weekly Brief tab already computes the core content that the scheduled job will deliver.</small></div><span class="cc23-data-badge warn">Planned</span></div></div></div></div></div>`}
+  function dataPage(){const inv=inventoryState(),bc=barcodeState(),defBc=window.YardOpsV2?.getDefaultBarcodes?.(),loc=locationState(),all=reports();return `${pageHeader("Data & automation","What is local today, and what the production architecture will automate.",`<button class="cc23-btn" id="cc23LoadInvData">Update inventory report</button><button class="cc23-btn primary" id="cc23LoadBarcode">Update barcode list</button>`)}<div class="cc23-grid2"><div><div class="cc23-panel"><div class="cc23-panel-head"><h4>Current data sources</h4></div><div class="cc23-panel-body"><div class="cc23-data-row"><div><b>FG inventory report</b><small>${inv?`${esc(inv.fileName||"Inventory report")} · ${esc(inv.rowCount||0)} SKUs · ${esc(fmtDT(inv.importedAt))}`:"No report loaded on this device."}</small></div><span class="cc23-data-badge ${inv?"good":"warn"}">${inv?"Loaded":"Missing"}</span></div><div class="cc23-data-row"><div><b>Official barcode list</b><small>${bc?`Device override: ${esc(bc.fileName||"Barcode list")} · ${esc(bc.count||0)} barcodes`:(defBc?`Built-in Tarter list · ${esc(defBc.count||0)} barcodes`:"Loading the built-in barcode list…")}</small></div><span class="cc23-data-badge good">${bc?"Device override":"Built-in"}</span></div><div class="cc23-data-row"><div><b>Operational reports</b><small>${all.length} local reports · workflow, timestamps, quantities and notes.</small></div><span class="cc23-data-badge warn">Local pilot</span></div><div class="cc23-data-row"><div><b>Secondary location observations</b><small>${loc.length} location records stored on this device.</small></div><span class="cc23-data-badge warn">Local pilot</span></div></div></div></div><div><div class="cc23-panel"><div class="cc23-panel-head"><h4>Automation roadmap</h4></div><div class="cc23-panel-body"><div class="cc23-data-row"><div><b>Automatic FG email ingestion</b><small>Expected production path: mailbox flow → attachment validation → versioned inventory snapshot.</small></div><span class="cc23-data-badge warn">Planned</span></div><div class="cc23-data-row"><div><b>Quality report email routing</b><small>Backend event → recipient rules by report type / disposition → email notification.</small></div><span class="cc23-data-badge warn">Planned</span></div><div class="cc23-data-row"><div><b>Weekly yard summary email</b><small>The Weekly Brief tab already computes the core content that the scheduled job will deliver.</small></div><span class="cc23-data-badge warn">Planned</span></div></div></div></div></div>${emailGroupsPanel()}`}
+
+  /* ---- email groups -------------------------------------------------
+     The distribution lists the send-by-email modals pick from. Editing
+     lives here, beside the other shared configuration, so a yard lead
+     curates the list once instead of everyone retyping addresses into
+     every report they send. */
+  function emailGroupsPanel(){
+    const eg=window.YardEmailGroups;
+    if(!eg)return "";
+    const groups=eg.list(),loaded=eg.isLoaded();
+    const can=canEdit();
+    const rows=groups.length?groups.map(g=>`<div class="cc23-eg-card" data-eg-id="${esc(g.id)}">
+      <div class="cc23-eg-head"><b>${esc(g.name)}</b><small>${(g.emails||[]).length} <span>${(g.emails||[]).length===1?"address":"addresses"}</span></small>
+        ${can?`<div class="cc23-eg-head-actions"><button data-eg-rename="${esc(g.id)}">Rename</button><button class="danger" data-eg-delete="${esc(g.id)}">Delete</button></div>`:""}</div>
+      <div class="cc23-eg-chips">${(g.emails||[]).length?(g.emails||[]).map(e=>`<span class="cc23-eg-chip">${esc(e)}${can?`<button data-eg-drop="${esc(g.id)}" data-eg-email="${esc(e)}" aria-label="Remove ${esc(e)}">×</button>`:""}</span>`).join(""):'<span class="cc23-eg-none">No addresses yet — this group cannot be picked until one is added.</span>'}</div>
+      ${can?`<div class="cc23-eg-add"><input type="email" data-eg-input="${esc(g.id)}" placeholder="name@company.com" /><button data-eg-add="${esc(g.id)}">Add address</button></div>`:""}
+    </div>`).join(""):`<div class="cc23-empty">${loaded?"No email groups yet.":"Loading email groups…"}</div>`;
+    return `<div class="cc23-panel"><div class="cc23-panel-head"><h4>Email groups</h4><small>Recipient lists the send-by-email actions pick from</small></div><div class="cc23-panel-body">
+      ${can?`<div class="cc23-eg-new"><input type="text" id="cc23EgName" maxlength="80" placeholder="Group name — e.g. Quality team" /><input type="text" id="cc23EgEmails" placeholder="Addresses, comma-separated (optional)" /><button class="cc23-btn primary" id="cc23EgCreate">Create group</button></div>`:""}
+      ${rows}
+    </div></div>`;
+  }
   function render(){const c=document.getElementById(OUTER_ID);if(!c||!c.classList.contains("cc-v23"))return;const yard=classifyYard(),inv=inventoryState(),pending=locationState().filter(l=>l.status==="observed").length;c.querySelector("#cc23Subtitle").textContent=`${currentUser()} · ${Sync.mode==="local"?"Local pilot":"Connected"} · ${inv?.fileName||"No FG report loaded"}`;const ys=c.querySelector("#cc23YardState");ys.classList.toggle("attn",yard.open.length>0);ys.querySelector("span").textContent=yard.label;c.querySelector("#cc23NavQueue").textContent=yard.open.length;c.querySelector("#cc23NavLoc").textContent=pending;c.querySelector("#cc23Sync").innerHTML=`<b><i></i>${Sync.mode==="local"?"Local mode":"Connected"}</b>${Sync.mode==="local"?"Changes stay on this device during the pilot.":"Report state is synchronized."}`;c.querySelectorAll("#cc23Nav [data-tab]").forEach(b=>b.classList.toggle("on",b.dataset.tab===state.tab));c.querySelectorAll("#cc23Range [data-range]").forEach(b=>b.classList.toggle("on",b.dataset.range===state.range));const page=c.querySelector("#cc23Page");page.innerHTML=state.tab==="queue"?queuePage():state.tab==="inventory"?inventoryPage():state.tab==="quality"?qualityPage():state.tab==="locations"?locationsPage():state.tab==="weekly"?weeklyPage():state.tab==="activity"?activityPage():state.tab==="data"?dataPage():state.tab==="announcements"?announcementsPage():overview();bindPage(page);}
+  /* The email-groups panel is the only place in the Control Center that
+     writes shared configuration from inline controls, so its handlers live
+     together here rather than scattered through bindPage. Each one re-renders
+     the whole page afterwards: the panel is cheap to rebuild and that keeps
+     the counts, chips and the send modals' picker reading from one source. */
+  function bindEmailGroups(page){
+    const eg=window.YardEmailGroups;
+    if(!eg)return;
+    // A first visit to the Data tab is what triggers the fetch; render() runs
+    // again once it lands so the panel fills itself in.
+    if(!eg.isLoaded()){eg.load().then(()=>{if(state.tab==="data")render()});return;}
+
+    const fail=(e)=>toast(e&&e.message==="duplicate_name"?"A group with that name already exists."
+      :e&&e.message==="missing_name"?"Give the group a name."
+      :"Could not save the email group.");
+
+    const create=page.querySelector("#cc23EgCreate");
+    if(create)create.onclick=async()=>{
+      const name=page.querySelector("#cc23EgName").value;
+      const emails=page.querySelector("#cc23EgEmails").value;
+      if(!name.trim()){toast("Give the group a name.");return;}
+      create.disabled=true;
+      try{await eg.create(name,emails);render();toast("Group created");}
+      catch(e){fail(e)}
+      finally{create.disabled=false}
+    };
+
+    page.querySelectorAll("[data-eg-add]").forEach(btn=>{
+      const id=btn.dataset.egAdd;
+      const input=page.querySelector(`[data-eg-input="${CSS.escape(id)}"]`);
+      const submit=async()=>{
+        const raw=(input?.value||"").trim();
+        if(!raw)return;
+        const added=eg.cleanEmails(raw);
+        if(!added.length){toast("That does not look like an email address.");return;}
+        const cur=eg.get(id)?.emails||[];
+        btn.disabled=true;
+        try{await eg.update(id,{emails:[...cur,...added]});render();}
+        catch(e){fail(e)}
+        finally{btn.disabled=false}
+      };
+      btn.onclick=submit;
+      // Typing an address and pressing Enter is the natural gesture here, and
+      // the inputs are not in a form that would do it for us.
+      if(input)input.onkeydown=(ev)=>{if(ev.key==="Enter"){ev.preventDefault();submit()}};
+    });
+
+    page.querySelectorAll("[data-eg-drop]").forEach(btn=>btn.onclick=async()=>{
+      const id=btn.dataset.egDrop,email=btn.dataset.egEmail;
+      const cur=eg.get(id)?.emails||[];
+      try{await eg.update(id,{emails:cur.filter(e=>e!==email)});render();}
+      catch(e){fail(e)}
+    });
+
+    page.querySelectorAll("[data-eg-rename]").forEach(btn=>btn.onclick=async()=>{
+      const id=btn.dataset.egRename,cur=eg.get(id);
+      const name=prompt("Group name",cur?.name||"");
+      if(name==null||!name.trim()||name===cur?.name)return;
+      try{await eg.update(id,{name});render();}
+      catch(e){fail(e)}
+    });
+
+    page.querySelectorAll("[data-eg-delete]").forEach(btn=>btn.onclick=async()=>{
+      const id=btn.dataset.egDelete,g=eg.get(id);
+      if(!confirm(`Delete the group "${g?.name||""}"? This cannot be undone.`))return;
+      try{await eg.remove(id);render();toast("Group deleted");}
+      catch(e){toast("Could not delete the email group.")}
+    });
+  }
+
   const SEV_LABEL={info:"Info",warning:"Warning",urgent:"Urgent"};
   function announcementsPage(){
     if(announcements===null){loadAnnouncements();return `${pageHeader("Announcements","Board messages visible to everyone in the app.")}<div class="cc23-empty">Loading…</div>`;}
@@ -7352,6 +7515,7 @@ boot();
     <div class="cc23-panel"><div class="cc23-panel-head"><h4>All announcements</h4><small>${rows.length}</small></div><div class="cc23-panel-body"><div class="cc23-queue">${rows.length?rows.map(a=>`<div class="cc23-ann-row ${a.severity} ${isLive(a)?"":"off"}"><div><div class="cc23-ann-msg">${esc(a.message)}</div><div class="cc23-ann-meta">${esc(SEV_LABEL[a.severity]||a.severity)} · ${isLive(a)?"Live":a.active?"Scheduled":"Inactive"} · ${esc(a.created_by||"—")} · ${esc(fmtDT(a.created_at))}${a.ends_at?` · Ends ${esc(fmtDT(a.ends_at))}`:""}</div></div><button data-ann-toggle="${esc(a.id)}" data-ann-active="${a.active?"1":"0"}">${a.active?"Deactivate":"Activate"}</button></div>`).join(""):'<div class="cc23-empty">No announcements yet.</div>'}</div></div></div>`;
   }
   function bindPage(page){bindRows(page);page.querySelectorAll("[data-go-tab]").forEach(b=>b.onclick=()=>{state.tab=b.dataset.goTab;render()});const s=page.querySelector("#cc23Search");if(s){s.oninput=()=>{state.query=s.value;clearTimeout(s._t);s._t=setTimeout(render,180)}}const ty=page.querySelector("#cc23Type");if(ty)ty.onchange=()=>{state.type=ty.value;render()};const st=page.querySelector("#cc23Status");if(st)st.onchange=()=>{state.status=st.value;render()};const ag=page.querySelector("#cc23Age");if(ag)ag.onchange=()=>{state.age=ag.value;render()};const load=page.querySelector("#cc23LoadInv");if(load)load.onclick=()=>document.getElementById("inventoryFile")?.click();const li2=page.querySelector("#cc23LoadInvData");if(li2)li2.onclick=()=>document.getElementById("inventoryFile")?.click();const lbc=page.querySelector("#cc23LoadBarcode");if(lbc)lbc.onclick=()=>document.getElementById("opsBarcodeFile")?.click();const we=page.querySelector("#cc23WeeklyExport");if(we)we.onclick=exportWeekly;const wem=page.querySelector("#cc23WeeklyEmail");if(wem)wem.onclick=()=>openReportEmailModal("Send weekly report",buildWeeklyReportHtml);page.querySelectorAll("[data-product]").forEach(b=>b.onclick=()=>{close();window.YardProductUX?.open?.(b.dataset.product)});page.querySelectorAll("[data-loc]").forEach(b=>b.onclick=()=>{const status=b.dataset.loc==="approve"?"approved":"dismissed";window.YardProductUX?.locations?.setStatus?.(b.dataset.id,status);render()});
+    bindEmailGroups(page);
     const annPost=page.querySelector("#cc23AnnPost");if(annPost)annPost.onclick=async()=>{
       const msg=(page.querySelector("#cc23AnnMsg").value||"").trim();
       if(!msg){toast("Enter a message.");return;}
@@ -7526,8 +7690,9 @@ ${bodyHtml}
     const modal=document.getElementById("reportEmailModal");if(!modal)return;
     const titleEl=document.getElementById("reportEmailTitle");if(titleEl)titleEl.textContent=title||"Send report by email";
     const toField=document.getElementById("reportEmailTo");
-    let lastTo="";try{lastTo=localStorage.getItem("tarterYardLastEmailTo")||"";}catch(e){}
-    if(toField)toField.value=lastTo;
+    if(toField)toField.value="";
+    const picker=document.getElementById("reportEmailGroups");
+    if(picker){picker._egSelected=null;window.YardEmailGroups?.renderPicker?.(picker);}
     document.getElementById("reportEmailForm").hidden=false;
     document.getElementById("reportEmailDone").hidden=true;
     document.getElementById("reportEmailFoot").hidden=false;
@@ -7538,14 +7703,14 @@ ${bodyHtml}
   async function sendReportEmail(){
     const sendBtn=document.getElementById("reportEmailSend");
     const to=(document.getElementById("reportEmailTo").value||"").trim();
-    if(!to){toast("Enter at least one email address");return;}
+    const groupIds=window.YardEmailGroups?.selection?.(document.getElementById("reportEmailGroups"))||[];
+    if(!to&&!groupIds.length){toast(window.YardEmailGroups?.tx?.("needOne")||"Pick a group or type an address.");return;}
     if(!reportEmailBuilder)return;
     if(sendBtn){sendBtn.disabled=true;sendBtn.textContent="Sending…";}
     try{
       const {subject,html}=reportEmailBuilder();
-      const r=await Sync.api("weekly-report",{method:"POST",body:JSON.stringify({to,subject,html})});
+      const r=await Sync.api("weekly-report",{method:"POST",body:JSON.stringify({to,groupIds,subject,html})});
       if(!r.ok)throw new Error(r.body.error||"send_failed");
-      try{localStorage.setItem("tarterYardLastEmailTo",to);}catch(e){}
       document.getElementById("reportEmailForm").hidden=true;
       document.getElementById("reportEmailFoot").hidden=true;
       document.getElementById("reportEmailDone").hidden=false;
@@ -8283,17 +8448,39 @@ body.fieldmode .tile .qbadge{font-size:9.5px;height:13px;line-height:12px;backgr
 body.fieldmode.showqty .tile>span{transform:translateY(-6.5px)}
 
 /* ---- targets a gloved thumb can hit ---- */
-body.fieldmode header.topbar{min-height:74px}
 body.fieldmode .search input{height:54px;font-size:17px}
 body.fieldmode .iconbtn{width:50px;height:50px}
 body.fieldmode .iconbtn svg{width:22px;height:22px}
 body.fieldmode .langpill{padding:9px 13px;font-size:13px}
-body.fieldmode .tarter-navrail{width:94px}
-body.fieldmode .app>main{margin-left:94px}
-body.fieldmode .tnav{height:78px;font-size:12.5px}
-body.fieldmode .tnav-ico{font-size:24px}
-body.fieldmode .tnav-label{font-size:12.5px;font-weight:800}
 body.fieldmode .drawer{width:min(348px,94vw)}
+
+/* The wider nav rail belongs to the desktop layout only. Below 900px the
+   base stylesheet hides the rail and moves navigation into the bottom bar,
+   but this sheet is injected into <head> at runtime -- so it comes after
+   that media query *and* outranks it on specificity. Left unscoped, its
+   left-margin rule pushed <main> 94px to the right on phones with nothing
+   to fill the gap: a black band down the side, map clipped off screen.
+   Same story for the taller topbar, which fights the wrapped mobile header.
+   Scoping them to the desktop breakpoint keeps field mode to what it is
+   for -- bigger targets and harder contrast -- without touching layout. */
+@media(min-width:901px){
+  body.fieldmode header.topbar{min-height:74px}
+  body.fieldmode .tarter-navrail{width:94px}
+  body.fieldmode .app>main{margin-left:94px}
+  body.fieldmode .tnav{height:78px;font-size:12.5px}
+  body.fieldmode .tnav-ico{font-size:24px}
+  body.fieldmode .tnav-label{font-size:12.5px;font-weight:800}
+}
+/* Belt and braces: whatever else this sheet grows, the phone layout keeps
+   the rail-less geometry the base stylesheet set up for it. */
+@media(max-width:900px){
+  body.fieldmode .app>main{margin-left:0}
+  body.fieldmode .tarter-navrail{display:none}
+  body.fieldmode .drawer{width:min(330px,90vw)}
+  /* The phone layout presents the report as a full-width bottom sheet;
+     the desk build's 440px cap would leave it floating mid-screen. */
+  body.fieldmode #reportModal .report-box{max-width:none}
+}
 body.fieldmode .dr-item{min-height:58px;font-size:16px;padding:14px 13px}
 body.fieldmode .dr-label{font-size:12px;color:var(--muted2)}
 body.fieldmode .dr-name{font-size:20px}
@@ -10198,6 +10385,203 @@ body.fieldmode .tnav-ico{width:27px;height:27px}
 .hint.editmode,.hint.bgmode{display:inline-flex;align-items:center;gap:8px}
 
 </style>
+<script id="tarter-email-groups">
+/* ============================================================
+   TARTER YARD MAP — email groups
+   ------------------------------------------------------------
+   Every "send by email" action used to open on an empty text box and a
+   single remembered address, per device. Whoever was sending had to know
+   the distribution list by heart and retype it, and a typo simply meant
+   the report went nowhere. A group is that list, named and curated once
+   by an editor in the Control Center, and picked from everywhere else.
+
+   The addresses are resolved server-side from the ids the client posts
+   (see api/_lib/email.js), so this module only has to know enough to draw
+   the picker and the editor. Local pilot mode has no backend at all, so
+   there it keeps the same shape in localStorage -- the UI above it cannot
+   tell the difference.
+   ============================================================ */
+(function (global) {
+  "use strict";
+
+  const LS_GROUPS = "tarter_yard_email_groups_local";
+  const LS_PICKED = "tarter_yard_email_groups_last";
+
+  let groups = null;          // null = never loaded, [] = loaded and empty
+  let loading = null;         // in-flight promise, so N pickers share one fetch
+  const listeners = [];
+
+  const isLocal = () => { try { return global.Sync?.mode === "local"; } catch (e) { return true; } };
+  const emit = () => listeners.forEach((fn) => { try { fn(groups); } catch (e) { console.error(e); } });
+
+  function lsRead() {
+    try { const raw = localStorage.getItem(LS_GROUPS); return raw ? JSON.parse(raw) : []; }
+    catch (e) { return []; }
+  }
+  function lsWrite(list) {
+    try { localStorage.setItem(LS_GROUPS, JSON.stringify(list)); } catch (e) {}
+  }
+
+  /* Same normalisation the API applies, so a group created offline and one
+     created on the server hold the same thing. */
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  function cleanEmails(raw) {
+    const flat = Array.isArray(raw) ? raw.join(",") : String(raw || "");
+    const list = flat.split(/[,;\s]+/).map((s) => s.trim().toLowerCase()).filter((s) => EMAIL_RE.test(s));
+    return [...new Set(list)].slice(0, 100);
+  }
+  function cleanName(raw) { return String(raw || "").replace(/\s+/g, " ").trim().slice(0, 80); }
+  const byName = (a, b) => String(a.name || "").localeCompare(String(b.name || ""));
+
+  async function load(force) {
+    if (groups && !force) return groups;
+    if (loading) return loading;
+    loading = (async () => {
+      if (isLocal()) { groups = lsRead().sort(byName); return groups; }
+      try {
+        const r = await global.Sync.api("email-groups");
+        groups = r.ok && Array.isArray(r.body.items) ? r.body.items : [];
+      } catch (e) {
+        // A failed load must not wedge the picker: fall back to "no groups"
+        // so the manual-address field still gets the send through.
+        groups = [];
+      }
+      return groups;
+    })().finally(() => { loading = null; });
+    const out = await loading;
+    emit();
+    return out;
+  }
+
+  function list() { return groups || []; }
+  function get(id) { return list().find((g) => g.id === id) || null; }
+
+  /* ---- mutations (editors only; the API enforces that too) ---- */
+
+  async function create(name, emails) {
+    const clean = cleanName(name);
+    if (!clean) throw new Error("missing_name");
+    if (list().some((g) => String(g.name).toLowerCase() === clean.toLowerCase())) throw new Error("duplicate_name");
+    if (isLocal()) {
+      const item = { id: `local-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, name: clean, emails: cleanEmails(emails) };
+      groups = [...list(), item].sort(byName);
+      lsWrite(groups); emit(); return item;
+    }
+    const r = await global.Sync.api("email-groups", { method: "POST", body: JSON.stringify({ name: clean, emails: cleanEmails(emails) }) });
+    if (!r.ok) throw new Error(r.body.error || "create_failed");
+    groups = [...list(), r.body.item].sort(byName);
+    emit(); return r.body.item;
+  }
+
+  async function update(id, patch) {
+    const next = {};
+    if (patch.name !== undefined) next.name = cleanName(patch.name);
+    if (patch.emails !== undefined) next.emails = cleanEmails(patch.emails);
+    if (next.name !== undefined && !next.name) throw new Error("missing_name");
+    if (next.name !== undefined && list().some((g) => g.id !== id && String(g.name).toLowerCase() === next.name.toLowerCase())) throw new Error("duplicate_name");
+    if (isLocal()) {
+      groups = list().map((g) => (g.id === id ? { ...g, ...next } : g)).sort(byName);
+      lsWrite(groups); emit(); return get(id);
+    }
+    const r = await global.Sync.api("email-groups", { method: "PATCH", body: JSON.stringify({ id, ...next }) });
+    if (!r.ok) throw new Error(r.body.error || "update_failed");
+    groups = list().map((g) => (g.id === id ? r.body.item : g)).sort(byName);
+    emit(); return r.body.item;
+  }
+
+  async function remove(id) {
+    if (isLocal()) { groups = list().filter((g) => g.id !== id); lsWrite(groups); emit(); return; }
+    const r = await global.Sync.api("email-groups", { method: "DELETE", body: JSON.stringify({ id }) });
+    if (!r.ok) throw new Error(r.body.error || "delete_failed");
+    groups = list().filter((g) => g.id !== id);
+    emit();
+  }
+
+  /* ---- the picker the send modals embed ---- */
+
+  function rememberPicked(ids) {
+    try { localStorage.setItem(LS_PICKED, JSON.stringify(ids)); } catch (e) {}
+  }
+  function lastPicked() {
+    try { const raw = localStorage.getItem(LS_PICKED); const v = raw ? JSON.parse(raw) : []; return Array.isArray(v) ? v : []; }
+    catch (e) { return []; }
+  }
+
+  function tx(key) {
+    const es = global.I18N?.getLang?.() === "es";
+    const S = {
+      pick:      [ "Send to", "Enviar a" ],
+      none:      [ "No email groups yet — an editor can create them in Control Center → Data.",
+                   "Aún no hay grupos de correo. Un editor puede crearlos en Centro de Control → Datos." ],
+      loading:   [ "Loading groups…", "Cargando grupos…" ],
+      empty:     [ "no addresses yet", "sin correos todavía" ],
+      other:     [ "Other addresses (optional)", "Otros correos (opcional)" ],
+      otherPh:   [ "name@company.com, name2@company.com", "correo@empresa.com, correo2@empresa.com" ],
+      needOne:   [ "Pick a group or type an address.", "Selecciona un grupo o escribe un correo." ],
+      selected:  [ "recipients selected", "destinatarios seleccionados" ],
+    };
+    return (S[key] || ["", ""])[es ? 1 : 0];
+  }
+
+  const escHtml = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  /* Renders into `host` and keeps the chosen ids on the element itself, so
+     the send handler can read them without this module holding per-modal
+     state (two modals can be built and torn down in any order). */
+  function renderPicker(host, opts) {
+    if (!host) return;
+    const preselect = opts && opts.preselect !== false;
+    const paint = () => {
+      const all = list();
+      if (groups === null) { host.innerHTML = `<div class="eg-note">${escHtml(tx("loading"))}</div>`; return; }
+      if (!all.length) { host.innerHTML = `<div class="eg-note">${escHtml(tx("none"))}</div>`; host._egSelected = []; return; }
+      const chosen = new Set(host._egSelected || (preselect ? lastPicked() : []));
+      host.innerHTML = all.map((g) => {
+        const n = (g.emails || []).length;
+        // An empty group is not a recipient, so it never comes back ticked
+        // from the remembered selection either -- a disabled checkbox still
+        // matches :checked, and the send would silently include nothing.
+        const on = chosen.has(g.id) && n > 0;
+        return `<label class="eg-row${on ? " on" : ""}">
+          <input type="checkbox" value="${escHtml(g.id)}"${on ? " checked" : ""}${n ? "" : " disabled"} />
+          <span class="eg-name">${escHtml(g.name)}</span>
+          <span class="eg-count">${n ? `${n}` : escHtml(tx("empty"))}</span>
+        </label>`;
+      }).join("") + `<div class="eg-total" data-eg-total></div>`;
+      const sync = () => {
+        const ids = [...host.querySelectorAll('input[type=checkbox]:checked')].map((i) => i.value);
+        host._egSelected = ids;
+        host.querySelectorAll(".eg-row").forEach((r) => r.classList.toggle("on", !!r.querySelector("input").checked));
+        const total = new Set(ids.flatMap((id) => (get(id)?.emails) || [])).size;
+        const el = host.querySelector("[data-eg-total]");
+        if (el) el.textContent = total ? `${total} ${tx("selected")}` : "";
+      };
+      host.querySelectorAll('input[type=checkbox]').forEach((i) => { i.onchange = sync; });
+      sync();
+    };
+    paint();
+    if (groups === null) load().then(paint);
+  }
+
+  /* What the send handlers post: the ids, and the addresses typed by hand. */
+  function selection(host) {
+    const ids = (host && host._egSelected) || [];
+    rememberPicked(ids);
+    return ids;
+  }
+
+  function onChange(fn) { listeners.push(fn); }
+
+  global.YardEmailGroups = {
+    load, list, get, create, update, remove,
+    renderPicker, selection, onChange, cleanEmails, tx,
+    // list() always hands back an array, so callers that need to tell
+    // "loaded and empty" from "not fetched yet" ask here instead.
+    isLoaded: () => groups !== null,
+    reset: () => { groups = null; },
+  };
+})(window);
+</script>
 <script id="tarter-cc23-es-translate">
 /* Spanish translation pass for the Control Center, report modal, and email
    modal -- these were built later as raw template-literal HTML (not the
@@ -10220,7 +10604,18 @@ body.fieldmode .tnav-ico{width:27px;height:27px}
     "Export":"Exportar","Export weekly brief":"Exportar resumen semanal","Today":"Hoy","Map":"Mapa",
     "Send report by email":"Enviar reporte por correo",
     "Send weekly report":"Enviar resumen semanal",
-    "Send by email":"Enviar por correo","Send to (comma-separated emails)":"Enviar a (correos separados por coma)",
+    "Send by email":"Enviar por correo","Send to":"Enviar a",
+    "Other addresses (optional)":"Otros correos (opcional)",
+    // Email groups (send modals + the Data tab editor)
+    "Email groups":"Grupos de correo",
+    "Recipient lists the send-by-email actions pick from":"Listas de destinatarios que usan las acciones de envío por correo",
+    "Create group":"Crear grupo","Group name — e.g. Quality team":"Nombre del grupo — ej. Equipo de calidad",
+    "Addresses, comma-separated (optional)":"Correos separados por coma (opcional)",
+    "Add address":"Agregar correo","Rename":"Renombrar","Delete":"Eliminar",
+    "address":"correo","addresses":"correos",
+    "No email groups yet.":"Aún no hay grupos de correo.",
+    "Loading email groups…":"Cargando grupos de correo…",
+    "No addresses yet — this group cannot be picked until one is added.":"Sin correos todavía. Este grupo no se puede seleccionar hasta que agregues uno.",
     "Everything from the last 7 days, ready to export or email.":"Todo lo de los últimos 7 días, listo para exportar o enviar por correo.",
     "Send this brief by email":"Enviar este resumen por correo",
     "Sends the summary below, plus the detail tables, to whoever you enter.":"Envía el resumen de abajo, más las tablas de detalle, a quien indiques.",
@@ -10245,7 +10640,7 @@ body.fieldmode .tnav-ico{width:27px;height:27px}
     "Assign to me":"Asignarme","Start":"Iniciar","Start work":"Iniciar trabajo","Resolve":"Resolver",
     "Acknowledge":"Reconocer","Save owner / priority":"Guardar responsable / prioridad",
     "Workflow":"Flujo de trabajo","Report context":"Contexto del reporte","Product context":"Contexto del producto",
-    "Reporter":"Reportado por","Created":"Creado","System On Hand":"Sistema","Product group":"Grupo de producto",
+    "Reporter":"Reportado por","Created":"Creado","System On Hand":"Sistema (On Hand)","Product group":"Grupo de producto",
     "Open product":"Abrir producto","Show on map":"Ver en el mapa","View photo":"Ver foto",
     "Send by email":"Enviar por correo","Email":"Correo","SKU":"SKU","Type":"Tipo","Reported":"Reportado",
     "Report":"Reporte","No workflow activity recorded yet.":"Sin actividad de flujo registrada todavía.",
@@ -10303,7 +10698,7 @@ body.fieldmode .tnav-ico{width:27px;height:27px}
     "No Quality reports yet.":"Sin reportes de calidad todavía.","No Seconds reports yet.":"Sin reportes de Seconds todavía.",
     "System vs physical count":"Sistema vs conteo físico","System On Hand vs physical":"Sistema vs físico",
     // Send-by-email modal
-    "Send to (comma-separated emails)":"Enviar a (correos separados por coma)",
+
     "Message (optional)":"Mensaje (opcional)","Cancel":"Cancelar","Send":"Enviar","Sending…":"Enviando…",
     "Email sent":"Correo enviado",
     // Login self-signup
@@ -10351,16 +10746,40 @@ body.fieldmode .tnav-ico{width:27px;height:27px}
     "Photo":"Foto","Email sent":"Correo enviado",
   };
 
-  function swapAttr(root, attr) {
+  /* Switching *back* to English used to leave these panels in Spanish: the
+     pass above rewrites the rendered DOM in place, so once a tab had been
+     translated the English text was simply gone, and a panel only ever
+     recovered if something happened to re-render it from scratch. Mapping
+     the dictionary the other way makes the pass reversible, so English mode
+     actively puts English back instead of just declining to translate.
+
+     A handful of English phrases share one Spanish translation -- almost all
+     of them casing variants of each other ("Open Reports" / "Open reports").
+     First entry wins there, so the phrase comes back in English even if its
+     capitalisation is the sibling's; leaving it stuck in Spanish would be
+     the worse outcome. Entries whose Spanish is identical to the English
+     have nothing to undo, and a Spanish phrase that is also an English key
+     is skipped so the two directions never fight each other. */
+  const REV = (() => {
+    const rev = {};
+    Object.entries(DICT).forEach(([en, es]) => {
+      if (es === en || DICT[es] != null || rev[es] != null) return;
+      rev[es] = en;
+    });
+    return rev;
+  })();
+
+  function swapAttr(root, attr, map) {
     root.querySelectorAll?.(`[${attr}]`).forEach((el) => {
       const cur = el.getAttribute(attr);
-      const hit = DICT[cur && cur.trim()];
+      const hit = map[cur && cur.trim()];
       if (hit != null) el.setAttribute(attr, hit);
     });
   }
 
-  function translateEs(root) {
-    if (!root || (window.I18N?.getLang?.() || "en") !== "es") return;
+  function translateDom(root) {
+    if (!root) return;
+    const map = (window.I18N?.getLang?.() || "en") === "es" ? DICT : REV;
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
     const nodes = [];
     let n;
@@ -10369,11 +10788,11 @@ body.fieldmode .tnav-ico{width:27px;height:27px}
       const raw = node.nodeValue;
       const trimmed = raw.trim();
       if (!trimmed) return;
-      const hit = DICT[trimmed];
+      const hit = map[trimmed];
       if (hit != null && trimmed !== hit) node.nodeValue = raw.replace(trimmed, hit);
     });
-    swapAttr(root, "placeholder");
-    swapAttr(root, "title");
+    swapAttr(root, "placeholder", map);
+    swapAttr(root, "title", map);
   }
 
   const ROOTS = ["opsCenter", "opsReportModal", "alertEmailModal", "alertsPanel", "productSheetModal", "reportEmailModal"];
@@ -10385,7 +10804,7 @@ body.fieldmode .tnav-ico{width:27px;height:27px}
     requestAnimationFrame(() => {
       scheduled = false;
       observers.forEach((o) => o.disconnect());
-      ROOTS.forEach((id) => translateEs(document.getElementById(id)));
+      ROOTS.forEach((id) => translateDom(document.getElementById(id)));
       observers.forEach((o, i) => {
         const el = document.getElementById(ROOTS[i]);
         if (el) o.observe(el, { childList: true, subtree: true, characterData: true });

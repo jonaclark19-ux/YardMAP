@@ -1,12 +1,12 @@
 import { requireEditor, requireUser } from "./_lib/auth.js";
 import { getMeta, rest, rpc } from "./_lib/db.js";
 import { audit } from "./_lib/audit.js";
-import { parseRecipients, sendMail } from "./_lib/email.js";
+import { parseRecipients, resolveRecipients, sendMail } from "./_lib/email.js";
 import { json, readJson, errorResponse, methodNotAllowed } from "./_lib/http.js";
 
-/* Combines announcements, shift handoffs, zone status, the ops summary and
-   the audit log into one Vercel Function -- five small, related endpoints
-   that together with everything else would blow past the Hobby plan's
+/* Combines announcements, shift handoffs, zone status, the ops summary, the
+   audit log and the email groups into one Vercel Function -- small, related
+   endpoints that each on their own would blow past the Hobby plan's
    12-function cap. vercel.json rewrites their old paths here with a
    ?route= query param so the public API is unchanged. */
 
@@ -117,7 +117,7 @@ async function handleWeeklyReport(request) {
   if (request.method !== "POST") return methodNotAllowed(["POST"]);
   const user = await requireEditor(request);
   const body = await readJson(request, 400_000);
-  const to = parseRecipients(body.to);
+  const to = await resolveRecipients({ to: body.to, groupIds: body.groupIds });
   if (!to.length) return json({ error: "invalid_recipients" }, 400);
   const subject = String(body.subject || "Tarter Yard Map · Report").trim().slice(0, 200);
   const html = String(body.html || "").trim();
@@ -126,6 +126,111 @@ async function handleWeeklyReport(request) {
   await sendMail({ to, subject, html });
   await audit(user, "weekly_report_emailed", "report", null, { to, count: to.length, subject });
   return json({ ok: true, to });
+}
+
+/* ---------------------------------------------- email groups ----
+   Named recipient lists the Control Center curates, so the email actions can
+   offer "Quality team" instead of asking someone to retype four addresses.
+   Reading one is open to any signed-in user (they need it to send); changing
+   one is an editor action, like every other piece of shared configuration. */
+
+const MAX_GROUPS = 60;
+const MAX_EMAILS_PER_GROUP = 100;
+
+function groupToClient(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    // Rows written before a validation pass, or hand-edited in Supabase, can
+    // hold anything; normalize on the way out so the client only ever sees an
+    // array of strings.
+    emails: Array.isArray(row.emails) ? row.emails.filter((e) => typeof e === "string") : [],
+    createdBy: row.created_by,
+    updatedAt: row.updated_at,
+  };
+}
+
+function cleanGroupName(raw) {
+  return String(raw || "").replace(/\s+/g, " ").trim().slice(0, 80);
+}
+
+// The addresses arrive as either an array or one comma/space-separated
+// string, so the same helper serves the API and a paste from a mail client.
+// parseRecipients drops anything that is not a plausible address, which is
+// what keeps a typo from silently becoming a group member.
+function cleanGroupEmails(raw) {
+  const flat = Array.isArray(raw) ? raw.join(",") : raw;
+  const list = parseRecipients(flat, MAX_EMAILS_PER_GROUP);
+  return [...new Set(list.map((e) => e.toLowerCase()))];
+}
+
+async function handleEmailGroups(request) {
+  if (request.method === "GET") {
+    await requireUser(request);
+    const { data } = await rest("email_groups", `select=*&order=name.asc&limit=${MAX_GROUPS}`);
+    return json({ items: (data || []).map(groupToClient) });
+  }
+
+  const editor = await requireEditor(request);
+  const body = await readJson(request, 60_000);
+
+  if (request.method === "POST") {
+    const name = cleanGroupName(body.name);
+    if (!name) return json({ error: "missing_name" }, 400);
+    const { data: existing } = await rest("email_groups", `select=id&limit=${MAX_GROUPS}`);
+    if ((existing || []).length >= MAX_GROUPS) return json({ error: "too_many_groups" }, 400);
+    const emails = cleanGroupEmails(body.emails);
+    // The unique index on lower(name) is what actually enforces uniqueness --
+    // checking first and inserting after would race two editors against each
+    // other. PostgREST answers the violation with 409, which rest() raises.
+    let data;
+    try {
+      ({ data } = await rest("email_groups", "", {
+        method: "POST",
+        body: { name, emails, created_by: editor.name },
+        headers: { prefer: "return=representation" },
+      }));
+    } catch (e) {
+      if (e?.status === 409) return json({ error: "duplicate_name" }, 409);
+      throw e;
+    }
+    await audit(editor, "email_group_created", "email_group", data?.[0]?.id, { name, count: emails.length });
+    return json({ item: groupToClient(data?.[0] || {}) }, 201);
+  }
+
+  if (request.method === "PATCH") {
+    const id = String(body.id || "");
+    if (!id) return json({ error: "missing_id" }, 400);
+    const patch = { updated_at: new Date().toISOString() };
+    if (body.name !== undefined) {
+      const name = cleanGroupName(body.name);
+      if (!name) return json({ error: "missing_name" }, 400);
+      patch.name = name;
+    }
+    if (body.emails !== undefined) patch.emails = cleanGroupEmails(body.emails);
+    let data;
+    try {
+      ({ data } = await rest("email_groups", `id=eq.${encodeURIComponent(id)}`, {
+        method: "PATCH", body: patch, headers: { prefer: "return=representation" },
+      }));
+    } catch (e) {
+      if (e?.status === 409) return json({ error: "duplicate_name" }, 409);
+      throw e;
+    }
+    if (!data?.[0]) return json({ error: "not_found" }, 404);
+    await audit(editor, "email_group_updated", "email_group", id, { fields: Object.keys(patch) });
+    return json({ item: groupToClient(data[0]) });
+  }
+
+  if (request.method === "DELETE") {
+    const id = String(body.id || new URL(request.url).searchParams.get("id") || "");
+    if (!id) return json({ error: "missing_id" }, 400);
+    await rest("email_groups", `id=eq.${encodeURIComponent(id)}`, { method: "DELETE" });
+    await audit(editor, "email_group_deleted", "email_group", id);
+    return json({ ok: true });
+  }
+
+  return methodNotAllowed(["GET", "POST", "PATCH", "DELETE"]);
 }
 
 async function handleAudit(request) {
@@ -145,6 +250,7 @@ export default {
       if (route === "summary") return await handleSummary(request);
       if (route === "weekly-report") return await handleWeeklyReport(request);
       if (route === "audit") return await handleAudit(request);
+      if (route === "email-groups") return await handleEmailGroups(request);
       return json({ error: "unknown_route" }, 404);
     } catch (error) { return errorResponse(error); }
   },
