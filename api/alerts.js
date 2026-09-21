@@ -18,22 +18,61 @@ async function recurrenceMap(days = 30) {
   } catch { return new Map(); }
 }
 
+/* The client treats this response as the whole authoritative list, so a flat
+   "newest 1500" meant that once the yard passed 1500 reports the oldest
+   simply stopped existing as far as the app was concerned -- and the ones to
+   go first are the oldest, which is where the open backlog lives. A silent
+   wrong answer, not a slow one.
+
+   Pagination was the obvious fix and the wrong one: it would still have the
+   client download every report ever filed, just in instalments. What the app
+   actually needs is narrower than "everything":
+
+     - every report that is not resolved, at any age. Age is what makes an
+       unresolved report matter more, so these are never bounded by date.
+     - resolved reports inside the window the UI can actually display. The
+       Control Center's widest range is 30 days and repeatedSkus() runs on
+       30, so nothing older is reachable by any screen.
+
+   Note this asks the server for status != resolved, while the client also
+   treats a verified inventory check as closed. That makes the first query a
+   superset of what the app calls open -- which is the safe direction: a
+   report can be fetched and then filtered out, never missed.
+
+   With retention deleting resolved reports at 30 days, the second query is
+   already close to a no-op. The window is wider than retention on purpose,
+   so turning retention off does not start hiding rows the UI still shows. */
+const OPEN_LIMIT = 4000;
+const RESOLVED_LIMIT = 4000;
+const RESOLVED_WINDOW_DAYS = Math.max(30, Number(process.env.ALERTS_RESOLVED_WINDOW_DAYS || 60));
+
 async function getAlerts() {
-  // Real pagination would need to change how the client syncs alerts (it
-  // currently treats this as the full authoritative list, not a page of
-  // one), which is a bigger change than is safe to make in isolation. This
-  // higher cap is a stop-gap: it buys a lot more headroom before the
-  // oldest open alerts start silently falling out of the list.
-  const { data } = await rest("alerts", "select=*&order=created_at.desc&limit=1500");
+  const since = new Date(Date.now() - RESOLVED_WINDOW_DAYS * 86400000).toISOString();
+  const [openRes, doneRes] = await Promise.all([
+    rest("alerts", `status=neq.resolved&select=*&order=created_at.desc&limit=${OPEN_LIMIT}`),
+    rest("alerts", `status=eq.resolved&created_at=gte.${encodeURIComponent(since)}&select=*&order=created_at.desc&limit=${RESOLVED_LIMIT}`),
+  ]);
+  const open = openRes.data || [];
+  const done = doneRes.data || [];
+
+  // Hitting either cap would put us back where we started, so say so instead
+  // of quietly returning a short list. A yard with 4000 unresolved reports
+  // has a problem the app should not be hiding.
+  const truncated = open.length >= OPEN_LIMIT || done.length >= RESOLVED_LIMIT;
+  if (truncated) {
+    console.warn("alerts: list truncated", { open: open.length, resolved: done.length, openLimit: OPEN_LIMIT, resolvedLimit: RESOLVED_LIMIT });
+  }
+
   const rec = await recurrenceMap(30);
-  return (data || []).map((a) => alertToClient(a, rec.get(String(a.sku || "")) || 0));
+  const rows = open.concat(done).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  return { items: rows.map((a) => alertToClient(a, rec.get(String(a.sku || "")) || 0)), truncated };
 }
 
 async function handleAlerts(request) {
   if (request.method === "GET") {
     await requireUser(request);
-    const [meta, items] = await Promise.all([getMeta(), getAlerts()]);
-    return json({ rev: Number(meta?.alerts_rev || 0), items });
+    const [meta, list] = await Promise.all([getMeta(), getAlerts()]);
+    return json({ rev: Number(meta?.alerts_rev || 0), items: list.items, truncated: list.truncated });
   }
 
   if (request.method === "POST") {
@@ -69,8 +108,8 @@ async function handleAlerts(request) {
       const revRows = await rpc("yard_bump_alerts_rev");
       const rev = Number(Array.isArray(revRows) ? revRows[0]?.alerts_rev : revRows?.alerts_rev) || 0;
       await audit(user, "alert_deleted", "alert", id);
-      const items = await getAlerts();
-      return json({ rev, items });
+      const list = await getAlerts();
+      return json({ rev, items: list.items, truncated: list.truncated });
     }
 
     const patch = { updated_at: new Date().toISOString() };
@@ -107,8 +146,8 @@ async function handleAlerts(request) {
     const revRows = await rpc("yard_bump_alerts_rev");
     const rev = Number(Array.isArray(revRows) ? revRows[0]?.alerts_rev : revRows?.alerts_rev) || 0;
     await audit(user, "alert_updated", "alert", id, patch);
-    const items = await getAlerts();
-    return json({ rev, items });
+    const list = await getAlerts();
+    return json({ rev, items: list.items, truncated: list.truncated });
   }
 
   return methodNotAllowed(["GET", "POST", "PATCH"]);
