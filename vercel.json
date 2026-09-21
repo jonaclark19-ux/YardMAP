@@ -17,7 +17,8 @@
     }
   ],
   "crons": [
-    { "path": "/api/alerts-weekly-summary", "schedule": "0 12 * * 1" }
+    { "path": "/api/alerts-weekly-summary", "schedule": "0 12 * * 1" },
+    { "path": "/api/alerts-weekly-summary?route=retention", "schedule": "0 7 * * *" }
   ],
   "rewrites": [
     { "source": "/api/login", "destination": "/api/auth?route=login" },
