@@ -1104,7 +1104,6 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
     <div class="dr-label" data-i18n="tool.sectionData">Data</div>
     <button class="dr-item" id="exportBtn"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.2v11.4M12 15.6 7.9 11.5M12 15.6l4.1-4.1"/><path d="M4.2 15v3.4a1.8 1.8 0 0 0 1.8 1.8h12a1.8 1.8 0 0 0 1.8-1.8V15"/></svg></span><span data-i18n="tool.export">Export</span></button>
     <button class="dr-item" id="importBtn"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15.6V4.2M12 4.2 7.9 8.3M12 4.2l4.1 4.1"/><path d="M4.2 15v3.4a1.8 1.8 0 0 0 1.8 1.8h12a1.8 1.8 0 0 0 1.8-1.8V15"/></svg></span><span data-i18n="tool.import">Import</span></button>
-    <button class="dr-item danger" id="resetBtn"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 5.6v5h5"/><path d="M4.7 14a8 8 0 1 0 1.3-6.6L3.6 10.6"/></svg></span><span data-i18n="tool.reset">Reset</span></button>
   </div>
 
   <div class="dr-sec">
@@ -1408,7 +1407,6 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "tool.excelTitle": "Import products from Excel/CSV in bulk",
       "tool.mto": "MTO Zones",
       "tool.mtoTitle": "Flexible areas (MTO / specials): a list of products with no fixed spot",
-      "tool.reset": "Reset",
       "tool.resetTitle": "Restore original layout",
       "tool.menu": "Menu",
       "tool.language": "Language",
@@ -1680,8 +1678,6 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "io.xlsUnreadable": "Could not read the file (is it a valid .xlsx or .csv?)",
       "io.xlsImported": "{n} products imported — drag them to their spot",
       "io.xlsSkipped": " ({n} empty rows skipped)",
-      "io.resetConfirm": "Restore the original layout and product positions? Your changes will be lost (export first for a backup).",
-      "io.wasReset": "Restored original layout",
 
       /* ---- sync ---- */
       "sync.saving": "Saving…",
@@ -1807,7 +1803,6 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "tool.excelTitle": "Importar productos desde Excel/CSV en lote",
       "tool.mto": "Zonas MTO",
       "tool.mtoTitle": "Áreas flexibles (MTO / especiales): lista de productos sin lugar fijo",
-      "tool.reset": "Restaurar",
       "tool.resetTitle": "Restaurar el diseño original",
       "tool.menu": "Menú",
       "tool.language": "Idioma",
@@ -2079,8 +2074,6 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "io.xlsUnreadable": "No pude leer el archivo (¿es un .xlsx o .csv válido?)",
       "io.xlsImported": "{n} productos importados — arrástralos a su lugar",
       "io.xlsSkipped": " ({n} filas vacías omitidas)",
-      "io.resetConfirm": "¿Restaurar el diseño y las posiciones originales? Se perderán tus cambios (exporta primero como respaldo).",
-      "io.wasReset": "Diseño original restaurado",
 
       /* ---- sync ---- */
       "sync.saving": "Guardando…",
@@ -4507,13 +4500,12 @@ $("#mtoXls").onchange=e=>{
   }catch(err){ console.error(err); toast(t("io.xlsUnreadable")); } };
   rd.readAsArrayBuffer(f); e.target.value=""; mtoImportTarget=null;
 };
-$("#resetBtn").onclick=()=>{
-  if(!canEdit()){ toast(t("session.noPermission")); return; }
-  if(!confirm(t("io.resetConfirm"))) return;
-  data=DEFAULT_DATA(); selection.clear(); save();
-  qInput.value=""; clrBtn.style.display="none";
-  render(); fit(); rebuildSkuList(); toast(t("io.wasReset")); closeDrawer();
-};
+/* The Data menu used to end in a "Reset" that ran data = DEFAULT_DATA():
+   every product, position, group and drawn shape replaced by the original
+   layout, behind a single confirm(), one tap inside the main menu. Nothing
+   short of re-importing a backup undid it. Export stays, and Import restores
+   a file, so a deliberate reset is still reachable -- through a route that
+   makes you choose the state you are restoring rather than one mis-tap. */
 
 let toastT;
 function toast(m){
