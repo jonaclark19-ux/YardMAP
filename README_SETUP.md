@@ -51,6 +51,10 @@ valores por defecto. Solo necesitas definirlos si quieres cambiarlos:
 - `RETENTION_HISTORY_DAYS` — días que se conserva una revisión del mapa
   aunque ya no esté entre las últimas `RETENTION_HISTORY_KEEP`. Por
   defecto `30`. Una revisión se borra solo si cumple **ambas** condiciones.
+- `ALERTS_RESOLVED_WINDOW_DAYS` — días de reportes **resueltos** que la app
+  descarga para mostrar. Por defecto `60`. Los reportes abiertos siempre se
+  descargan completos, sin importar su antigüedad. No baja de `30`, que es
+  el rango más amplio que muestra el Centro de Control.
 - `SESSION_SECRET`
 - `BOOTSTRAP_ADMIN_CODE`
 
