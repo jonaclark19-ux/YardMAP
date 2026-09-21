@@ -3344,40 +3344,35 @@ function renderTiles(){
 function render(){ drawBackground(); renderTiles(); applyView(); }
 
 /* ---------------------------------------------- panning cost ----
-   Panning on a phone used to run at about 20fps regardless of zoom. Three
-   things were paying for that, found by measuring rather than guessing --
-   the first suspect, the saturate/brightness filter on every tile, turned
-   out to cost nothing at all.
+   Panning on a phone used to run at about 20fps regardless of zoom. What
+   paid for that was found by measuring under 6x CPU throttle rather than
+   guessing -- the obvious suspect, the saturate/brightness filter on all
+   396 tiles, cost nothing measurable at all.
 
    1. This ran once per pointermove, which on a touch screen fires several
       times per rendered frame, so the transform was written ~3.4 times for
       every frame the user actually saw. It now writes on the leading edge
       and coalesces the rest into one write per frame. Leading-edge matters:
-      callers that apply the view and then measure the DOM still see it
-      applied synchronously.
+      fit() and flyTo() apply the view and then measure the DOM, so a purely
+      trailing implementation would break them.
 
-   2. Tile labels were painted at every zoom. At the zoomed-out end a 12px
-      label renders around 1.5px tall -- unreadable, and 396 of them. They
-      are dropped below the zoom where they could be read at all.
-
-   3. #canvas carried will-change:transform. That reads like a performance
+   2. #canvas carried will-change:transform. That reads like a performance
       hint, and on a viewport-sized element it is one, but this element
       spans the whole yard: it promoted a layer far larger than the screen
       and had the browser re-rasterise all of it on every pan, which is why
       the cost did not fall when only 14 tiles were on screen. Dropping it
       lets the browser tile the raster the way it does for ordinary
-      scrolling. Measured at 6x CPU throttle on a 390px viewport, the three
-      together take the median frame from 50ms to 16.7ms at every zoom.
+      scrolling. That single change is most of the win.
 
-   Below this scale a tile label is under ~5.5px tall, which no one is
-   reading; the tile itself is about 30px wide at that point. */
-const LABEL_MIN_SCALE = 0.45;
-let viewRaf = 0, viewPending = false, viewCoarse = null;
+   Hiding tile labels at low zoom was measured as a third fix and dropped:
+   with the two above in place it left the median frame at 16.7ms either
+   way, and the labels are wanted on desktop, where the whole yard at once
+   is a normal way to work. It only ever helped at the furthest zoom-out,
+   and only with occasional hitches rather than the typical frame. */
 function writeView(){
   canvas.style.transform=`translate(${view.tx}px,${view.ty}px) scale(${view.k})`;
-  const coarse = view.k < LABEL_MIN_SCALE;
-  if(coarse !== viewCoarse){ viewCoarse = coarse; canvas.classList.toggle("coarse", coarse); }
 }
+let viewRaf = 0, viewPending = false;
 function applyView(){
   if(viewRaf){ viewPending = true; return; }
   writeView();
@@ -10550,14 +10545,6 @@ body.fieldmode .tnav-ico{width:27px;height:27px}
 .insp .ibody button[data-shape]{min-width:36px;height:34px;display:grid;place-items:center;
   border-radius:9px;font-size:0}
 .insp .ibody button[data-shape] svg{width:17px;height:17px}
-
-/* ---- Zoomed far enough out, tile text is noise the GPU still pays for ---- */
-/* Dropped rather than faded: opacity still costs a paint, display:none does
-   not. The tile, its colour and its search outline all stay, so a match is
-   still findable -- only the characters nobody could read go away. */
-#canvas.coarse .tile>span,
-#canvas.coarse .tile .qbadge,
-#canvas.coarse .apin .plbl{display:none}
 
 /* ---- Mode banners: the two editor modes announce themselves the same way -- */
 .hint.editmode,.hint.bgmode{display:inline-flex;align-items:center;gap:8px}
