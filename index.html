@@ -946,7 +946,6 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       <span class="sep"></span>
       <button id="bgPropBtn" class="lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.6 14.6a1.6 1.6 0 0 0 .32 1.76l.06.06a1.9 1.9 0 1 1-2.7 2.7l-.06-.06a1.6 1.6 0 0 0-1.76-.32 1.6 1.6 0 0 0-.97 1.47v.17a1.9 1.9 0 1 1-3.8 0v-.09a1.6 1.6 0 0 0-1.05-1.47 1.6 1.6 0 0 0-1.76.32l-.06.06a1.9 1.9 0 1 1-2.7-2.7l.06-.06a1.6 1.6 0 0 0 .32-1.76 1.6 1.6 0 0 0-1.47-.97H3.7a1.9 1.9 0 1 1 0-3.8h.09a1.6 1.6 0 0 0 1.47-1.05 1.6 1.6 0 0 0-.32-1.76l-.06-.06a1.9 1.9 0 1 1 2.7-2.7l.06.06a1.6 1.6 0 0 0 1.76.32h.08A1.6 1.6 0 0 0 10.45 4V3.7a1.9 1.9 0 1 1 3.8 0v.09a1.6 1.6 0 0 0 .97 1.47 1.6 1.6 0 0 0 1.76-.32l.06-.06a1.9 1.9 0 1 1 2.7 2.7l-.06.06a1.6 1.6 0 0 0-.32 1.76v.08a1.6 1.6 0 0 0 1.47.97h.17a1.9 1.9 0 1 1 0 3.8h-.09a1.6 1.6 0 0 0-1.47.97Z"/></svg><span data-i18n="bg.props">Properties</span></button>
       <button id="bgDelBtn" class="lbl danger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.8 6.4h16.4M9 6.4V4.8a1.4 1.4 0 0 1 1.4-1.4h3.2A1.4 1.4 0 0 1 15 4.8v1.6"/><path d="M18.2 6.4v13a1.8 1.8 0 0 1-1.8 1.8H7.6a1.8 1.8 0 0 1-1.8-1.8v-13"/><path d="M10.2 10.6v6M13.8 10.6v6"/></svg><span data-i18n="bg.delete">Delete</span></button>
-      <button id="bgResetBtn" class="lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 5.6v5h5"/><path d="M4.7 14a8 8 0 1 0 1.3-6.6L3.6 10.6"/></svg><span data-i18n="bg.reset">Reset bg</span></button>
       <span class="hintx" data-i18n="hint.bgbar"></span>
     </div>
 
@@ -1522,13 +1521,10 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "bg.labelReset": "Label centered again",
       "bg.props": "Properties",
       "bg.delete": "Delete",
-      "bg.reset": "Reset bg",
       "bg.on": "Background edit on — select to move/resize, tools to draw",
       "bg.off": "Background edit off",
       "bg.deleted": "Deleted background item",
       "bg.selectFirst": "Select a background item first",
-      "bg.resetConfirm": "Restore the drawn background \u2014 buildings, roads, doors, labels \u2014 to the original yard layout?\n\nProducts, their positions and their groups are NOT touched. Inventory areas and MTO zones are kept. Only your edits to the drawn background are lost.",
-      "bg.wasReset": "Background reset",
       "bg.labelPrompt": "Label text:",
       "bg.doorPrompt": "Door label (e.g. #5):",
       "bg.front": "Brought to front",
@@ -1924,13 +1920,10 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "bg.labelReset": "Etiqueta centrada de nuevo",
       "bg.props": "Propiedades",
       "bg.delete": "Eliminar",
-      "bg.reset": "Restaurar fondo",
       "bg.on": "Edición de fondo activa — selecciona para mover/redimensionar, usa las herramientas para dibujar",
       "bg.off": "Edición de fondo apagada",
       "bg.deleted": "Elemento de fondo eliminado",
       "bg.selectFirst": "Primero selecciona un elemento del fondo",
-      "bg.resetConfirm": "¿Restaurar el fondo dibujado \u2014 edificios, caminos, puertas, etiquetas \u2014 al diseño original de la yarda?\n\nLos productos, sus posiciones y sus grupos NO se tocan. Las áreas de inventario y las zonas MTO se conservan. Solo se pierden tus ediciones del fondo dibujado.",
-      "bg.wasReset": "Fondo restaurado",
       "bg.labelPrompt": "Texto de la etiqueta:",
       "bg.doorPrompt": "Etiqueta de la puerta (ej. #5):",
       "bg.front": "Traído al frente",
@@ -4164,23 +4157,6 @@ document.querySelectorAll(".bgbar [data-tool]").forEach(b=>b.onclick=()=>setBgTo
   document.addEventListener("click",e=>{ if(!e.target.closest("#stampGrp")) pk.hidden=true; });
 })();
 $("#bgDelBtn").onclick=()=>{ if(bgSel!=null){ data.bg.splice(bgSel,1); bgSel=null; save(); drawBackground(); updateInspector(); toast(t("bg.deleted")); } else toast(t("bg.selectFirst")); };
-/* This restores the drawn scenery -- buildings, roads, doors, pits, labels --
-   and never touches the products, their positions or their groups. But
-   inventory areas and MTO zones also live in data.bg, and those are curated
-   data rather than part of the "original yard layout" this button means by
-   background. Taking them out from under someone restoring a road would be an
-   unrelated, unannounced loss, so they are carried across. An MTO zone only
-   counts as curated once it holds SKUs; an empty one falls back to the seed's. */
-$("#bgResetBtn").onclick=()=>{
-  if(!confirm(t("bg.resetConfirm"))) return;
-  const current=data.bg||[];
-  const keptAreas=current.filter(isArea);
-  const keptZones=current.filter(it=>it.kind==="flex" && (it.skus||[]).length);
-  const base=DEFAULT_BG().filter(it=>!isArea(it) && !(keptZones.length && it.kind==="flex"));
-  data.bg=base.concat(keptZones,keptAreas);
-  bgSel=null; save(); drawBackground(); updateInspector();
-  toast(t("bg.wasReset"));
-};
 
 document.querySelectorAll("#seltool [data-al]").forEach(b=>b.onclick=()=>alignSel(b.dataset.al));
 $("#selColor").addEventListener("input",e=>colorSel(e.target.value));
