@@ -6222,11 +6222,11 @@ boot();
   function fmtNum(v){ const n=num(v); return n == null ? "—" : new Intl.NumberFormat("en-US",{maximumFractionDigits:2}).format(n); }
   function fmtDateTime(iso){
     if(!iso) return "—"; const d=new Date(iso); if(isNaN(d)) return String(iso);
-    return d.toLocaleString("en-US",{month:"short",day:"numeric",year:"numeric",hour:"numeric",minute:"2-digit"});
+    return d.toLocaleString((window.I18N?.getLang?.()==="es"?"es-MX":"en-US"),{month:"short",day:"numeric",year:"numeric",hour:"numeric",minute:"2-digit"});
   }
   function fmtTime(iso){
     if(!iso) return "—"; const d=new Date(iso); if(isNaN(d)) return String(iso);
-    return d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
+    return d.toLocaleTimeString((window.I18N?.getLang?.()==="es"?"es-MX":"en-US"),{hour:"numeric",minute:"2-digit"});
   }
   function sameDay(iso, ref=new Date()){
     const d=new Date(iso); return !isNaN(d) && d.getFullYear()===ref.getFullYear() && d.getMonth()===ref.getMonth() && d.getDate()===ref.getDate();
@@ -6520,7 +6520,7 @@ boot();
     document.getElementById("opsPhotoInput").value="";
     document.getElementById("opsPhotoThumb").className="ops-photo-placeholder";
     document.getElementById("opsPhotoThumb").innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.3 8.7a2.2 2.2 0 0 1 2.2-2.2h1.8l1.3-2.1h6.8l1.3 2.1h1.8a2.2 2.2 0 0 1 2.2 2.2v8.6a2.2 2.2 0 0 1-2.2 2.2H5.5a2.2 2.2 0 0 1-2.2-2.2Z"/><circle cx="12" cy="12.8" r="3.5"/></svg>`;
-    document.getElementById("opsTimestampPreview").textContent=`Timestamp will be saved automatically · ${fmtDateTime(new Date().toISOString())}`;
+    document.getElementById("opsTimestampPreview").innerHTML=`<span>Timestamp will be saved automatically</span> · ${escOps(fmtDateTime(new Date().toISOString()))}`;
     document.querySelectorAll("#opsTypeGrid .ops-type").forEach(b=>b.classList.toggle("on",b.dataset.type===reportCtxV2.type));
     renderDynamicFields(); refreshReportSku();
     document.getElementById("opsReportModal").classList.add("show");
@@ -6556,16 +6556,26 @@ boot();
       : `<strong>${escOps(reportCtxV2.sku)}</strong><br><span style="color:var(--amber)">SKU/barcode not found in the current map list.</span>`;
     renderInventoryPreview();
   }
+  /* These options used to be bare <option>Paint</option>, so the browser took
+     the label as the value and the report stored whatever text was on screen.
+     That is why the Spanish pass had to leave them alone: translating the
+     label would have written "Pintura" into the database and split every
+     Control Center count by language. With the English value pinned in the
+     attribute, the label is free to be translated -- what gets stored and
+     grouped stays the same in either language. */
+  function reasonOptions(values){
+    return values.map(v=>`<option value="${escOps(v)}">${escOps(v)}</option>`).join("");
+  }
   function renderDynamicFields(){
     const el=document.getElementById("opsDynamicFields"); if(!reportCtxV2||!reportCtxV2.type){el.innerHTML="";return;}
     const t=reportCtxV2.type;
     let html=`<div class="ops-section-title">${escOps(TYPE_META[t].label)} details</div>`;
     if(t==="quality") html+=`
       <div class="ops-inline"><div class="ops-field"><label>Affected quantity</label><input id="opsQty" type="number" min="1" step="1" placeholder="1" /></div>
-      <div class="ops-field"><label>Problem</label><select id="opsReason"><option>Paint</option><option>Weld</option><option>Bent / Deformed</option><option>Missing component</option><option>Assembly</option><option>Fit / Function</option><option>Other</option></select></div></div>`;
+      <div class="ops-field"><label>Problem</label><select id="opsReason">${reasonOptions(["Paint","Weld","Bent / Deformed","Missing component","Assembly","Fit / Function","Other"])}</select></div></div>`;
     if(t==="seconds") html+=`
       <div class="ops-inline"><div class="ops-field"><label>Quantity going to Seconds</label><input id="opsQty" type="number" min="1" step="1" placeholder="1" /></div>
-      <div class="ops-field"><label>Reason</label><select id="opsReason"><option>Damaged</option><option>Quality defect</option><option>Paint</option><option>Weld</option><option>Bent / Deformed</option><option>Missing component</option><option>Other</option></select></div></div>
+      <div class="ops-field"><label>Reason</label><select id="opsReason">${reasonOptions(["Damaged","Quality defect","Paint","Weld","Bent / Deformed","Missing component","Other"])}</select></div></div>
       <div id="opsAdjustedRef" class="ops-result warn">Enter a quantity to see the adjusted reference. This does not change official inventory.</div>`;
     if(t==="inventory") html+=`
       <div class="ops-field"><label>Physical quantity you see</label><input id="opsPhysicalQty" type="number" min="0" step="1" placeholder="Count physically present" /></div>
@@ -6781,7 +6791,7 @@ boot();
       <div class="ops-panel"><div class="ops-panel-head"><h3>Seconds by reason</h3></div><div class="ops-panel-body">${reasonCount(seconds).length?reasonCount(seconds).map(([k,v])=>`<div class="ops-settings-row"><div class="info"><b>${escOps(k)}</b></div><strong>${fmtNum(v)} units</strong></div>`).join(""):'<div class="ops-empty">No Seconds reports yet.</div>'}</div></div>`;
 
     const events=[]; reports.forEach(r=>{(Array.isArray(r.timeline)?r.timeline:[{status:r.status||"new",at:r.createdAt,by:r.by}]).forEach(ev=>events.push({at:ev.at||r.createdAt,sku:r.sku,type:r.type,status:ev.status,by:ev.by||r.by,comment:ev.comment||""}));}); events.sort((a,b)=>new Date(b.at)-new Date(a.at));
-    const ap=document.getElementById("opsPageActivity"); ap.innerHTML=`<div class="ops-panel"><div class="ops-panel-head"><h3>Activity Timeline</h3><span class="muted">Who · what · when</span></div><div class="ops-panel-body"><div class="ops-timeline">${events.length?events.slice(0,250).map(e=>`<div class="ops-event"><div class="time">${escOps(fmtTime(e.at))}<br>${escOps(new Date(e.at).toLocaleDateString("en-US",{month:"short",day:"numeric"}))}</div><div class="rail"><span class="dot"></span></div><div class="evt"><b>${escOps(e.by||"—")}</b> · ${escOps(TYPE_META[e.type]?.label||e.type)} · <b>${escOps(e.sku||"?")}</b><br>${escOps(STATUS_LABEL[e.status]||e.status)}${e.comment?` · ${escOps(e.comment)}`:""}</div></div>`).join(""):'<div class="ops-empty">No activity yet.</div>'}</div></div></div>`;
+    const ap=document.getElementById("opsPageActivity"); ap.innerHTML=`<div class="ops-panel"><div class="ops-panel-head"><h3>Activity Timeline</h3><span class="muted">Who · what · when</span></div><div class="ops-panel-body"><div class="ops-timeline">${events.length?events.slice(0,250).map(e=>`<div class="ops-event"><div class="time">${escOps(fmtTime(e.at))}<br>${escOps(new Date(e.at).toLocaleDateString((window.I18N?.getLang?.()==="es"?"es-MX":"en-US"),{month:"short",day:"numeric"}))}</div><div class="rail"><span class="dot"></span></div><div class="evt"><b>${escOps(e.by||"—")}</b> · ${escOps(TYPE_META[e.type]?.label||e.type)} · <b>${escOps(e.sku||"?")}</b><br>${escOps(STATUS_LABEL[e.status]||e.status)}${e.comment?` · ${escOps(e.comment)}`:""}</div></div>`).join(""):'<div class="ops-empty">No activity yet.</div>'}</div></div></div>`;
 
     const inv=inventoryState(),bc=getBarcodeState(); const sp=document.getElementById("opsPageSettings");
     sp.innerHTML=`<div class="ops-panel"><div class="ops-panel-head"><h3>Data Sources</h3></div><div class="ops-panel-body">
@@ -7318,7 +7328,7 @@ boot();
   const dateMs=v=>{const t=new Date(v).getTime();return Number.isFinite(t)?t:0};
   const ageMs=r=>Math.max(0,now()-dateMs(r.createdAt));
   function ageText(r){const ms=ageMs(r),m=Math.floor(ms/60000);if(m<60)return `${m}m`;const h=Math.floor(m/60);if(h<48)return `${h}h ${m%60}m`;return `${Math.floor(h/24)}d ${h%24}h`;}
-  function fmtDT(v){if(!v)return "—";const d=new Date(v);if(isNaN(d))return String(v);return d.toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});}
+  function fmtDT(v){if(!v)return "—";const d=new Date(v);if(isNaN(d))return String(v);return d.toLocaleString((window.I18N?.getLang?.()==="es"?"es-MX":"en-US"),{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});}
   function rangeReports(all=reports()){const t=now();if(state.range==="today")return all.filter(r=>{const d=new Date(r.createdAt),n=new Date();return d.toDateString()===n.toDateString()});const days=state.range==="30d"?30:7;return all.filter(r=>dateMs(r.createdAt)>=t-days*86400000);}
   function reportSummary(r){if(r.type==="inventory")return r.inventoryResult==="verified"?`Verified ${r.physicalQuantity??"—"}`:`System ${r.systemInventory??"—"} · Physical ${r.physicalQuantity??"—"} · Δ ${r.variance>0?"+":""}${r.variance??"—"}`;if(r.type==="quality")return `Qty ${r.quantity??1} · ${r.reason||"Quality issue"}${r.disposition?` · ${String(r.disposition).replace(/_/g," ")}`:""}`;if(r.type==="seconds")return `Qty ${r.quantity??1} · ${r.reason||"Sent to Seconds"}`;if(r.type==="out_of_place")return `${r.locationFinding==="additional_stock"?"Additional stock observed":"Wrong location"}${r.quantity?` · Qty ${r.quantity}`:""}`;return r.note||"Operational report";}
   function autoPriority(r){if(!openReport(r))return "normal";if(r.priority==="high"||r.priority==="critical")return "high";if(ageMs(r)>48*3600000)return "high";if(ageMs(r)>24*3600000)return "attention";if(r.type==="inventory"&&Math.abs(num(r.variance)||0)>=10)return "high";if(r.type==="quality"&&["hold_quality","nonconforming_area"].includes(r.disposition))return "high";if(r.type==="out_of_place"&&r.locationFinding!=="additional_stock")return "attention";if(r.type==="seconds"&&(num(r.quantity)||0)>=5)return "attention";return "normal";}
@@ -7396,7 +7406,7 @@ boot();
     <div class="cc23-status-hero"><div class="cc23-hero-main ${o.length?"attn":""}"><div class="cc23-hero-badge">${o.length?M_ICO.alert:M_ICO.check}</div><div><div class="cc23-kicker">Yard status</div><div class="cc23-hero-number ${o.length?"warn":"good"}">${o.length?`${o.length} open report${o.length===1?"":"s"}`:"No open issues"}</div><div class="cc23-hero-sub">${o.length?`${high.length} high attention · ${inprog.length} in progress${oldest?` · oldest ${ageText(oldest)}`:""}`:"No unresolved operational reports are currently active."}</div></div><button class="cc23-hero-cta" data-go-tab="queue">Open action queue →</button></div><div class="cc23-hero-side"><div class="cc23-source"><span class="dot ${inv?"":"warn"}"></span><div><b>${inv?"FG inventory loaded":"FG inventory not loaded"}</b><small>${inv?`${esc(inv.fileName||"Inventory report")} · ${inv.rowCount||0} SKUs`:"Load the current report before using system On Hand as a reference."}</small></div></div><div class="cc23-source"><span class="dot ${pendingLocs.length?"warn":""}"></span><div><b>${pendingLocs.length?`${pendingLocs.length} location observation${pendingLocs.length===1?"":"s"} pending` : "No pending location reviews"}</b><small>Observed secondary locations require an administrator decision before becoming approved map locations.</small></div></div></div></div>
     <div class="cc23-metrics">${metric("New",newc.length,"Awaiting review",newc.length?"alert":"",M_ICO.bell)}${metric("In progress",inprog.length,"Currently being worked",inprog.length?"blue":"",M_ICO.list)}${metric("Quality open",quality.length,"Active quality issues",quality.length?"red":"",M_ICO.shield)}${metric("Inventory issues",invOpen.length,"Physical ≠ system",invOpen.length?"alert":"",M_ICO.box)}${metric("Seconds units",secondsUnits,state.range.toUpperCase(),"",M_ICO.clock)}${metric("Out of place",oop,"Open location issues",oop?"alert":"",M_ICO.pin)}</div>
     <div class="cc23-grid2"><div><div class="cc23-panel"><div class="cc23-panel-head"><h4>${panelIco(M_ICO.flag,"is-brand")}Needs attention</h4><small>Priority + age</small></div><div class="cc23-panel-body"><div class="cc23-queue">${queue.length?queue.map(r=>qRow(r,true)).join(""):ccEmpty(M_ICO.check,"Nothing is waiting for action","Great job keeping the yard clear.")}</div></div></div></div><div><div class="cc23-panel"><div class="cc23-panel-head"><h4>${panelIco(M_ICO.trend)}${state.range==="today"?"Today":state.range==="30d"?"30-day pulse":"7-day pulse"}</h4></div><div class="cc23-panel-body"><div class="cc23-pulse-row"><span>Reports created</span><b>${t.length}</b></div><div class="cc23-pulse-row"><span>Resolved / verified</span><b>${resolved}</b></div><div class="cc23-pulse-row"><span>Closure rate</span><b>${resRate}%</b></div><div class="cc23-pulse-row"><span>Seconds units</span><b>${secondsUnits}</b></div><div class="cc23-pulse-row"><span>Quality reports</span><b>${t.filter(r=>r.type==="quality").length}</b></div><div class="cc23-pulse-row"><span>Inventory discrepancies</span><b>${t.filter(r=>r.type==="inventory"&&r.inventoryResult!=="verified").length}</b></div></div></div><div class="cc23-panel"><div class="cc23-panel-head"><h4>${panelIco(M_ICO.repeat)}Repeat SKUs · 30 days</h4></div><div class="cc23-panel-body"><div class="cc23-repeat-list">${rep.length?rep.slice(0,8).map(([s,c])=>`<span class="cc23-repeat"><b>${esc(s)}</b> · ${c}</span>`).join(""):'<span class="cc23-empty" style="padding:8px">No repeat SKUs yet.</span>'}</div></div></div></div></div>`}
-  function queuePage(){let list=reports().slice().sort((a,b)=>priorityScore(b)-priorityScore(a)||dateMs(b.createdAt)-dateMs(a.createdAt));if(state.status==="open")list=list.filter(openReport);else if(state.status!=="all")list=list.filter(r=>(r.status||"new")===state.status);if(state.type!=="all")list=list.filter(r=>r.type===state.type);if(state.age==="4h")list=list.filter(r=>ageMs(r)>=4*3600000);if(state.age==="24h")list=list.filter(r=>ageMs(r)>=24*3600000);if(state.query.trim()){const q=state.query.trim().toLowerCase();list=list.filter(r=>[r.sku,r.reason,r.note,r.by,r.owner,r.homeGroup].some(v=>String(v||"").toLowerCase().includes(q)))}return `${pageHeader("Action Queue","One worklist for every unresolved yard issue.")}<div class="cc23-toolbar"><div class="cc23-field"><label>Search</label><input id="cc23Search" value="${esc(state.query)}" placeholder="SKU, reason, reporter, owner..." /></div><div class="cc23-field"><label>Type</label><select id="cc23Type"><option value="all">All report types</option>${Object.entries(META).map(([k,m])=>`<option value="${k}" ${state.type===k?"selected":""}>${esc(m.label)}</option>`).join("")}</select></div><div class="cc23-field"><label>Status</label><select id="cc23Status"><option value="open" ${state.status==="open"?"selected":""}>Open only</option><option value="all" ${state.status==="all"?"selected":""}>All</option><option value="new" ${state.status==="new"?"selected":""}>New</option><option value="acknowledged" ${state.status==="acknowledged"?"selected":""}>Acknowledged</option><option value="in_progress" ${state.status==="in_progress"?"selected":""}>In progress</option><option value="resolved" ${state.status==="resolved"?"selected":""}>Resolved</option></select></div><div class="cc23-field"><label>Age</label><select id="cc23Age"><option value="all" ${state.age==="all"?"selected":""}>Any age</option><option value="4h" ${state.age==="4h"?"selected":""}>4+ hours</option><option value="24h" ${state.age==="24h"?"selected":""}>24+ hours</option></select></div></div><div class="cc23-panel"><div class="cc23-panel-head"><h4>${list.length} report${list.length===1?"":"s"}</h4><small>Click a row for full report context</small></div><div class="cc23-panel-body"><div class="cc23-queue">${list.length?list.map(r=>qRow(r,true)).join(""):ccEmpty(M_ICO.search,"No reports match these filters","Widen the status, type or age filter.")}</div></div></div>`}
+  function queuePage(){let list=reports().slice().sort((a,b)=>priorityScore(b)-priorityScore(a)||dateMs(b.createdAt)-dateMs(a.createdAt));if(state.status==="open")list=list.filter(openReport);else if(state.status!=="all")list=list.filter(r=>(r.status||"new")===state.status);if(state.type!=="all")list=list.filter(r=>r.type===state.type);if(state.age==="4h")list=list.filter(r=>ageMs(r)>=4*3600000);if(state.age==="24h")list=list.filter(r=>ageMs(r)>=24*3600000);if(state.query.trim()){const q=state.query.trim().toLowerCase();list=list.filter(r=>[r.sku,r.reason,r.note,r.by,r.owner,r.homeGroup].some(v=>String(v||"").toLowerCase().includes(q)))}return `${pageHeader("Action Queue","One worklist for every unresolved yard issue.")}<div class="cc23-toolbar"><div class="cc23-field"><label>Search</label><input id="cc23Search" value="${esc(state.query)}" placeholder="SKU, reason, reporter, owner..." /></div><div class="cc23-field"><label>Type</label><select id="cc23Type"><option value="all">All report types</option>${Object.entries(META).map(([k,m])=>`<option value="${k}" ${state.type===k?"selected":""}>${esc(m.label)}</option>`).join("")}</select></div><div class="cc23-field"><label>Status</label><select id="cc23Status"><option value="open" ${state.status==="open"?"selected":""}>Open only</option><option value="all" ${state.status==="all"?"selected":""}>All</option><option value="new" ${state.status==="new"?"selected":""}>New</option><option value="acknowledged" ${state.status==="acknowledged"?"selected":""}>Acknowledged</option><option value="in_progress" ${state.status==="in_progress"?"selected":""}>In progress</option><option value="resolved" ${state.status==="resolved"?"selected":""}>Resolved</option></select></div><div class="cc23-field"><label>Age</label><select id="cc23Age"><option value="all" ${state.age==="all"?"selected":""}>Any age</option><option value="4h" ${state.age==="4h"?"selected":""}>4+ hours</option><option value="24h" ${state.age==="24h"?"selected":""}>24+ hours</option></select></div></div><div class="cc23-panel"><div class="cc23-panel-head"><h4>${list.length} <span>report${list.length===1?"":"s"}</span></h4><small>Click a row for full report context</small></div><div class="cc23-panel-body"><div class="cc23-queue">${list.length?list.map(r=>qRow(r,true)).join(""):ccEmpty(M_ICO.search,"No reports match these filters","Widen the status, type or age filter.")}</div></div></div>`}
   function inventoryPage(){const rr=rangeReports(),disc=rr.filter(r=>r.type==="inventory"&&r.inventoryResult!=="verified"),open=disc.filter(openReport),verified=rr.filter(r=>r.type==="inventory"&&r.inventoryResult==="verified"),abs=disc.reduce((s,r)=>s+Math.abs(num(r.variance)||0),0),largest=disc.slice().sort((a,b)=>Math.abs(num(b.variance)||0)-Math.abs(num(a.variance)||0))[0],inv=inventoryState();return `${pageHeader("Inventory control","Physical checks, discrepancies, and the active FG reference.",`<button class="cc23-btn" id="cc23LoadInv">Load FG report</button>`)}<div class="cc23-metrics">${metric("Open discrepancies",open.length,"Needs investigation",open.length?"alert":"")}${metric("Verified",verified.length,state.range.toUpperCase(),"green")}${metric("Units mismatched",abs,"Absolute variance",abs?"red":"")}${metric("Largest variance",largest?`${largest.variance>0?"+":""}${largest.variance}`:"0",largest?.sku||"No discrepancies",largest?"alert":"")}</div><div class="cc23-panel"><div class="cc23-panel-head"><h4>Inventory discrepancies</h4><small>System On Hand vs physical</small></div><div class="cc23-panel-body"><div class="cc23-table-wrap"><table class="cc23-table"><thead><tr><th>SKU</th><th>Status</th><th class="num">System</th><th class="num">Physical</th><th class="num">Variance</th><th>Reported</th><th>Owner</th></tr></thead><tbody>${disc.length?disc.sort((a,b)=>Math.abs(num(b.variance)||0)-Math.abs(num(a.variance)||0)).map(r=>`<tr data-report-id="${esc(r.id)}"><td class="sku">${esc(r.sku)}</td><td><span class="cc23-status ${esc(r.status||"new")}">${esc(STATUS[r.status]||r.status||"New")}</span></td><td class="num">${esc(r.systemInventory??"—")}</td><td class="num">${esc(r.physicalQuantity??"—")}</td><td class="num ${(num(r.variance)||0)<0?"neg":(num(r.variance)||0)>0?"pos":""}">${(num(r.variance)||0)>0?"+":""}${esc(r.variance??"—")}</td><td>${esc(fmtDT(r.createdAt))}</td><td>${esc(r.owner||"—")}</td></tr>`).join(""):'<tr><td colspan="7"><div class="cc23-empty">No inventory discrepancies in this period.</div></td></tr>'}</tbody></table></div></div></div><div class="cc23-panel"><div class="cc23-panel-head"><h4>Active inventory source</h4></div><div class="cc23-panel-body">${inv?`<div class="cc23-data-row"><div><b>${esc(inv.fileName||"FG inventory report")}</b><small>${esc(inv.rowCount||0)} SKUs · loaded ${esc(fmtDT(inv.importedAt))}</small></div><span class="cc23-data-badge good">Current on this device</span></div>`:'<div class="cc23-empty">No FG inventory report is loaded on this device.</div>'}</div></div>`}
   function reasonCounts(arr,field="reason"){const m={};arr.forEach(r=>{const k=String(r[field]||"Other").replace(/_/g," ");m[k]=(m[k]||0)+(num(r.quantity)||1)});return Object.entries(m).sort((a,b)=>b[1]-a[1]);}
   function bars(rows){const max=Math.max(1,...rows.map(x=>x[1]));return `<div class="cc23-bars">${rows.slice(0,8).map(([n,v])=>`<div class="cc23-bar-row"><span class="name">${esc(n)}</span><div class="cc23-bar-track"><div class="cc23-bar-fill" style="width:${Math.max(4,Math.round(v/max*100))}%"></div></div><b>${esc(v)}</b></div>`).join("")}</div>`}
@@ -7404,9 +7414,9 @@ boot();
   function locationsPage(){const locs=locationState(),pending=locs.filter(l=>l.status==="observed"),approved=locs.filter(l=>l.status==="approved"),oop=reports().filter(r=>r.type==="out_of_place"&&openReport(r)&&r.locationFinding!=="additional_stock");return `${pageHeader("Location review","Approve true secondary locations without silently replacing the assigned location.")}<div class="cc23-metrics">${metric("Observed",pending.length,"Pending admin review",pending.length?"alert":"")}${metric("Approved secondary",approved.length,"Active extra locations","green")}${metric("Wrong location",oop.length,"Open out-of-place reports",oop.length?"red":"")}</div><div class="cc23-grid2"><div><div class="cc23-panel"><div class="cc23-panel-head"><h4>Observed additional stock</h4><small>Pending review</small></div><div class="cc23-panel-body">${pending.length?pending.map(l=>`<div class="cc23-location-card"><div><b>${esc(l.sku)}</b><small>Observed at map point ${esc(l.x)}, ${esc(l.y)}${l.qty!=null?` · Qty ${esc(l.qty)}`:""}<br>${esc(fmtDT(l.createdAt))} · ${esc(l.createdBy||"—")}</small></div><div class="cc23-location-actions"><button class="primary" data-loc="approve" data-id="${esc(l.id)}">Approve secondary</button><button data-loc="dismiss" data-id="${esc(l.id)}">Dismiss</button><button data-product="${esc(l.sku)}">Product</button></div></div>`).join(""):'<div class="cc23-empty">No observed secondary locations are waiting for review.</div>'}</div></div></div><div><div class="cc23-panel"><div class="cc23-panel-head"><h4>Open wrong-location reports</h4></div><div class="cc23-panel-body"><div class="cc23-queue">${oop.length?oop.map(r=>qRow(r,false)).join(""):'<div class="cc23-empty">No wrong-location reports are open.</div>'}</div></div></div><div class="cc23-panel"><div class="cc23-panel-head"><h4>Approved secondary locations</h4></div><div class="cc23-panel-body">${approved.length?approved.slice(0,12).map(l=>`<div class="cc23-pulse-row"><span><b style="font-family:var(--mono)">${esc(l.sku)}</b> · ${esc(l.x)}, ${esc(l.y)}</span><span style="display:flex;align-items:center;gap:8px"><b>${l.qty!=null?`Qty ${esc(l.qty)}`:"Active"}</b><button data-loc="dismiss" data-id="${esc(l.id)}">Remove</button></span></div>`).join(""):'<div class="cc23-empty">No approved secondary locations yet.</div>'}</div></div></div></div>`}
   function barChart(items){const max=Math.max(1,...items.map(i=>i.val));return `<div class="cc23-barchart">${items.map(i=>`<div class="cc23-bar-row"><span class="cc23-bar-label">${esc(i.label)}</span><div class="cc23-bar-track"><div class="cc23-bar-fill" style="width:${Math.round(i.val/max*100)}%;background:${i.color}"></div></div><span class="cc23-bar-val">${i.val}</span></div>`).join("")}</div>`}
   function donutChart(resolved,open){const total=resolved+open||1,r=42,c=2*Math.PI*r,resolvedLen=c*(resolved/total),pct=Math.round(resolved/total*100);return `<svg class="cc23-donut" viewBox="0 0 100 100" width="132" height="132" role="img" aria-label="${pct}% resolved"><circle cx="50" cy="50" r="${r}" fill="none" stroke="#22303c" stroke-width="12"/>${open>0?`<circle cx="50" cy="50" r="${r}" fill="none" stroke="#ff6a63" stroke-width="12" stroke-dasharray="${c} ${c}" transform="rotate(-90 50 50)" stroke-linecap="round"/>`:""}${resolved>0?`<circle cx="50" cy="50" r="${r}" fill="none" stroke="#4ecb8a" stroke-width="12" stroke-dasharray="${resolvedLen} ${c-resolvedLen}" transform="rotate(-90 50 50)" stroke-linecap="round"/>`:""}<text x="50" y="47" text-anchor="middle" font-size="20" font-weight="900" fill="#e6ecf0">${pct}%</text><text x="50" y="63" text-anchor="middle" font-size="7.5" fill="#8997a4" letter-spacing="0.5">RESOLVED</text></svg>`}
-  function weeklyPage(){const old=state.range;state.range="7d";const rr=rangeReports();state.range=old;const open=reports().filter(openReport),q=rr.filter(r=>r.type==="quality"),s=rr.filter(r=>r.type==="seconds"),inv=rr.filter(r=>r.type==="inventory"&&r.inventoryResult!=="verified"),oop=rr.filter(r=>r.type==="out_of_place"),resolved=rr.filter(r=>r.status==="resolved"||r.inventoryResult==="verified"),seconds=s.reduce((a,r)=>a+(num(r.quantity)||0),0),repeat=repeatedSkus(7);const typeBars=barChart([{label:"Quality",val:q.length,color:"#ffc767"},{label:"Seconds",val:s.length,color:"#ff918a"},{label:"Inventory",val:inv.length,color:"#7ebcff"},{label:"Out of place",val:oop.length,color:"#bda0ff"}]);return `${pageHeader("Weekly yard brief","Everything from the last 7 days, ready to export or email.",`<button class="cc23-btn" id="cc23WeeklyExport">Export weekly brief</button><button class="cc23-btn primary" id="cc23WeeklyEmail">Send by email</button>`)}<div class="cc23-status-hero"><div class="cc23-hero-main"><div><div class="cc23-kicker">Last 7 days</div><div class="cc23-hero-number">${rr.length} operational event${rr.length===1?"":"s"}</div><div class="cc23-hero-sub">${resolved.length} resolved / verified · ${open.length} currently open · ${repeat.length} repeat SKU${repeat.length===1?"":"s"}</div></div></div><div class="cc23-hero-side"><div class="cc23-source"><span class="dot"></span><div><b>Send this brief by email</b><small>Sends the summary below, plus the detail tables, to whoever you enter.</small></div></div></div></div><div class="cc23-metrics">${metric("Quality",q.length,"Reports")}${metric("Seconds",seconds,"Units")}${metric("Inventory",inv.length,"Discrepancies")}${metric("Out of place",oop.length,"Findings")}${metric("Resolved",resolved.length,"Reports / checks","green")}${metric("Still open",open.length,"Current backlog",open.length?"alert":"")}</div><div class="cc23-grid2"><div class="cc23-panel"><div class="cc23-panel-head"><h4>Reports by type</h4><small>Last 7 days</small></div><div class="cc23-panel-body">${typeBars}</div></div><div class="cc23-panel"><div class="cc23-panel-head"><h4>Resolution status</h4><small>Last 7 days</small></div><div class="cc23-panel-body cc23-donut-wrap"><div>${donutChart(resolved.length,open.length)}</div><div class="cc23-donut-legend"><div><i style="background:#4ecb8a"></i>Resolved · ${resolved.length}</div><div><i style="background:#ff6a63"></i>Open · ${open.length}</div></div></div></div></div><div class="cc23-grid2"><div><div class="cc23-panel"><div class="cc23-panel-head"><h4>Executive summary</h4></div><div class="cc23-panel-body"><div class="cc23-pulse-row"><span>Quality issues reported</span><b>${q.length}</b></div><div class="cc23-pulse-row"><span>Units sent to Seconds</span><b>${seconds}</b></div><div class="cc23-pulse-row"><span>Inventory discrepancies</span><b>${inv.length}</b></div><div class="cc23-pulse-row"><span>Out-of-place findings</span><b>${oop.length}</b></div><div class="cc23-pulse-row"><span>Resolved / verified this week</span><b>${resolved.length}</b></div></div></div><div class="cc23-panel"><div class="cc23-panel-head"><h4>Repeat products · 7 days</h4></div><div class="cc23-panel-body"><div class="cc23-repeat-list">${repeat.length?repeat.slice(0,12).map(([sku,c])=>`<span class="cc23-repeat"><b>${esc(sku)}</b> · ${c}</span>`).join(""):'<span class="cc23-empty" style="padding:8px">No repeated SKUs this week.</span>'}</div></div></div></div><div><div class="cc23-panel"><div class="cc23-panel-head"><h4>Open carryover</h4><small>Still needs action</small></div><div class="cc23-panel-body"><div class="cc23-queue">${open.length?open.slice().sort((a,b)=>priorityScore(b)-priorityScore(a)||dateMs(a.createdAt)-dateMs(b.createdAt)).slice(0,8).map(r=>qRow(r,false)).join(""):'<div class="cc23-empty">No open carryover.</div>'}</div></div></div></div></div>`}
-  function activityPage(){const ev=[];reports().forEach(r=>{const arr=Array.isArray(r.timeline)&&r.timeline.length?r.timeline:[{status:r.status||"new",at:r.createdAt,by:r.by,comment:"Created"}];arr.forEach(x=>ev.push({at:x.at||r.createdAt,sku:r.sku,type:r.type,status:x.status||r.status,by:x.by||r.by,comment:x.comment||""}))});ev.sort((a,b)=>dateMs(b.at)-dateMs(a.at));return `${pageHeader("Activity","Audit-style history of who did what and when.")}<div class="cc23-panel"><div class="cc23-panel-head"><h4>Report activity</h4><small>${ev.length} events</small></div><div class="cc23-panel-body"><div class="cc23-activity">${ev.length?ev.slice(0,300).map(e=>`<div class="cc23-event"><div class="time">${esc(fmtDT(e.at))}</div><div class="rail"><i></i></div><div class="text"><b>${esc(e.by||"—")}</b> · ${esc(META[e.type]?.label||e.type||"Report")} · <b>${esc(e.sku||"?")}</b><br>${esc(STATUS[e.status]||e.status||"")}${e.comment?` <span class="comment">· ${esc(e.comment)}</span>`:""}</div></div>`).join(""):'<div class="cc23-empty">No activity yet.</div>'}</div></div></div>`}
-  function dataPage(){const inv=inventoryState(),bc=barcodeState(),defBc=window.YardOpsV2?.getDefaultBarcodes?.(),loc=locationState(),all=reports();return `${pageHeader("Data & automation","What is local today, and what the production architecture will automate.",`<button class="cc23-btn" id="cc23LoadInvData">Update inventory report</button><button class="cc23-btn primary" id="cc23LoadBarcode">Update barcode list</button>`)}<div class="cc23-grid2"><div><div class="cc23-panel"><div class="cc23-panel-head"><h4>Current data sources</h4></div><div class="cc23-panel-body"><div class="cc23-data-row"><div><b>FG inventory report</b><small>${inv?`${esc(inv.fileName||"Inventory report")} · ${esc(inv.rowCount||0)} SKUs · ${esc(fmtDT(inv.importedAt))}`:"No report loaded on this device."}</small></div><span class="cc23-data-badge ${inv?"good":"warn"}">${inv?"Loaded":"Missing"}</span></div><div class="cc23-data-row"><div><b>Official barcode list</b><small>${bc?`Device override: ${esc(bc.fileName||"Barcode list")} · ${esc(bc.count||0)} barcodes`:(defBc?`Built-in Tarter list · ${esc(defBc.count||0)} barcodes`:"Loading the built-in barcode list…")}</small></div><span class="cc23-data-badge good">${bc?"Device override":"Built-in"}</span></div><div class="cc23-data-row"><div><b>Operational reports</b><small>${all.length} local reports · workflow, timestamps, quantities and notes.</small></div><span class="cc23-data-badge warn">Local pilot</span></div><div class="cc23-data-row"><div><b>Secondary location observations</b><small>${loc.length} location records stored on this device.</small></div><span class="cc23-data-badge warn">Local pilot</span></div></div></div></div><div><div class="cc23-panel"><div class="cc23-panel-head"><h4>Automation roadmap</h4></div><div class="cc23-panel-body"><div class="cc23-data-row"><div><b>Automatic FG email ingestion</b><small>Expected production path: mailbox flow → attachment validation → versioned inventory snapshot.</small></div><span class="cc23-data-badge warn">Planned</span></div><div class="cc23-data-row"><div><b>Quality report email routing</b><small>Backend event → recipient rules by report type / disposition → email notification.</small></div><span class="cc23-data-badge warn">Planned</span></div><div class="cc23-data-row"><div><b>Weekly yard summary email</b><small>The Weekly Brief tab already computes the core content that the scheduled job will deliver.</small></div><span class="cc23-data-badge warn">Planned</span></div></div></div></div></div>${emailGroupsPanel()}`}
+  function weeklyPage(){const old=state.range;state.range="7d";const rr=rangeReports();state.range=old;const open=reports().filter(openReport),q=rr.filter(r=>r.type==="quality"),s=rr.filter(r=>r.type==="seconds"),inv=rr.filter(r=>r.type==="inventory"&&r.inventoryResult!=="verified"),oop=rr.filter(r=>r.type==="out_of_place"),resolved=rr.filter(r=>r.status==="resolved"||r.inventoryResult==="verified"),seconds=s.reduce((a,r)=>a+(num(r.quantity)||0),0),repeat=repeatedSkus(7);const typeBars=barChart([{label:"Quality",val:q.length,color:"#ffc767"},{label:"Seconds",val:s.length,color:"#ff918a"},{label:"Inventory",val:inv.length,color:"#7ebcff"},{label:"Out of place",val:oop.length,color:"#bda0ff"}]);return `${pageHeader("Weekly yard brief","Everything from the last 7 days, ready to export or email.",`<button class="cc23-btn" id="cc23WeeklyExport">Export weekly brief</button><button class="cc23-btn primary" id="cc23WeeklyEmail">Send by email</button>`)}<div class="cc23-status-hero"><div class="cc23-hero-main"><div><div class="cc23-kicker">Last 7 days</div><div class="cc23-hero-number">${rr.length} <span>operational event${rr.length===1?"":"s"}</span></div><div class="cc23-hero-sub">${resolved.length} <span>resolved / verified</span> · ${open.length} <span>currently open</span> · ${repeat.length} <span>repeat SKU${repeat.length===1?"":"s"}</span></div></div></div><div class="cc23-hero-side"><div class="cc23-source"><span class="dot"></span><div><b>Send this brief by email</b><small>Sends the summary below, plus the detail tables, to whoever you enter.</small></div></div></div></div><div class="cc23-metrics">${metric("Quality",q.length,"Reports")}${metric("Seconds",seconds,"Units")}${metric("Inventory",inv.length,"Discrepancies")}${metric("Out of place",oop.length,"Findings")}${metric("Resolved",resolved.length,"Reports / checks","green")}${metric("Still open",open.length,"Current backlog",open.length?"alert":"")}</div><div class="cc23-grid2"><div class="cc23-panel"><div class="cc23-panel-head"><h4>Reports by type</h4><small>Last 7 days</small></div><div class="cc23-panel-body">${typeBars}</div></div><div class="cc23-panel"><div class="cc23-panel-head"><h4>Resolution status</h4><small>Last 7 days</small></div><div class="cc23-panel-body cc23-donut-wrap"><div>${donutChart(resolved.length,open.length)}</div><div class="cc23-donut-legend"><div><i style="background:#4ecb8a"></i><span>Resolved</span> · ${resolved.length}</div><div><i style="background:#ff6a63"></i><span>Open</span> · ${open.length}</div></div></div></div></div><div class="cc23-grid2"><div><div class="cc23-panel"><div class="cc23-panel-head"><h4>Executive summary</h4></div><div class="cc23-panel-body"><div class="cc23-pulse-row"><span>Quality issues reported</span><b>${q.length}</b></div><div class="cc23-pulse-row"><span>Units sent to Seconds</span><b>${seconds}</b></div><div class="cc23-pulse-row"><span>Inventory discrepancies</span><b>${inv.length}</b></div><div class="cc23-pulse-row"><span>Out-of-place findings</span><b>${oop.length}</b></div><div class="cc23-pulse-row"><span>Resolved / verified this week</span><b>${resolved.length}</b></div></div></div><div class="cc23-panel"><div class="cc23-panel-head"><h4>Repeat products · 7 days</h4></div><div class="cc23-panel-body"><div class="cc23-repeat-list">${repeat.length?repeat.slice(0,12).map(([sku,c])=>`<span class="cc23-repeat"><b>${esc(sku)}</b> · ${c}</span>`).join(""):'<span class="cc23-empty" style="padding:8px">No repeated SKUs this week.</span>'}</div></div></div></div><div><div class="cc23-panel"><div class="cc23-panel-head"><h4>Open carryover</h4><small>Still needs action</small></div><div class="cc23-panel-body"><div class="cc23-queue">${open.length?open.slice().sort((a,b)=>priorityScore(b)-priorityScore(a)||dateMs(a.createdAt)-dateMs(b.createdAt)).slice(0,8).map(r=>qRow(r,false)).join(""):'<div class="cc23-empty">No open carryover.</div>'}</div></div></div></div></div>`}
+  function activityPage(){const ev=[];reports().forEach(r=>{const arr=Array.isArray(r.timeline)&&r.timeline.length?r.timeline:[{status:r.status||"new",at:r.createdAt,by:r.by,comment:"Created"}];arr.forEach(x=>ev.push({at:x.at||r.createdAt,sku:r.sku,type:r.type,status:x.status||r.status,by:x.by||r.by,comment:x.comment||""}))});ev.sort((a,b)=>dateMs(b.at)-dateMs(a.at));return `${pageHeader("Activity","Audit-style history of who did what and when.")}<div class="cc23-panel"><div class="cc23-panel-head"><h4>Report activity</h4><small>${ev.length} <span>events</span></small></div><div class="cc23-panel-body"><div class="cc23-activity">${ev.length?ev.slice(0,300).map(e=>`<div class="cc23-event"><div class="time">${esc(fmtDT(e.at))}</div><div class="rail"><i></i></div><div class="text"><b>${esc(e.by||"—")}</b> · ${esc(META[e.type]?.label||e.type||"Report")} · <b>${esc(e.sku||"?")}</b><br>${esc(STATUS[e.status]||e.status||"")}${e.comment?` <span class="comment">· ${esc(e.comment)}</span>`:""}</div></div>`).join(""):'<div class="cc23-empty">No activity yet.</div>'}</div></div></div>`}
+  function dataPage(){const inv=inventoryState(),bc=barcodeState(),defBc=window.YardOpsV2?.getDefaultBarcodes?.(),loc=locationState(),all=reports();return `${pageHeader("Data & automation","What is local today, and what the production architecture will automate.",`<button class="cc23-btn" id="cc23LoadInvData">Update inventory report</button><button class="cc23-btn primary" id="cc23LoadBarcode">Update barcode list</button>`)}<div class="cc23-grid2"><div><div class="cc23-panel"><div class="cc23-panel-head"><h4>Current data sources</h4></div><div class="cc23-panel-body"><div class="cc23-data-row"><div><b>FG inventory report</b><small>${inv?`${esc(inv.fileName||"Inventory report")} · ${esc(inv.rowCount||0)} SKUs · ${esc(fmtDT(inv.importedAt))}`:"No report loaded on this device."}</small></div><span class="cc23-data-badge ${inv?"good":"warn"}">${inv?"Loaded":"Missing"}</span></div><div class="cc23-data-row"><div><b>Official barcode list</b><small>${bc?`Device override: ${esc(bc.fileName||"Barcode list")} · ${esc(bc.count||0)} barcodes`:(defBc?`<span>Built-in Tarter list</span> · ${esc(defBc.count||0)} <span>barcodes</span>`:"Loading the built-in barcode list…")}</small></div><span class="cc23-data-badge good">${bc?"Device override":"Built-in"}</span></div><div class="cc23-data-row"><div><b>Operational reports</b><small>${all.length} <span>local reports · workflow, timestamps, quantities and notes.</span></small></div><span class="cc23-data-badge warn">Local pilot</span></div><div class="cc23-data-row"><div><b>Secondary location observations</b><small>${loc.length} <span>location records stored on this device.</span></small></div><span class="cc23-data-badge warn">Local pilot</span></div></div></div></div><div><div class="cc23-panel"><div class="cc23-panel-head"><h4>Automation roadmap</h4></div><div class="cc23-panel-body"><div class="cc23-data-row"><div><b>Automatic FG email ingestion</b><small>Expected production path: mailbox flow → attachment validation → versioned inventory snapshot.</small></div><span class="cc23-data-badge warn">Planned</span></div><div class="cc23-data-row"><div><b>Quality report email routing</b><small>Backend event → recipient rules by report type / disposition → email notification.</small></div><span class="cc23-data-badge warn">Planned</span></div><div class="cc23-data-row"><div><b>Weekly yard summary email</b><small>The Weekly Brief tab already computes the core content that the scheduled job will deliver.</small></div><span class="cc23-data-badge warn">Planned</span></div></div></div></div></div>${emailGroupsPanel()}`}
 
   /* ---- email groups -------------------------------------------------
      The distribution lists the send-by-email modals pick from. Editing
@@ -7429,7 +7439,7 @@ boot();
       ${rows}
     </div></div>`;
   }
-  function render(){const c=document.getElementById(OUTER_ID);if(!c||!c.classList.contains("cc-v23"))return;const yard=classifyYard(),inv=inventoryState(),pending=locationState().filter(l=>l.status==="observed").length;c.querySelector("#cc23Subtitle").textContent=`${currentUser()} · ${Sync.mode==="local"?"Local pilot":"Connected"} · ${inv?.fileName||"No FG report loaded"}`;const ys=c.querySelector("#cc23YardState");ys.classList.toggle("attn",yard.open.length>0);ys.querySelector("span").textContent=yard.label;c.querySelector("#cc23NavQueue").textContent=yard.open.length;c.querySelector("#cc23NavLoc").textContent=pending;c.querySelector("#cc23Sync").innerHTML=`<b><i></i>${Sync.mode==="local"?"Local mode":"Connected"}</b>${Sync.mode==="local"?"Changes stay on this device during the pilot.":"Report state is synchronized."}`;c.querySelectorAll("#cc23Nav [data-tab]").forEach(b=>b.classList.toggle("on",b.dataset.tab===state.tab));c.querySelectorAll("#cc23Range [data-range]").forEach(b=>b.classList.toggle("on",b.dataset.range===state.range));const page=c.querySelector("#cc23Page");page.innerHTML=state.tab==="queue"?queuePage():state.tab==="inventory"?inventoryPage():state.tab==="quality"?qualityPage():state.tab==="locations"?locationsPage():state.tab==="weekly"?weeklyPage():state.tab==="activity"?activityPage():state.tab==="data"?dataPage():state.tab==="announcements"?announcementsPage():overview();bindPage(page);}
+  function render(){const c=document.getElementById(OUTER_ID);if(!c||!c.classList.contains("cc-v23"))return;const yard=classifyYard(),inv=inventoryState(),pending=locationState().filter(l=>l.status==="observed").length;c.querySelector("#cc23Subtitle").innerHTML=`${esc(currentUser())} · <span>${Sync.mode==="local"?"Local pilot":"Connected"}</span> · <span>${esc(inv?.fileName||"No FG report loaded")}</span>`;const ys=c.querySelector("#cc23YardState");ys.classList.toggle("attn",yard.open.length>0);ys.querySelector("span").textContent=yard.label;c.querySelector("#cc23NavQueue").textContent=yard.open.length;c.querySelector("#cc23NavLoc").textContent=pending;c.querySelector("#cc23Sync").innerHTML=`<b><i></i>${Sync.mode==="local"?"Local mode":"Connected"}</b>${Sync.mode==="local"?"Changes stay on this device during the pilot.":"Report state is synchronized."}`;c.querySelectorAll("#cc23Nav [data-tab]").forEach(b=>b.classList.toggle("on",b.dataset.tab===state.tab));c.querySelectorAll("#cc23Range [data-range]").forEach(b=>b.classList.toggle("on",b.dataset.range===state.range));const page=c.querySelector("#cc23Page");page.innerHTML=state.tab==="queue"?queuePage():state.tab==="inventory"?inventoryPage():state.tab==="quality"?qualityPage():state.tab==="locations"?locationsPage():state.tab==="weekly"?weeklyPage():state.tab==="activity"?activityPage():state.tab==="data"?dataPage():state.tab==="announcements"?announcementsPage():overview();bindPage(page);}
   /* The email-groups panel is the only place in the Control Center that
      writes shared configuration from inline controls, so its handlers live
      together here rather than scattered through bindPage. Each one re-renders
@@ -10744,6 +10754,199 @@ body.fieldmode .tnav-ico{width:27px;height:27px}
     "Live":"Activo","Scheduled":"Programado","Inactive":"Inactivo","Deactivate":"Desactivar","Activate":"Activar",
     // Alerts bell panel action buttons
     "Photo":"Foto","Email sent":"Correo enviado",
+
+    /* ---- second sweep: everything the first pass missed, harvested by
+       walking the rendered panels in Spanish and diffing against this
+       dictionary, so the list is what the app actually shows rather
+       than what we guessed it shows. ---- */
+    // Overview
+    "Physical ≠ system":"Físico ≠ sistema",
+    "Seconds units":"Unidades de Seconds",
+    "Open location issues":"Problemas de ubicación abiertos",
+    "Needs attention":"Necesita atención",
+    "Priority + age":"Prioridad + antigüedad",
+    "Nothing is waiting for action":"No hay nada esperando acción",
+    "Great job keeping the yard clear.":"Buen trabajo manteniendo el yard despejado.",
+    "7-day pulse":"Pulso de 7 días",
+    "Quality reports":"Reportes de calidad",
+    "Repeat SKUs · 30 days":"SKUs repetidos · 30 días",
+    // Action queue filters + empty state
+    "One worklist for every unresolved yard issue.":"Una sola lista de trabajo para cada problema sin resolver del yard.",
+    "4+ hours":"4+ horas",
+    "24+ hours":"24+ horas",
+    "No reports match these filters":"Ningún reporte coincide con estos filtros",
+    "Widen the status, type or age filter.":"Amplía el filtro de estado, tipo o antigüedad.",
+    "SKU, reason, reporter, owner...":"SKU, motivo, quién reportó, responsable...",
+    // Inventory tab
+    "Inventory control":"Control de inventario",
+    "Physical checks, discrepancies, and the active FG reference.":"Conteos físicos, discrepancias y la referencia FG activa.",
+    "Open discrepancies":"Discrepancias abiertas",
+    "Needs investigation":"Necesita investigación",
+    "Units mismatched":"Unidades descuadradas",
+    "Absolute variance":"Variación absoluta",
+    "Largest variance":"Variación más grande",
+    "No discrepancies":"Sin discrepancias",
+    "Active inventory source":"Fuente de inventario activa",
+    "No FG inventory report is loaded on this device.":"No hay un reporte de inventario FG cargado en este dispositivo.",
+    // Quality tab
+    "Quality & Seconds":"Calidad y Seconds",
+    "Separate the issue, the disposition, and what is still active.":"Separa el problema, la disposición y lo que sigue activo.",
+    "Still active":"Sigue activo",
+    "Quality hold":"Retenido por calidad",
+    "Waiting Quality":"Esperando a Calidad",
+    "Non-conforming":"No conforme",
+    "Open in NCA":"Abiertos en NCA",
+    "Seconds reports":"Reportes de Seconds",
+    "Moved to Seconds":"Movido a Seconds",
+    // Locations tab
+    "Location review":"Revisión de ubicaciones",
+    "Approve true secondary locations without silently replacing the assigned location.":"Aprueba ubicaciones secundarias reales sin reemplazar en silencio la ubicación asignada.",
+    "Observed":"Observadas",
+    "Pending admin review":"Pendiente de revisión del admin",
+    "Approved secondary":"Secundarias aprobadas",
+    "Active extra locations":"Ubicaciones extra activas",
+    "Open out-of-place reports":"Reportes abiertos de fuera de lugar",
+    "No observed secondary locations are waiting for review.":"No hay ubicaciones secundarias observadas esperando revisión.",
+    // Weekly brief tiles
+    "Weekly yard brief":"Resumen semanal del yard",
+    "Reports":"Reportes",
+    "Units":"Unidades",
+    "Discrepancies":"Discrepancias",
+    "Findings":"Hallazgos",
+    "Reports / checks":"Reportes / revisiones",
+    "Still open":"Sigue abierto",
+    "Current backlog":"Pendientes actuales",
+    "RESOLVED":"RESUELTO",
+    "Repeat products · 7 days":"Productos repetidos · 7 días",
+    // Activity, announcements, data
+    "Audit-style history of who did what and when.":"Historial tipo auditoría de quién hizo qué y cuándo.",
+    "Loading…":"Cargando…",
+    "Missing":"Falta",
+    "Backend event → recipient rules by report type / disposition → email notification.":"Evento del backend → reglas de destinatarios por tipo de reporte / disposición → notificación por correo.",
+    "The Weekly Brief tab already computes the core content that the scheduled job will deliver.":"La pestaña Resumen semanal ya calcula el contenido principal que entregará el trabajo programado.",
+    // Report modal: type blurbs and section titles
+    "Report a quality problem on a product.":"Reporta un problema de calidad en un producto.",
+    "Report product being sent to Seconds.":"Reporta producto que se envía a Seconds.",
+    "Compare physical quantity against system On Hand.":"Compara la cantidad física contra el On Hand del sistema.",
+    "Report product found away from its assigned location.":"Reporta producto encontrado fuera de su ubicación asignada.",
+    "Product":"Producto",
+    "Quality Report details":"Detalles del reporte de calidad",
+    "Report Seconds details":"Detalles del reporte de Seconds",
+    "Inventory Check details":"Detalles de la verificación de inventario",
+    "Found Out of Place details":"Detalles del hallazgo fuera de lugar",
+    // Problem / reason options. Safe to translate now that each <option>
+    // carries its English value in the attribute -- the label is display only.
+    "Paint":"Pintura",
+    "Weld":"Soldadura",
+    "Bent / Deformed":"Doblado / Deformado",
+    "Missing component":"Componente faltante",
+    "Assembly":"Ensamble",
+    "Fit / Function":"Ajuste / Función",
+    "Other":"Otro",
+    "Damaged":"Dañado",
+    "Quality defect":"Defecto de calidad",
+    // Disposition + per-type help text
+    "What was done with the product?":"¿Qué se hizo con el producto?",
+    "Select disposition...":"Selecciona la disposición...",
+    "Moved to Non-Conforming Area":"Movido al área de no conformes",
+    "Sent to Seconds":"Enviado a Seconds",
+    "Corrected now by operator":"Corregido ahora por el operador",
+    "Hold for Quality review":"Retenido para revisión de Calidad",
+    "Other problem":"Otro problema",
+    "Other disposition":"Otra disposición",
+    "Other reason":"Otro motivo",
+    "Choose what happened to the product so the alert reflects its real condition.":"Elige qué pasó con el producto para que la alerta refleje su condición real.",
+    "Add a clear photo when it helps Quality review the condition.":"Agrega una foto clara cuando ayude a que Calidad revise la condición.",
+    "Quality notes (optional)":"Notas de calidad (opcional)",
+    "Describe the quality problem":"Describe el problema de calidad",
+    "Describe what you found...":"Describe lo que encontraste...",
+    "Enter a quantity to see the adjusted reference. This does not change official inventory.":"Ingresa una cantidad para ver la referencia ajustada. Esto no cambia el inventario oficial.",
+    "This records a movement to Seconds. It does not overwrite the official FG inventory snapshot.":"Esto registra un movimiento a Seconds. No sobrescribe el corte oficial de inventario FG.",
+    "Add a photo of the defect or reason for downgrading.":"Agrega una foto del defecto o del motivo de la degradación.",
+    "Seconds notes (optional)":"Notas de Seconds (opcional)",
+    "Why is it going to Seconds?":"¿Por qué va a Seconds?",
+    "Enter the physical count to compare it with the imported report.":"Ingresa el conteo físico para compararlo con el reporte importado.",
+    "Scan or type the SKU, compare System On Hand with the physical count, and submit only the discrepancy or verification. No photo is needed.":"Escanea o escribe el SKU, compara el On Hand del sistema con el conteo físico y envía solo la discrepancia o la verificación. No se necesita foto.",
+    "Add a photo to support the discrepancy, if useful.":"Agrega una foto que respalde la discrepancia, si sirve.",
+    "Inventory note (optional)":"Nota de inventario (opcional)",
+    "Count physically present":"Conteo presente físicamente",
+    "📍 Found location:":"📍 Ubicación encontrada:",
+    "Not selected":"Sin seleccionar",
+
+    // Counted lines: the number stays outside the span so only the words
+    // below need a translation.
+    "operational event":"evento operativo",
+    "operational events":"eventos operativos",
+    "resolved / verified":"resueltos / verificados",
+    "currently open":"abiertos ahora",
+    "repeat SKU":"SKU repetido",
+    "repeat SKUs":"SKUs repetidos",
+    "report":"reporte",
+    "reports":"reportes",
+    "events":"eventos",
+    "local reports · workflow, timestamps, quantities and notes.":"reportes locales · flujo, marcas de tiempo, cantidades y notas.",
+    "location records stored on this device.":"registros de ubicación guardados en este dispositivo.",
+
+    // Third sweep: out-of-place fields, plus the shell lines whose
+    // translatable words now sit in their own span.
+    "Verified":"Verificado",
+    "Wrong location":"Ubicación incorrecta",
+    "📍 Pick exact location on map":"📍 Marca la ubicación exacta en el mapa",
+    "What did you find?":"¿Qué encontraste?",
+    "Product is in the wrong location":"El producto está en la ubicación equivocada",
+    "Additional stock is also here":"También hay stock adicional aquí",
+    "The assigned location remains the source of truth. “Additional stock” creates an observed secondary location for review instead of silently changing the map.":"La ubicación asignada sigue siendo la fuente de verdad. “Stock adicional” crea una ubicación secundaria observada para revisión, en vez de cambiar el mapa en silencio.",
+    "Add a photo of where the product was found.":"Agrega una foto de dónde se encontró el producto.",
+    "Location note (optional)":"Nota de ubicación (opcional)",
+    "Local pilot":"Piloto local",
+    "Connected":"Conectado",
+    "No FG report loaded":"Sin reporte FG cargado",
+    "Built-in Tarter list":"Lista Tarter integrada",
+    "barcodes":"códigos de barras",
+    "Timestamp will be saved automatically":"La marca de tiempo se guarda automáticamente",
+
+    // Fourth sweep: copy that only appears on a condition -- a chosen
+    // disposition, a validation failure, a toast -- so walking the
+    // rendered panels never surfaced it.
+    "The Quality event will be recorded and treated as resolved so the map does not keep showing this piece as defective.":"El evento de calidad se registra y se trata como resuelto, para que el mapa deje de mostrar esta pieza como defectuosa.",
+    "The Quality event will be recorded as dispositioned to Seconds and will not remain an open defect.":"El evento de calidad se registra con disposición a Seconds y no queda como defecto abierto.",
+    "Photo is stored only on this device.":"La foto se guarda solo en este dispositivo.",
+    // Report validation
+    "Choose a report type.":"Elige un tipo de reporte.",
+    "Required — scan or enter a SKU.":"Requerido — escanea o escribe un SKU.",
+    "Required — enter a quantity greater than 0.":"Requerido — ingresa una cantidad mayor a 0.",
+    "Enter a quantity greater than 0.":"Ingresa una cantidad mayor a 0.",
+    "Required — enter the physical quantity.":"Requerido — ingresa la cantidad física.",
+    "Enter the physical quantity.":"Ingresa la cantidad física.",
+    "Required — pick the location on the map.":"Requerido — marca la ubicación en el mapa.",
+    "Pick the location where you found the product.":"Marca la ubicación donde encontraste el producto.",
+    "Describe the quality problem.":"Describe el problema de calidad.",
+    "Choose what was done with the product.":"Elige qué se hizo con el producto.",
+    "Describe what was done with the product.":"Describe qué se hizo con el producto.",
+    "Describe why the product is going to Seconds.":"Describe por qué el producto va a Seconds.",
+    // Toasts
+    "Report saved, but the photo could not be stored on this device.":"Reporte guardado, pero la foto no se pudo guardar en este dispositivo.",
+    "SKU does not have a fixed map tile.":"El SKU no tiene una ficha fija en el mapa.",
+    "Photo is not available on this device.":"La foto no está disponible en este dispositivo.",
+    "Could not open the photo.":"No se pudo abrir la foto.",
+    "Excel library is not available.":"La librería de Excel no está disponible.",
+    "Excel export is unavailable in this build.":"La exportación a Excel no está disponible en esta versión.",
+    "Pick a group or type an address.":"Selecciona un grupo o escribe un correo.",
+    "This alert was not saved to the server and can't be emailed. Refresh the page and try again.":"Esta alerta no se guardó en el servidor y no se puede enviar por correo. Recarga la página e inténtalo de nuevo.",
+    "Invalid email address":"Correo inválido",
+    "Could not send the email":"No se pudo enviar el correo",
+    "A group with that name already exists.":"Ya existe un grupo con ese nombre.",
+    "Give the group a name.":"Ponle un nombre al grupo.",
+    "Could not save the email group.":"No se pudo guardar el grupo de correo.",
+    "That does not look like an email address.":"Eso no parece un correo.",
+    "Could not delete the email group.":"No se pudo eliminar el grupo de correo.",
+    "Group created":"Grupo creado",
+    "Group deleted":"Grupo eliminado",
+    "Note saved":"Nota guardada",
+    "Report updated":"Reporte actualizado",
+    "Write a note first.":"Escribe una nota primero.",
+    "Report state is synchronized.":"El estado de los reportes está sincronizado.",
+    "Optional status / resolution note...":"Nota opcional de estado / resolución...",
   };
 
   /* Switching *back* to English used to leave these panels in Spanish: the
@@ -10795,7 +10998,7 @@ body.fieldmode .tnav-ico{width:27px;height:27px}
     swapAttr(root, "title", map);
   }
 
-  const ROOTS = ["opsCenter", "opsReportModal", "alertEmailModal", "alertsPanel", "productSheetModal", "reportEmailModal"];
+  const ROOTS = ["opsCenter", "opsReportModal", "alertEmailModal", "alertsPanel", "productSheetModal", "reportEmailModal", "toast"];
   let scheduled = false;
   const observers = [];
   function retranslateAll() {
