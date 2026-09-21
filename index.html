@@ -935,6 +935,7 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
         <button class="sh" data-tool="line" data-i18n-title="bg.line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.6 19.4 19.4 4.6"/><circle cx="4.6" cy="19.4" r="1.7"/><circle cx="19.4" cy="4.6" r="1.7"/></svg></button>
         <button class="sh" data-tool="label" data-i18n-title="bg.label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6.4V4.6h14v1.8M12 4.6v14.8M9.4 19.4h5.2"/></svg></button>
         <button class="sh" data-tool="door" data-i18n-title="bg.door"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.6h9.4a1.6 1.6 0 0 1 1.6 1.6v13.6a1.6 1.6 0 0 1-1.6 1.6H6Z"/><circle cx="13.4" cy="12" r="1"/><path d="M19.4 20.4h1.2M3.4 20.4h1.2"/></svg></button>
+        <button class="sh" data-tool="area" data-i18n-title="bg.area"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.4" y="5.6" width="17.2" height="12.8" rx="2.4" stroke-dasharray="4 3"/><path d="M8 10.2h3.2M8 13.8h6.4"/></svg></button>
         <button class="sh" data-tool="road" data-i18n-title="bg.road"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 20.4 12 4.6l8.4 15.8"/><path d="M12 9.6v3M12 15v1.6" stroke-dasharray="2 2.4"/></svg></button>
       </span>
       <span class="sep"></span>
@@ -1077,6 +1078,7 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
     <button class="dr-item" id="legendBtn"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.6" y="3.6" width="7" height="7" rx="1.6"/><rect x="13.4" y="3.6" width="7" height="7" rx="1.6"/><rect x="3.6" y="13.4" width="7" height="7" rx="1.6"/><rect x="13.4" y="13.4" width="7" height="7" rx="1.6"/></svg></span><span data-i18n="tool.legend">Legend</span></button>
     <button class="dr-item" id="drReport"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.1 2.8 19.5h18.4Z"/><path d="M12 10.2v4M12 17.3h.01"/></svg></span><span data-i18n="tool.report">Report</span></button>
     <button class="dr-item" id="drScan"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8V5.6A2.6 2.6 0 0 1 5.6 3H8M16 3h2.4A2.6 2.6 0 0 1 21 5.6V8M21 16v2.4a2.6 2.6 0 0 1-2.6 2.6H16M8 21H5.6A2.6 2.6 0 0 1 3 18.4V16"/><path d="M7.4 8.6v6.8M10.6 8.6v6.8M13.4 8.6v6.8M16.6 8.6v6.8"/></svg></span><span data-i18n="tool.scan">Scan</span></button>
+    <button class="dr-item" id="areaLayerItem" aria-pressed="false"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.4" y="5.6" width="17.2" height="12.8" rx="2.4" stroke-dasharray="4 3"/><path d="M8 10.2h3.2M8 13.8h6.4"/></svg></span><span data-area-label>Inventory areas</span></button>
     <button class="dr-item" id="drHelp"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.2 9.3a2.8 2.8 0 1 1 3.9 2.6c-.9.5-1.4.9-1.4 1.9"/><path d="M12 17.2h.01"/></svg></span><span data-i18n="onboard.help">How to use</span></button>
   </div>
 
@@ -1720,6 +1722,17 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "onboard.s6.body": "Tap the sun icon at the top (or Field mode in the menu) for a high-contrast view with bigger controls, built for using the app outdoors on the yard.",
       "onboard.help": "How to use",
 
+      /* ---- inventory areas ---- */
+      "area.show": "Inventory areas",
+      "area.hide": "Inventory areas · on",
+      "area.on": "Inventory areas shown",
+      "area.off": "Inventory areas hidden",
+      "area.count": "{n} products",
+      "area.result": "Inventory area · {n} products",
+      "area.toast": "Area {name} · {n} products",
+      "area.namePrompt": "Name for this inventory area (this is what you type in the search)",
+      "bg.area": "Inventory area",
+
       /* ---- operational report entry points ---- */
       "ops.newReport": "New Operational Report",
       "ops.newReportTitle": "New Operational Report · Quality / Seconds / Inventory / Out of Place",
@@ -2110,6 +2123,17 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "onboard.s6.title": "Trabajar bajo el sol",
       "onboard.s6.body": "Toca el ícono de sol arriba (o Modo campo en el menú) para una vista de alto contraste y controles más grandes, pensada para usar la app afuera en la yarda.",
       "onboard.help": "Cómo usar la app",
+
+      /* ---- inventory areas ---- */
+      "area.show": "Áreas de inventario",
+      "area.hide": "Áreas de inventario · activas",
+      "area.on": "Áreas de inventario visibles",
+      "area.off": "Áreas de inventario ocultas",
+      "area.count": "{n} productos",
+      "area.result": "Área de inventario · {n} productos",
+      "area.toast": "Área {name} · {n} productos",
+      "area.namePrompt": "Nombre de esta área de inventario (es lo que escribirás en el buscador)",
+      "bg.area": "Área de inventario",
 
       /* ---- operational report entry points ---- */
       "ops.newReport": "Nuevo reporte operativo",
@@ -3159,6 +3183,9 @@ function stampNode(icon,x,y,size){
 }
 
 function kindStyle(k){
+  // Green, so an inventory area never reads as an MTO zone (amber) or a
+  // fixed yard zone like SECONDS (blue-grey) at a glance.
+  if(k==="area")        return {fill:"rgba(64,178,134,.07)",stroke:"#40B286",sw:2.5,rx:12,dash:"16 8",lsize:21,lcol:"#6FD3AE",lw:900,ltop:true};
   if(k==="flex")        return {fill:"rgba(255,192,46,.06)",stroke:"#C98A2E",sw:2.5,rx:14,dash:"14 9",lsize:19,lcol:"#E0A93E",lw:800,ltop:true};
   if(k==="zone")        return {fill:"rgba(90,141,239,.04)",stroke:"#37506e",sw:2,rx:16,dash:"10 8",lsize:20,lcol:"#5f7690",lw:800,ltop:true};
   if(k==="building")    return {fill:"rgba(255,255,255,.045)",stroke:"#465364",sw:3,rx:10,dash:null,lsize:18,lcol:"#6d7a8a",lw:800,ltop:true};
@@ -3215,6 +3242,10 @@ function renderBgItem(it,idx,frag){
       const lbl=bgLabel(lx, ly, it.label, s.lsize, it.lcol||s.lcol, s.lw);
       lbl.setAttribute("data-lbl",idx); lbl.classList.add("bglabel"); g.appendChild(lbl);
     }
+    if(k==="area"){
+      const n=tilesInArea(it).length;
+      g.appendChild(bgLabel(it.x+it.w/2, it.y+46, t("area.count",{n}), 13, "#4f9e7e", 700));
+    }
     if(k==="flex"){
       const n=(it.skus||[]).length;
       g.appendChild(bgLabel(it.x+it.w/2, it.y+44, t("bg.flexCount",{n}), 13, "#b8863a", 600));
@@ -3267,7 +3298,11 @@ function bgHandles(it,frag){
 function drawBackground(){
   const b=bounds(); bg.setAttribute("width",b.maxx); bg.setAttribute("height",b.maxy); bg.setAttribute("viewBox",`0 0 ${b.maxx} ${b.maxy}`);
   const frag=document.createDocumentFragment();
-  (data.bg||[]).forEach((it,idx)=>renderBgItem(it,idx,frag));
+  // Skipped entirely rather than hidden: with the layer off the map is
+  // byte-for-byte the one a viewer saw before areas existed. An editor
+  // still sees them while editing the map, or the shape they are
+  // drawing would vanish under them.
+  (data.bg||[]).forEach((it,idx)=>{ if(isArea(it) && !areaLayerOn && !bgEditing) return; renderBgItem(it,idx,frag); });
   if(bgDraw){
     if(bgDraw.tool==="rect") frag.appendChild(svgel("rect",{x:Math.min(bgDraw.x0,bgDraw.x),y:Math.min(bgDraw.y0,bgDraw.y),
       width:Math.abs(bgDraw.x-bgDraw.x0),height:Math.abs(bgDraw.y-bgDraw.y0),rx:6,fill:"rgba(255,192,46,.08)",stroke:"#FFC02E","stroke-width":2,"stroke-dasharray":"6 5"}));
@@ -3346,11 +3381,60 @@ stage.addEventListener("wheel",e=>{e.preventDefault();zoomAt(e.clientX,e.clientY
 let pointers=new Map(), pinch=0;
 let panning=false, panStart=null, didPan=false;
 let tileDrag=null, bandDrag=null, resizeDrag=null;
+/* ---------------------------------------------- inventory areas ----
+   A named rectangle over the map whose members are simply the tiles that
+   fall inside it. Membership is geometric on purpose: the tiles are
+   already positioned, so a curated SKU list (the way MTO zones work)
+   would duplicate what the map knows and go stale the moment someone
+   moved a tile. Move a tile in, it belongs; resize the rectangle, the
+   members follow.
+
+   They live in `data.bg` with every other drawn shape, which is what
+   gets them saving, syncing, history/restore and the whole editor --
+   draw, move, resize, Properties -- without any of it being rebuilt.
+
+   The layer is off by default and, when off, the shapes are not drawn at
+   all rather than hidden with opacity: a viewer who never turns it on
+   sees exactly the map they see today. */
+const AREA_KEY="tarter_yard_inventory_areas";
+let areaLayerOn=false;
+try{ areaLayerOn = localStorage.getItem(AREA_KEY)==="1"; }catch(e){}
+const isArea=(it)=>it && it.kind==="area";
+const inventoryAreas=()=>(data.bg||[]).map((it,idx)=>({it,idx})).filter(o=>isArea(o.it));
+/* A tile counts as inside when its centre is, so a tile straddling the
+   edge lands in exactly one area instead of two or none. */
+function tilesInArea(it){
+  if(!it) return [];
+  const x2=it.x+it.w, y2=it.y+it.h;
+  return (data.tiles||[]).filter(t=>{
+    const cx=t.x+(t.w||66)/2, cy=t.y+(t.h||34)/2;
+    return cx>=it.x && cx<=x2 && cy>=it.y && cy<=y2;
+  });
+}
+function setAreaLayer(on,announce){
+  areaLayerOn=!!on;
+  try{ localStorage.setItem(AREA_KEY, areaLayerOn?"1":"0"); }catch(e){}
+  paintAreaToggle();
+  drawBackground();
+  if(announce){ try{ toast(t(areaLayerOn?"area.on":"area.off")); }catch(e){} }
+}
+function paintAreaToggle(){
+  const item=document.getElementById("areaLayerItem");
+  if(!item) return;
+  item.classList.toggle("on",areaLayerOn);
+  item.setAttribute("aria-pressed",String(areaLayerOn));
+  const label=item.querySelector("[data-area-label]");
+  if(label) label.textContent=t(areaLayerOn?"area.hide":"area.show");
+}
+
 let bgEditing=false, bgTool="select", bgSel=null, bgDraw=null, bgMove=null, bgResize=null, bgRotate=null;
 let pendingStampIcon="forklift";
 let flashFlex=null;
 const flexZones=()=>(data.bg||[]).map((it,idx)=>({it,idx})).filter(o=>o.it.kind==="flex");
 const SHAPE_TOOLS=["rect","ellipse","diamond","triangle"];
+// Drawn like a rectangle but born with kind:"area", so creating one is a
+// single gesture instead of draw-then-change-its-kind in Properties.
+const AREA_TOOL="area";
 
 function toCanvas(cx,cy){ const r=stage.getBoundingClientRect(); return {x:(cx-r.left-view.tx)/view.k, y:(cy-r.top-view.ty)/view.k}; }
 function dist2(){const p=[...pointers.values()];return Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);}
@@ -3591,7 +3675,7 @@ function bgPointerDown(e){
     else roadDraft.push([Math.round(w.x),Math.round(w.y)]);
     drawBackground(); return;
   }
-  if(SHAPE_TOOLS.includes(bgTool)||bgTool==="line"){ bgDraw={tool:bgTool,x0:w.x,y0:w.y,x:w.x,y:w.y}; stage.setPointerCapture(e.pointerId); return; }
+  if(SHAPE_TOOLS.includes(bgTool)||bgTool===AREA_TOOL||bgTool==="line"){ bgDraw={tool:bgTool,x0:w.x,y0:w.y,x:w.x,y:w.y}; stage.setPointerCapture(e.pointerId); return; }
   const lblHit=e.target.closest("[data-lbl]");
   if(lblHit){ bgSel=+lblHit.dataset.lbl; bgLabelMove={start:w, orig:JSON.parse(JSON.stringify(data.bg[bgSel]))};
     showInspector(true); drawBackground(); updateInspector(); stage.setPointerCapture(e.pointerId); return; }
@@ -3630,7 +3714,16 @@ function bgPointerMove(e){
 function bgPointerUp(e){
   if(bgDraw){ const d=bgDraw; bgDraw=null;
     if(Math.abs(d.x-d.x0)+Math.abs(d.y-d.y0)>6){
-      if(SHAPE_TOOLS.includes(d.tool)) data.bg.push({type:"rect",shape:d.tool,x:Math.round(Math.min(d.x0,d.x)),y:Math.round(Math.min(d.y0,d.y)),w:Math.round(Math.abs(d.x-d.x0)),h:Math.round(Math.abs(d.y-d.y0)),label:"",kind:"box"});
+      const box={x:Math.round(Math.min(d.x0,d.x)),y:Math.round(Math.min(d.y0,d.y)),w:Math.round(Math.abs(d.x-d.x0)),h:Math.round(Math.abs(d.y-d.y0))};
+      if(d.tool===AREA_TOOL){
+        // The name is the whole point of an area -- it is what gets searched --
+        // so it is asked for on creation rather than left blank to fill in later.
+        const name=(prompt(t("area.namePrompt"),"")||"").trim();
+        if(!name){ drawBackground(); updateInspector(); return; }
+        data.bg.push({type:"rect",shape:"rect",...box,label:name,kind:"area"});
+        if(!areaLayerOn) setAreaLayer(true);
+      }
+      else if(SHAPE_TOOLS.includes(d.tool)) data.bg.push({type:"rect",shape:d.tool,...box,label:"",kind:"box"});
       else data.bg.push({type:"line",x1:Math.round(d.x0),y1:Math.round(d.y0),x2:Math.round(d.x),y2:Math.round(d.y)});
       bgSel=data.bg.length-1; save(); setBgTool("select");
     }
@@ -3942,14 +4035,23 @@ document.addEventListener("click",e=>{ if(!e.target.closest(".search")) closeRes
 function onSearch(){
   const q=qInput.value.trim(); clrBtn.style.display=q?"block":"none"; highlightSearch();
   if(!q){ closeResults(); return; }
-  const Q=q.toUpperCase(); const m=[];
+  const Q=q.toUpperCase(); const m=[]; const areaHits=[];
   data.tiles.forEach((t,i)=>{ if(t.sku&&t.sku.toUpperCase().includes(Q)) m.push({sku:t.sku,i,g:t.g}); });
   // also scan flexible (MTO) zones — a match points to the AREA, not a tile
   flexZones().forEach(z=>{ (z.it.skus||[]).forEach(sku=>{ if(sku&&sku.toUpperCase().includes(Q))
     m.push({sku, flex:true, bi:z.idx, zone:z.it.label||"MTO"}); }); });
+  // Inventory areas answer to their own name ("AF"), and only while the
+  // layer is on: with it off the search behaves exactly as it did before.
+  if(areaLayerOn) inventoryAreas().forEach(z=>{
+    const name=String(z.it.label||"");
+    if(name && name.toUpperCase().includes(Q)) areaHits.push({sku:name, area:true, bi:z.idx, n:tilesInArea(z.it).length});
+  });
   m.sort((x,y)=>{ const xi=x.sku.toUpperCase().startsWith(Q)?0:1, yi=y.sku.toUpperCase().startsWith(Q)?0:1;
     if(xi!==yi) return xi-yi; return x.sku.localeCompare(y.sku,undefined,{numeric:true}); });
-  currentResults=m.slice(0,80); activeIdx=m.length?0:-1; paintResults(m.length);
+  areaHits.sort((x,y)=>{ const xi=x.sku.toUpperCase().startsWith(Q)?0:1, yi=y.sku.toUpperCase().startsWith(Q)?0:1;
+    return xi-yi || x.sku.localeCompare(y.sku,undefined,{numeric:true}); });
+  const all=areaHits.concat(m);
+  currentResults=all.slice(0,80); activeIdx=all.length?0:-1; paintResults(all.length);
 }
 function paintResults(total){
   if(!currentResults.length){
@@ -3960,6 +4062,10 @@ function paintResults(total){
   const q=qInput.value.trim();
   resultsBox.innerHTML=`<div class="rhint">${esc(I18N.tn("search.matches",total))}</div>`+
     currentResults.map((r,i)=>{
+      if(r.area) return `<div class="ritem ${i===activeIdx?"active":""}" data-i="${i}">
+        <div class="rb" style="background:#40B286">▣</div>
+        <div class="rtext"><div class="rsku">${hl(r.sku,q)}</div><div class="rloc">${esc(t("area.result",{n:r.n}))}</div></div>
+        <div class="arrow">→</div></div>`;
       if(r.flex) return `<div class="ritem ${i===activeIdx?"active":""}" data-i="${i}">
         <div class="rb" style="background:#C98A2E">★</div>
         <div class="rtext"><div class="rsku">${hl(r.sku,q)}</div><div class="rloc">${esc(t("search.mtoLoc",{zone:r.zone}))}</div></div>
@@ -3976,14 +4082,15 @@ function paintResults(total){
   resultsBox.querySelectorAll(".rimg").forEach(btn=>btn.onclick=e=>{
     e.stopPropagation();
     const r=currentResults[+btn.dataset.imgI];
-    if(r.flex) return;
+    if(r.flex||r.area) return;
     openImageViewer(r.i);
   });
 }
 function paintActive(){ resultsBox.querySelectorAll(".ritem").forEach(it=>it.classList.toggle("active",+it.dataset.i===activeIdx));
   const a=resultsBox.querySelector(".ritem.active"); if(a) a.scrollIntoView({block:"nearest"}); }
 function choose(r){ closeResults(); qInput.value=r.sku; highlightSearch();
-  if(r.flex){ focusFlex(r.bi); toast(t("search.mtoToast",{sku:r.sku,zone:r.zone})); }
+  if(r.area){ focusFlex(r.bi); toast(t("area.toast",{name:r.sku,n:r.n})); }
+  else if(r.flex){ focusFlex(r.bi); toast(t("search.mtoToast",{sku:r.sku,zone:r.zone})); }
   else flyTo(r.i);
 }
 function focusFlex(bi){
@@ -4055,6 +4162,14 @@ $("#legendBtn").onclick=()=>{
   if(show) buildLegend();
   closeDrawer();
 };
+/* The toggle stays in the drawer rather than the top bar: it is a setting
+   someone flips once for a shift, not a control they reach for repeatedly,
+   and the top bar is already full on a phone. */
+const areaItem=$("#areaLayerItem");
+if(areaItem) areaItem.onclick=()=>{ setAreaLayer(!areaLayerOn,true); closeDrawer(); };
+paintAreaToggle();
+try{ if(window.I18N?.onLangChange) I18N.onLangChange(paintAreaToggle); }catch(e){}
+
 function buildLegend(){
   if(!Array.isArray(data.groups)||!data.groups.length) ensureGroups(data);   
   const counts={}; data.tiles.forEach(t=>counts[t.g]=(counts[t.g]||0)+1);
@@ -5795,7 +5910,7 @@ boot();
     box.querySelectorAll(".ritem").forEach(node => {
       const idx = +node.dataset.i;
       const result = currentResults[idx];
-      if(!result || node.querySelector(".inv-search")) return;
+      if(!result || result.area || node.querySelector(".inv-search")) return;
       const item = inventoryForSku(result.sku);
       const line = document.createElement("div");
       line.className = `inv-search ${item ? quantityClass(item.onHand) : ""}`;
@@ -7137,7 +7252,7 @@ boot();
       const S=String(r&&r.sku||"").toUpperCase();const locCount=locationRows(S).length;if(locCount>1){closeResults();qInput.value=r.sku;highlightSearch();focusSkuLocations(S);try{toast(`${locCount} known locations for ${S}`);}catch(e){}return;}return baseChoose(r);
     };
     const basePaintResults=paintResults;
-    paintResults=function(total){basePaintResults(total);try{const counts={};currentResults.forEach(r=>{if(!r.flex){const k=String(r.sku||"").toUpperCase();counts[k]=locationRows(k).length;}});resultsBox.querySelectorAll(".ritem").forEach((el,idx)=>{const r=currentResults[+el.dataset.i];if(!r||r.flex)return;const n=counts[String(r.sku||"").toUpperCase()]||1;if(n>1){const text=el.querySelector(".rtext");if(text&&!text.querySelector(".multi-count"))text.insertAdjacentHTML("beforeend",`<div class="multi-count">${n} known locations · map will show all</div>`);}});}catch(e){}};
+    paintResults=function(total){basePaintResults(total);try{const counts={};currentResults.forEach(r=>{if(!r.flex&&!r.area){const k=String(r.sku||"").toUpperCase();counts[k]=locationRows(k).length;}});resultsBox.querySelectorAll(".ritem").forEach((el,idx)=>{const r=currentResults[+el.dataset.i];if(!r||r.flex||r.area)return;const n=counts[String(r.sku||"").toUpperCase()]||1;if(n>1){const text=el.querySelector(".rtext");if(text&&!text.querySelector(".multi-count"))text.insertAdjacentHTML("beforeend",`<div class="multi-count">${n} known locations · map will show all</div>`);}});}catch(e){}};
   }catch(e){console.warn("Multi-location search hook unavailable",e);}
 
   // Report UI enhancer ------------------------------------------------------
