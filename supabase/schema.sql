@@ -1,5 +1,13 @@
 -- Tarter Yard Map — Supabase schema
--- Run this once in Supabase > SQL Editor.
+-- Run this in Supabase > SQL Editor. It is safe to run again: every statement
+-- is "if not exists" or "create or replace".
+--
+-- This file alone must build the whole database the code expects. Columns
+-- used to be added by hand in the SQL editor or in loose migration files, and
+-- the result was a production database that the repository could not
+-- reproduce: `yard_users.onboarded_at`, read on every signed-in request, was
+-- in no file at all. Anything the code reads goes here; the migration-*.sql
+-- files are kept only for databases created before this file was complete.
 
 create extension if not exists pgcrypto;
 
@@ -11,8 +19,11 @@ create table if not exists public.yard_users (
   role text not null default 'viewer' check (role in ('viewer','editor')),
   active boolean not null default true,
   created_at timestamptz not null default now(),
-  last_login_at timestamptz
+  last_login_at timestamptz,
+  onboarded_at timestamptz
 );
+-- Read by requireUser() on every signed-in request: without it, no one can log in.
+alter table public.yard_users add column if not exists onboarded_at timestamptz;
 
 create table if not exists public.map_state (
   id text primary key default 'yard',
@@ -66,6 +77,9 @@ create table if not exists public.alerts (
   resolved_by text,
   updated_at timestamptz not null default now()
 );
+-- The full client report (V2+): quantity, reason, disposition, the inventory
+-- comparison, the timeline. See migration-ops-v2.sql and api/_lib/models.js.
+alter table public.alerts add column if not exists payload jsonb;
 create index if not exists alerts_status_created_idx on public.alerts(status, created_at desc);
 create index if not exists alerts_sku_created_idx on public.alerts(sku, created_at desc);
 
@@ -141,7 +155,20 @@ create table if not exists public.shift_handoffs (
 -- The browser never receives the server secret key. These tables are accessed
 -- only through Vercel Functions, so enable RLS and leave anon/authenticated
 -- without direct policies.
+-- Named recipient lists for report emails (see migration-email-groups.sql).
+create table if not exists public.email_groups (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  emails jsonb not null default '[]'::jsonb,
+  created_by text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create unique index if not exists email_groups_name_idx on public.email_groups (lower(name));
+create index if not exists email_groups_name_sort_idx on public.email_groups (name);
+
 alter table public.yard_users enable row level security;
+alter table public.email_groups enable row level security;
 alter table public.map_state enable row level security;
 alter table public.map_history enable row level security;
 alter table public.alerts enable row level security;
@@ -166,6 +193,7 @@ create or replace function public.yard_save_map(
   p_actor text
 ) returns table(ok boolean, rev bigint, data jsonb, updated_by text)
 language plpgsql
+set search_path = public, pg_temp
 as $$
 declare
   v public.map_state%rowtype;
@@ -197,6 +225,7 @@ create or replace function public.yard_restore_map(
   p_actor text
 ) returns table(ok boolean, rev bigint, data jsonb)
 language plpgsql
+set search_path = public, pg_temp
 as $$
 declare
   v_hist public.map_history%rowtype;
@@ -219,6 +248,7 @@ $$;
 create or replace function public.yard_bump_alerts_rev()
 returns table(alerts_rev bigint)
 language sql
+set search_path = public, pg_temp
 as $$
   update public.app_meta set alerts_rev=alerts_rev+1, updated_at=now() where id='yard'
   returning app_meta.alerts_rev;
@@ -227,6 +257,7 @@ $$;
 create or replace function public.yard_bump_announcements_rev()
 returns table(announcements_rev bigint)
 language sql
+set search_path = public, pg_temp
 as $$
   update public.app_meta set announcements_rev=announcements_rev+1, updated_at=now() where id='yard'
   returning app_meta.announcements_rev;
@@ -235,6 +266,7 @@ $$;
 create or replace function public.yard_bump_verifications_rev()
 returns table(verifications_rev bigint)
 language sql
+set search_path = public, pg_temp
 as $$
   update public.app_meta set verifications_rev=verifications_rev+1, updated_at=now() where id='yard'
   returning app_meta.verifications_rev;
@@ -243,6 +275,7 @@ $$;
 create or replace function public.yard_alert_recurrence(p_days integer default 30)
 returns table(sku text, report_count bigint, last_report_at timestamptz)
 language sql
+set search_path = public, pg_temp
 as $$
   select a.sku, count(*)::bigint, max(a.created_at)
   from public.alerts a
@@ -255,6 +288,7 @@ $$;
 create or replace function public.yard_acquire_lock(p_holder text, p_session_id text)
 returns table(ok boolean, lock_data jsonb)
 language plpgsql
+set search_path = public, pg_temp
 as $$
 declare
   v public.edit_lock%rowtype;
@@ -271,6 +305,10 @@ begin
       where id='yard'
       returning * into v;
     return query select true, to_jsonb(v);
+    -- `return query` adds a row and keeps going: without this the function
+    -- answered "granted" and "refused" at once, and the API only worked
+    -- because it happened to read the first row.
+    return;
   end if;
   return query select false, to_jsonb(v);
 end;
@@ -279,6 +317,7 @@ $$;
 create or replace function public.yard_release_lock(p_session_id text)
 returns void
 language plpgsql
+set search_path = public, pg_temp
 as $$
 begin
   update public.edit_lock
@@ -286,3 +325,17 @@ begin
   where id='yard' and session_id=p_session_id;
 end;
 $$;
+
+-- These functions are reached only through the Vercel functions, with the
+-- server key. The anonymous key must not be able to call them, even though
+-- RLS already stops them from touching any row.
+do $$
+declare f record;
+begin
+  for f in select p.oid::regprocedure as sig from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+           where n.nspname='public' and p.proname like 'yard\_%'
+  loop
+    execute format('revoke execute on function %s from public, anon, authenticated', f.sig);
+    execute format('grant execute on function %s to service_role', f.sig);
+  end loop;
+end $$;
