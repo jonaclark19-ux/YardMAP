@@ -24,6 +24,16 @@ create table if not exists public.map_state (
 insert into public.map_state(id, rev, data) values ('yard',0,null)
 on conflict (id) do nothing;
 
+create table if not exists public.inventory_state (
+  id text primary key default 'yard',
+  rev bigint not null default 0,
+  data jsonb,
+  updated_at timestamptz not null default now()
+);
+insert into public.inventory_state(id, rev, data) values ('yard',0,null)
+on conflict (id) do nothing;
+alter table public.inventory_state enable row level security;
+
 create table if not exists public.map_history (
   id bigint generated always as identity primary key,
   rev bigint not null,
@@ -54,15 +64,8 @@ create table if not exists public.alerts (
   in_progress_at timestamptz,
   resolved_at timestamptz,
   resolved_by text,
-  -- Everything the operational report carries beyond the columns above:
-  -- quantity, physical count, variance, reason, the status timeline, who
-  -- acknowledged it. Without it those fields were dropped on save and the
-  -- report vanished from the Control Center.
-  details jsonb not null default '{}'::jsonb,
   updated_at timestamptz not null default now()
 );
--- For a database created before `details` existed; a no-op otherwise.
-alter table public.alerts add column if not exists details jsonb not null default '{}'::jsonb;
 create index if not exists alerts_status_created_idx on public.alerts(status, created_at desc);
 create index if not exists alerts_sku_created_idx on public.alerts(sku, created_at desc);
 
@@ -236,23 +239,6 @@ as $$
   update public.app_meta set verifications_rev=verifications_rev+1, updated_at=now() where id='yard'
   returning app_meta.verifications_rev;
 $$;
-
--- Merges a report's details in one statement, so two people updating the
--- same report at once cannot overwrite each other's fields.
-create or replace function public.yard_merge_alert_details(p_id uuid, p_patch jsonb)
-returns void
-language sql
-as $$
-  update public.alerts
-     set details = coalesce(details, '{}'::jsonb) || coalesce(p_patch, '{}'::jsonb),
-         updated_at = now()
-   where id = p_id;
-$$;
--- Reached only through the Vercel function with the server key. The grant to
--- service_role is spelled out: revoking from `public` would otherwise take the
--- server's own access with it.
-revoke execute on function public.yard_merge_alert_details(uuid, jsonb) from public, anon, authenticated;
-grant execute on function public.yard_merge_alert_details(uuid, jsonb) to service_role;
 
 create or replace function public.yard_alert_recurrence(p_days integer default 30)
 returns table(sku text, report_count bigint, last_report_at timestamptz)

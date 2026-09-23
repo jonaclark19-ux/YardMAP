@@ -1,43 +1,11 @@
-/* The fields that live in their own columns. Anything else a report carries —
-   quantity, physical count, variance, reason, the status timeline — travels in
-   `details`, so a newer report shape survives the round trip instead of being
-   cut down to the columns the first version of the app knew about. */
-const CORE_KEYS = new Set([
-  "id", "type", "sku", "rawCode", "note", "status", "priority", "assignedTo",
-  "by", "role", "createdAt", "acknowledgedAt", "inProgressAt", "resolvedAt",
-  "resolvedBy", "foundAt", "homeAt", "homeGroup", "photoUrl", "recurringCount",
-]);
-
-/* Who moved a report along the workflow is recorded by the person doing it,
-   not claimed up front by whoever filed it. */
-const WORKFLOW_KEYS = new Set(["acknowledgedBy", "inProgressBy", "resolutionNote"]);
-
-const MAX_DETAILS_BYTES = 32_000;
-const MAX_TIMELINE = 100;
-
-export function cleanDetails(input, { onCreate = false } = {}) {
-  const out = {};
-  if (!input || typeof input !== "object" || Array.isArray(input)) return out;
-  for (const [key, value] of Object.entries(input)) {
-    if (CORE_KEYS.has(key)) continue;
-    if (onCreate && WORKFLOW_KEYS.has(key)) continue;
-    if (!/^[A-Za-z][A-Za-z0-9_]{0,40}$/.test(key)) continue;
-    if (value === undefined || typeof value === "function") continue;
-    out[key] = value;
-  }
-  if (Array.isArray(out.timeline)) out.timeline = out.timeline.slice(-MAX_TIMELINE);
-  if (JSON.stringify(out).length > MAX_DETAILS_BYTES) {
-    throw Object.assign(new Error("details_too_large"), { status: 413 });
-  }
-  return out;
-}
-
 export function alertToClient(a, recurringCount = undefined) {
-  // Details first, columns after: a value stored in `details` can never
-  // override the status, the author or the timestamps the server owns.
-  const details = a.details && typeof a.details === "object" && !Array.isArray(a.details) ? a.details : {};
+  // The client payload rides first so every V2 field (opsVersion, quantity,
+  // reason, disposition, the inventory comparison, the timeline, the owner)
+  // survives the round trip. The dedicated columns are written over it, because
+  // status, timestamps and priority are the server's to decide -- a stale copy
+  // inside the payload must never win.
   const out = {
-    ...details,
+    ...(a.payload && typeof a.payload === "object" ? a.payload : {}),
     id: a.id,
     type: a.type,
     sku: a.sku,
@@ -62,9 +30,28 @@ export function alertToClient(a, recurringCount = undefined) {
   return out;
 }
 
+const PAYLOAD_MAX_BYTES = 120_000;
+
+/* Keep the whole client report, minus anything the server decides for itself,
+   so a future field on the form needs no migration. Oversized payloads are
+   dropped rather than rejected: losing the extra detail beats losing the
+   report. */
+function payloadFor(input) {
+  if (!input || typeof input !== "object") return null;
+  const { status, createdAt, acknowledgedAt, inProgressAt, resolvedAt, resolvedBy,
+          by, role, id, ...rest } = input;
+  if (!Object.keys(rest).length) return null;
+  try {
+    const json = JSON.stringify(rest);
+    if (!json || Buffer.byteLength(json, "utf8") > PAYLOAD_MAX_BYTES) return null;
+    return rest;
+  } catch { return null; }
+}
+
 export function mapAlertInput(input = {}) {
   const clean = (v, max = 1000) => v == null ? null : String(v).trim().slice(0, max);
   return {
+    payload: payloadFor(input),
     type: clean(input.type, 40) || "empty",
     sku: clean(input.sku, 120),
     raw_code: clean(input.rawCode, 200),
@@ -74,6 +61,19 @@ export function mapAlertInput(input = {}) {
     home_at: input.homeAt && typeof input.homeAt === "object" ? input.homeAt : null,
     home_group: clean(input.homeGroup, 160),
     photo_url: clean(input.photoUrl, 2000),
-    details: cleanDetails(input, { onCreate: true }),
   };
+}
+
+/* Workflow edits (owner, priority note, resolution note, timeline) arrive as a
+   partial object and are merged into the stored payload, so one field changing
+   never drops the rest of the report. */
+export function mergePayload(existing, patch) {
+  const base = existing && typeof existing === "object" ? existing : {};
+  const add = payloadFor(patch);
+  if (!add) return base;
+  const merged = { ...base, ...add };
+  try {
+    if (Buffer.byteLength(JSON.stringify(merged), "utf8") > PAYLOAD_MAX_BYTES) return base;
+  } catch { return base; }
+  return merged;
 }

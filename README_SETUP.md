@@ -32,6 +32,29 @@ No subas claves, contraseñas o secretos a GitHub.
 Nunca debes pegar en GitHub ni dentro de `index.html` valores como:
 
 - `SUPABASE_SECRET_KEY`
+
+### Retención de datos (opcional)
+
+La limpieza automática corre todos los días a las 7:00 UTC y usa estos
+valores por defecto. Solo necesitas definirlos si quieres cambiarlos:
+
+- `RETENTION_RESOLVED_DAYS` — días que se conserva un reporte **resuelto**
+  antes de borrarse, junto con su foto. Por defecto `30`. Los reportes
+  abiertos o sin resolver **nunca** se borran, sin importar su antigüedad.
+  No conviene bajarlo de 30: la detección de SKUs repetidos usa una ventana
+  de 30 días, y por debajo de eso deja de marcar productos que se vuelven
+  a reportar dentro del mismo mes.
+- `RETENTION_AUDIT_DAYS` — días que se conserva el registro de auditoría.
+  Por defecto `21`.
+- `RETENTION_HISTORY_KEEP` — cuántas revisiones del mapa se conservan
+  siempre, para poder restaurar. Por defecto `100`.
+- `RETENTION_HISTORY_DAYS` — días que se conserva una revisión del mapa
+  aunque ya no esté entre las últimas `RETENTION_HISTORY_KEEP`. Por
+  defecto `30`. Una revisión se borra solo si cumple **ambas** condiciones.
+- `ALERTS_RESOLVED_WINDOW_DAYS` — días de reportes **resueltos** que la app
+  descarga para mostrar. Por defecto `60`. Los reportes abiertos siempre se
+  descargan completos, sin importar su antigüedad. No baja de `30`, que es
+  el rango más amplio que muestra el Centro de Control.
 - `SESSION_SECRET`
 - `BOOTSTRAP_ADMIN_CODE`
 
@@ -234,6 +257,24 @@ Si existen las tablas y el bucket, Supabase está preparado.
 ### Si ejecutaste `schema.sql` dos veces
 
 No debería ser un problema. El archivo está diseñado para poder volver a ejecutarse sin recrear las tablas existentes.
+
+## Paso 3.5 — Ejecutar las migraciones
+
+Además de `schema.sql`, la carpeta `supabase/` trae migraciones que agregan
+funciones nuevas sobre ese esquema base. Ejecútalas en el mismo SQL Editor,
+una por una, con el mismo procedimiento de copiar y pegar:
+
+```text
+supabase/migration-ops-v2.sql
+supabase/migration-inventory.sql
+supabase/migration-email-groups.sql
+```
+
+Cada una se puede volver a ejecutar sin problema si tienes dudas de si ya
+la corriste. `migration-email-groups.sql` crea la tabla `email_groups`, que
+es la que guarda los grupos de correo del Centro de Control; sin ella, la
+sección **Datos → Grupos de correo** aparecerá vacía y los envíos seguirán
+funcionando solo con correos escritos a mano.
 
 ---
 
@@ -1205,77 +1246,62 @@ Las ubicaciones exactas de algunos botones pueden cambiar ligeramente con actual
 
 ---
 
-# CÓDIGOS DE BARRAS → PRODUCTO
+# CORREO AUTOMÁTICO (alertas y resumen semanal)
 
-Al escanear una etiqueta, el lector devuelve un UPC/EAN (por ejemplo
-`704496065337`), que no le dice nada a nadie en la yarda. La app lo convierte
-al número de parte y muestra el producto escrito.
+Para que funcione el botón "Enviar por correo" de cada alerta y el resumen
+semanal automático, agregá estas Environment Variables en Vercel (además de
+las 5 ya existentes):
 
-## Archivos
+- `SMTP_HOST` — servidor SMTP de tu correo corporativo (ej. `smtp.office365.com`)
+- `SMTP_PORT` — normalmente `587`
+- `SMTP_USER` — la cuenta de correo que va a enviar (ej. `alertas@tuempresa.com`)
+- `SMTP_PASS` — la contraseña o "app password" de esa cuenta
+- `SMTP_FROM` — opcional; si no se pone, se usa `SMTP_USER`
+- `ALERT_SUMMARY_RECIPIENTS` — correos que reciben el resumen semanal, separados por coma
+- `CRON_SECRET` — una clave larga cualquiera que vos inventes; protege que solo Vercel Cron pueda disparar el resumen
 
-| Archivo | Qué tiene | De dónde sale |
-|---|---|---|
-| `barcodes.js` | 2 896 códigos de barras → número de parte | `seed/Part_Conversion.xlsx` |
-| `catalog.js` | 104 números de parte → nombre del producto | `fotos3point.xlsx` |
+El resumen semanal se envía automáticamente todos los lunes (configurado en
+`vercel.json`, se puede cambiar el horario ahí). El botón de enviar una
+alerta por correo aparece dentro de cada tarjeta de alerta en el panel de
+"Active reports".
 
-Los dos se cargan solos con la página (`index.html` los llama antes del mapa),
-así que un teléfono nuevo ya escanea bien sin importar nada.
+## Importación diaria del inventario (TGU FG Report)
 
-## Cuando llegue un Excel de códigos actualizado
+Ya está construido `/api/inventory` (POST). Usa las mismas columnas que ya
+reconoce el importador manual de la app (hojas "TGU FG Report" / "Worksheet",
+columnas `FG`/`Total Inventory On Hand` o `Part`/`On Hand`), así que el
+resultado es idéntico a subir el Excel a mano — pero queda guardado en
+Supabase y se comparte automáticamente entre todos los dispositivos (se
+sincroniza solo cada 5 minutos, sin tener que tocar nada).
 
-Dos caminos, el que le quede más a mano:
+Si un SKU del Excel no está todavía como tile en el mapa, se guarda igual en
+el catálogo de inventario (para búsquedas, tarjetas de producto, etc.) pero
+no se crea ni se mueve ningún tile — eso lo sigue haciendo un editor a mano.
 
-- **Menú → 🏷 Load barcode list** (justo debajo de *Load inventory report*).
-- **Menú → Control Center → pestaña Data → Load barcode Excel.**
+### Configuración
 
-Elija el Excel y ya está.
+1. Agregá la Environment Variable `INVENTORY_IMPORT_SECRET` en Vercel — una
+   clave larga que vos inventes (por ejemplo, generada con un gestor de
+   contraseñas). Es la que va a usar Power Automate para autenticarse.
+2. En Power Automate, creá un flujo:
+   - Disparador: "Cuando llega un correo nuevo" (Office 365 Outlook),
+     filtrado por remitente/asunto del TGU FG Report.
+   - Acción: "Obtener el contenido del adjunto" del correo.
+   - Acción: HTTP POST a `https://TU-DOMINIO.vercel.app/api/inventory`
+     con:
+     - Header `Content-Type: application/json`
+     - Header `x-import-secret: <el mismo valor de INVENTORY_IMPORT_SECRET>`
+     - Body JSON:
+       ```json
+       {
+         "fileName": "@{triggerOutputs()?['body/attachments'][0]?['name']}",
+         "fileBase64": "@{triggerOutputs()?['body/attachments'][0]?['contentBytes']}"
+       }
+       ```
+       (Power Automate ya entrega el adjunto en base64 en `contentBytes`,
+       así que no hace falta convertir nada.)
 
-Acepta el archivo del ERP tal como sale (columnas `PartNum` y `BarCode`) y
-también `FG` + `UPC` del reporte de inventario.
+La respuesta indica cuántas filas se importaron (`rowCount`) y si hubo
+conflictos entre hojas (`conflicts`), útil para armar una alerta en el
+propio flujo de Power Automate si algo sale raro.
 
-Los códigos se guardan **dentro del mapa**, igual que las fichas: quien tenga
-la app se los lleva en la siguiente sincronización, sin volver a publicar el
-sitio ni reemplazar archivos. Lo mismo pasa con los nombres de producto del
-reporte de inventario: el administrador lo carga una vez y los demás
-teléfonos ya leen el producto escrito aunque nunca hayan cargado un reporte.
-
-En el mapa solo se guarda **lo que sea distinto** de la lista que trae la app,
-así que volver a cargar el mismo archivo no lo infla. Con la tabla completa
-sustituida, el mapa pesa unos 220 KB — el servidor admite 5 500 KB.
-
-> **Ojo:** "se lo llevan todos" vale cuando el sitio está publicado con
-> Supabase y las variables de Vercel puestas. Sin backend, la app trabaja en
-> modo local y el mapa (con sus códigos y nombres) se guarda solo en ese
-> navegador.
-
-## Meter los códigos dentro de la app (opcional)
-
-Sirve para que un teléfono recién instalado escane bien **antes** de
-sincronizar, o si todavía no hay backend. En la misma fila:
-
-1. **⬇ Download barcodes.js** → descarga el archivo ya armado, con lo que trae
-   la app más lo que se haya cargado encima.
-2. Reemplace el `barcodes.js` del sitio por ese y vuelva a publicar.
-
-## Regenerar los archivos desde los Excel de origen
-
-Solo hace falta si se quiere rehacer todo desde cero, o para actualizar los
-nombres de `catalog.js`. Con Python instalado:
-
-```
-python3 tools/build-barcode-map.py
-```
-
-Reescribe `barcodes.js` y `catalog.js` a partir de `seed/Part_Conversion.xlsx`
-y `fotos3point.xlsx`. Da exactamente el mismo `barcodes.js` que el botón de
-descarga de la app.
-
-## De dónde salen los nombres
-
-1. El **reporte de inventario TGU** que carga el administrador (columna
-   `Description`) — es el que cubre toda la planta.
-2. `catalog.js`, la lista que viene con la app (104 productos, los de 3 puntos).
-
-Si un número de parte no está en ninguno de los dos, la app muestra el número
-de parte solo y avisa que ese producto todavía no tiene nombre. Cargando el
-reporte de inventario del día se llenan los que faltan.
