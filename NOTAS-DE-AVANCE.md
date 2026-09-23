@@ -2,6 +2,9 @@
 
 Dónde quedó el trabajo y qué sigue, para retomarlo desde cero en otra sesión.
 
+> **Revisión completa del proyecto (23 sep 2026):** [`REVISION.md`](REVISION.md) —
+> los 19 hallazgos, su estado y el orden acordado para resolverlos.
+
 Rama: `claude/yard-map-barcode-conversion-b7e4k3` · PR abierto:
 [#1](https://github.com/jonaclark19-ux/YardMAP/pull/1) (sin fusionar a `main`).
 
