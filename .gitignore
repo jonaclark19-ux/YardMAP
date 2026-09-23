@@ -1,1 +1,9 @@
 node_modules/
+
+# Secretos: nunca al repositorio. La lista de variables está en .env.example.
+.env
+.env.*
+!.env.example
+
+# Carpeta local de la CLI de Vercel (trae el id del proyecto y a veces tokens)
+.vercel/
