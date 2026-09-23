@@ -2332,6 +2332,7 @@ header.topbar{
   const LS_STATE = "tarter_yard_state_v6";
   const LS_ALERTS = "tarter_yard_alerts_v6";
   const LS_QUEUE = "tarter_yard_queue_v6";
+  const LS_DETAILS_QUEUE = "tarter_yard_details_queue_v1";
   const LS_NAME = "tarter_yard_name";
   // Polling backs off when nobody is touching the screen. A phone left open
   // on the map all shift then costs ~60 requests/hour instead of ~450, which
@@ -2609,7 +2610,7 @@ header.topbar{
   async function flushQueue() {
     if (S.mode !== "remote") return;
     let q = queued();
-    if (!q.length) return;
+    if (!q.length) { await flushDetailsQueue(); return; }
     const rest = [];
     for (const item of q) {
       try {
@@ -2619,6 +2620,71 @@ header.topbar{
     }
     setQueued(rest);
     if (rest.length !== q.length) await loadAlerts();
+    // Edits go after the reports they belong to have reached the server.
+    await flushDetailsQueue();
+  }
+
+  /* The columns the server owns. Everything else on a report — quantity,
+     physical count, variance, the status timeline, who acknowledged it — is
+     its "details", and has to be sent up explicitly: the Control Center edits
+     those fields in place, and they used to stay on the phone that made them. */
+  const ALERT_COLUMNS = new Set([
+    "id", "type", "sku", "rawCode", "note", "status", "priority", "assignedTo",
+    "by", "role", "createdAt", "acknowledgedAt", "inProgressAt", "resolvedAt",
+    "resolvedBy", "foundAt", "homeAt", "homeGroup", "photoUrl", "recurringCount",
+  ]);
+  function detailsOf(alert) {
+    const out = {};
+    Object.keys(alert || {}).forEach((k) => { if (!ALERT_COLUMNS.has(k)) out[k] = alert[k]; });
+    return out;
+  }
+  // One pending entry per report: the latest snapshot is the one that matters.
+  function queuedDetails() { return lsGet(LS_DETAILS_QUEUE, {}) || {}; }
+  function queueDetails(id, details) { const q = queuedDetails(); q[id] = details; lsSet(LS_DETAILS_QUEUE, q); }
+  function dropQueuedDetails(id) { const q = queuedDetails(); if (id in q) { delete q[id]; lsSet(LS_DETAILS_QUEUE, q); } }
+
+  async function pushDetails(id, details) {
+    const r = await api("alerts", { method: "PATCH", body: JSON.stringify({ id, details }) });
+    if (r.ok) {
+      S.alertsRev = r.body.rev || S.alertsRev;
+      if (Array.isArray(r.body.items)) S.alerts = r.body.items;
+      lsSet(LS_ALERTS, { rev: S.alertsRev, items: S.alerts });
+      emit("alerts", S.alerts);
+    }
+    return r;
+  }
+
+  /**
+   * Sends a report's details to the server after it was changed locally.
+   * Offline, the change waits in a queue and goes out with the next flush.
+   */
+  async function saveAlertDetails(id) {
+    const alert = S.alerts.find((a) => a.id === id);
+    if (!alert) return { ok: false, missing: true };
+    lsSet(LS_ALERTS, { rev: S.alertsRev, items: S.alerts });
+    if (S.mode !== "remote") return { ok: true, local: true };
+    const details = detailsOf(alert);
+    try {
+      const r = await pushDetails(id, details);
+      if (r.ok) { dropQueuedDetails(id); return { ok: true }; }
+      // A refusal is not going to change on retry; only a lost connection is.
+      if (r.status === 401) return { ok: false, unauthorized: true };
+      if (r.status === 403) return { ok: false, forbidden: true };
+      if (r.status >= 400 && r.status < 500) return { ok: false, error: r.body.error };
+    } catch (e) { /* offline: queue below */ }
+    queueDetails(id, details);
+    return { ok: false, queued: true };
+  }
+
+  async function flushDetailsQueue() {
+    const q = queuedDetails();
+    const ids = Object.keys(q);
+    for (const id of ids) {
+      try {
+        const r = await pushDetails(id, q[id]);
+        if (r.ok || (r.status >= 400 && r.status < 500)) dropQueuedDetails(id);
+      } catch (e) { /* still offline: keep it */ }
+    }
   }
 
   async function setAlertStatus(id, status, remove) {
@@ -2739,7 +2805,7 @@ header.topbar{
     state: S,
     probe, login, logout, useLocalMode,
     loadState, pushState, pushStateNow, flush,
-    loadAlerts, addAlert, setAlertStatus, pollOnce, startPolling, stopPolling,
+    loadAlerts, addAlert, setAlertStatus, saveAlertDetails, pollOnce, startPolling, stopPolling,
     onState: (fn) => listeners.state.push(fn),
     onAlerts: (fn) => listeners.alerts.push(fn),
     onStatus: (fn) => listeners.status.push(fn),
@@ -6733,11 +6799,18 @@ ${rows.join(",\n")}
       try{await PhotoStore.put(alert.id,selectedPhotoFile);alert.hasPhoto=true;}catch(e){console.error(e);alert.hasPhoto=false;toast("Report saved, but the photo could not be stored on this device.");}
     }
     // A matching inventory count is a verification event, not an open problem.
-    if(alert&&type==="inventory"&&payload.inventoryResult==="verified"){
+    // The server closes it on arrival; only a report kept on this device still
+    // needs closing here.
+    if(alert&&type==="inventory"&&payload.inventoryResult==="verified"&&alert.status!=="resolved"){
       await setDetailedStatus(alert.id,"resolved","Inventory verified");
     }else persistAlerts();
     syncAlertUi(); closeOpsReport();
-    toast(type==="inventory"&&payload.inventoryResult==="verified"?"Inventory verified ✓":"Report saved locally");
+    // Say where the report actually went: "saved locally" was shown even after
+    // the server had it, and never when it was stuck waiting for signal.
+    const verifiedMsg = type==="inventory"&&payload.inventoryResult==="verified";
+    toast(res&&res.queued ? "No signal — the report will be sent when there is"
+        : res&&res.local  ? (verifiedMsg ? "Inventory verified ✓ · saved on this device" : "Report saved on this device")
+        : (verifiedMsg ? "Inventory verified ✓" : "Report sent"));
   }
 
   /* ------------------------------ status workflow */
@@ -6751,6 +6824,8 @@ ${rows.join(",\n")}
     if(status==="in_progress"){fresh.inProgressAt=new Date().toISOString();fresh.inProgressBy=currentUser();}
     if(status==="resolved"){fresh.resolvedAt=fresh.resolvedAt||new Date().toISOString();fresh.resolvedBy=fresh.resolvedBy||currentUser();}
     persistAlerts(); syncAlertUi();
+    // The timeline and who moved it along live in the report's details.
+    try{ await Sync.saveAlertDetails(id); }catch(e){ console.warn("Could not send report changes", e); }
   }
 
   /* ------------------------------ map actions */
@@ -7224,8 +7299,8 @@ ${rows.join(",\n")}
   function barcodeState(){try{return JSON.parse(localStorage.getItem("tarter_yard_barcodes_v1")||"null")}catch(e){return null}}
   function locationState(){try{const k=window.YardProductUX?.locations?.storageKey||"tarter_yard_secondary_locations_v1";const v=JSON.parse(localStorage.getItem(k)||"null");return v&&Array.isArray(v.items)?v.items:[]}catch(e){return []}}
   function persistAlerts(){try{const old=JSON.parse(localStorage.getItem(ALERTS_KEY)||"{}");localStorage.setItem(ALERTS_KEY,JSON.stringify({rev:old.rev||0,items:Sync.state.alerts||[]}))}catch(e){console.warn(e)}}
-  function patchReport(id,patch,comment){const r=Sync.state.alerts.find(x=>x.id===id);if(!r)return null;Object.assign(r,patch||{});if(comment){r.timeline=Array.isArray(r.timeline)?r.timeline:[];r.timeline.push({status:r.status||"new",at:new Date().toISOString(),by:currentUser(),comment});}persistAlerts();return r;}
-  async function setStatus(id,status,comment){if(!window.Sync)return;await Sync.setAlertStatus(id,status,false);const r=Sync.state.alerts.find(x=>x.id===id);if(!r)return;const stamp=new Date().toISOString();r.timeline=Array.isArray(r.timeline)?r.timeline:[];r.timeline.push({status,at:stamp,by:currentUser(),comment:comment||""});if(status==="acknowledged"){r.acknowledgedAt=stamp;r.acknowledgedBy=currentUser()}if(status==="in_progress"){r.inProgressAt=stamp;r.inProgressBy=currentUser()}if(status==="resolved"){r.resolvedAt=r.resolvedAt||stamp;r.resolvedBy=r.resolvedBy||currentUser();if(comment)r.resolutionNote=comment}persistAlerts();render();openDetail(id);}
+  function patchReport(id,patch,comment){const r=Sync.state.alerts.find(x=>x.id===id);if(!r)return null;Object.assign(r,patch||{});if(comment){r.timeline=Array.isArray(r.timeline)?r.timeline:[];r.timeline.push({status:r.status||"new",at:new Date().toISOString(),by:currentUser(),comment});}persistAlerts();try{Sync.saveAlertDetails(id)}catch(e){console.warn(e)}return r;}
+  async function setStatus(id,status,comment){if(!window.Sync)return;await Sync.setAlertStatus(id,status,false);const r=Sync.state.alerts.find(x=>x.id===id);if(!r)return;const stamp=new Date().toISOString();r.timeline=Array.isArray(r.timeline)?r.timeline:[];r.timeline.push({status,at:stamp,by:currentUser(),comment:comment||""});if(status==="acknowledged"){r.acknowledgedAt=stamp;r.acknowledgedBy=currentUser()}if(status==="in_progress"){r.inProgressAt=stamp;r.inProgressBy=currentUser()}if(status==="resolved"){r.resolvedAt=r.resolvedAt||stamp;r.resolvedBy=r.resolvedBy||currentUser();if(comment)r.resolutionNote=comment}persistAlerts();render();openDetail(id);try{await Sync.saveAlertDetails(id)}catch(e){console.warn(e)}}
   function classifyYard(){const open=reports().filter(openReport);const high=open.filter(r=>autoPriority(r)==="high");return {open,high,label:open.length?`${open.length} need attention`:"Yard clear"};}
   function shell(){
     const center=document.getElementById(OUTER_ID);if(!center)return;center.classList.add("cc-v23");center.innerHTML=`<div class="cc23-shell">

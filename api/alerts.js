@@ -1,7 +1,7 @@
 import { requireEditor, requireUser } from "./_lib/auth.js";
 import { getMeta, rest, rpc } from "./_lib/db.js";
 import { audit } from "./_lib/audit.js";
-import { alertToClient, mapAlertInput } from "./_lib/models.js";
+import { alertToClient, cleanDetails, mapAlertInput } from "./_lib/models.js";
 import { json, readJson, errorResponse, methodNotAllowed } from "./_lib/http.js";
 
 async function recurrenceMap(days = 30) {
@@ -30,11 +30,22 @@ export default {
         const user = await requireUser(request);
         const body = await readJson(request, 6_000_000);
         const input = mapAlertInput(body.alert || {});
+        /* A physical count that matches the system is a verification, not an
+           open problem. The app used to resolve it with a second request —
+           which a viewer is not allowed to make, so every matching count a
+           floor worker did stayed open. It is closed here, on arrival. */
+        const now = new Date().toISOString();
+        const verified = input.type === "inventory" && input.details.inventoryResult === "verified";
+        if (verified) {
+          const timeline = Array.isArray(input.details.timeline) ? input.details.timeline : [];
+          input.details.timeline = timeline.concat({ status: "resolved", at: now, by: user.name, comment: "Inventory verified" });
+        }
         const { data } = await rest("alerts", "", {
           method: "POST",
           body: {
             ...input,
-            status: "new",
+            status: verified ? "resolved" : "new",
+            ...(verified ? { resolved_at: now, resolved_by: user.name } : {}),
             by_name: user.name,
             by_role: user.role,
           },
@@ -62,6 +73,14 @@ export default {
           return json({ rev, items });
         }
 
+        // The workflow (timeline, who acknowledged it, the resolution note) is
+        // merged in one statement so two people on the same report don't
+        // overwrite each other.
+        if (body.details !== undefined) {
+          await rpc("yard_merge_alert_details", { p_id: id, p_patch: cleanDetails(body.details) });
+        }
+        const touchesColumns = ["status", "priority", "assignedTo", "photoUrl"].some((k) => body[k] !== undefined);
+
         const patch = { updated_at: new Date().toISOString() };
         if (["new", "acknowledged", "in_progress", "resolved"].includes(body.status)) {
           patch.status = body.status;
@@ -79,14 +98,16 @@ export default {
         if (body.assignedTo !== undefined) patch.assigned_to = String(body.assignedTo || "").trim().slice(0, 160) || null;
         if (body.photoUrl !== undefined) patch.photo_url = String(body.photoUrl || "").trim().slice(0, 2000) || null;
 
-        await rest("alerts", `id=eq.${encodeURIComponent(id)}`, {
-          method: "PATCH",
-          body: patch,
-          headers: { prefer: "return=minimal" },
-        });
+        if (touchesColumns || body.details === undefined) {
+          await rest("alerts", `id=eq.${encodeURIComponent(id)}`, {
+            method: "PATCH",
+            body: patch,
+            headers: { prefer: "return=minimal" },
+          });
+        }
         const revRows = await rpc("yard_bump_alerts_rev");
         const rev = Number(Array.isArray(revRows) ? revRows[0]?.alerts_rev : revRows?.alerts_rev) || 0;
-        await audit(user, "alert_updated", "alert", id, patch);
+        await audit(user, "alert_updated", "alert", id, { ...patch, ...(body.details !== undefined ? { details: true } : {}) });
         const items = await getAlerts();
         return json({ rev, items });
       }
