@@ -111,6 +111,12 @@ async function handlePut(request) {
   if (isBinaryUpload(request)) {
     const { buffer, fileName } = await readWorkbook(request);
     data = parseInventoryWorkbook(buffer, fileName);
+    // The workbook has no catalog photos or day-over-day history; those were
+    // added in the browser. Carry over what the shared copy already had.
+    const { data: rows } = await rest("inventory_state", "id=eq.yard&select=data");
+    const prev = Array.isArray(rows) ? rows[0]?.data : null;
+    if (prev?.photos) data.photos = prev.photos;
+    if (Array.isArray(prev?.history)) data.history = prev.history;
   } else {
     const body = await readJson(request, MAX_BODY);
     if (!body.data || typeof body.data !== "object" || !body.data.items) return json({ error: "invalid_data" }, 400);

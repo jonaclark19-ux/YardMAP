@@ -824,6 +824,11 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       <input type="password" id="loginCode" name="password" autocomplete="current-password" data-i18n-ph="login.passwordPh" required />
     </label>
 
+    <label class="fld" id="loginInviteFld" hidden>
+      <span data-i18n="login.invite">Invite code</span>
+      <input type="text" id="loginInvite" name="invite" autocomplete="off" autocapitalize="off" data-i18n-ph="login.invitePh" />
+    </label>
+
     <div class="login-err" id="loginErr" hidden></div>
 
     <button type="submit" class="login-submit" id="loginSubmit" data-i18n="login.submit">Sign in</button>
@@ -1353,8 +1358,21 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "login.badPassword": "That access code is not valid.",
       "login.needName": "Please enter your name.",
       "login.offline": "Could not reach the server. Working in local mode.",
-      "login.roleHint": "The code you enter decides what you can do: viewers report issues, editors can also edit the map.",
+      "login.roleHint": "Your account decides what you can do: operators report issues, editors can also edit the map and manage reports.",
       "login.localMode": "Local mode — no server detected. Changes stay on this device only.",
+      "login.unavailable": "The server is not answering right now. Check the connection and try again.",
+      "login.unavailableLocal": "You can still continue offline, but nothing you do will reach other devices.",
+      "login.tooMany": "Too many attempts. Wait 15 minutes and try again.",
+      "login.signupClosed": "Sign-up is closed. Ask an admin to create your account.",
+      "login.badInvite": "That invite code is not valid. Ask your supervisor for the current code.",
+      "login.invite": "Invite code",
+      "login.invitePh": "Given by your supervisor",
+      "login.codeShort": "Choose a code with at least 6 characters.",
+      "login.codeChoosePh": "Choose a code (6+ characters)",
+      "login.nameTaken": "That name is already registered. Try signing in instead.",
+      "login.createAccount": "Create account",
+      "login.haveAccount": "Already have an account? Sign in",
+      "login.newOperator": "New operator? Create an account",
       "login.continueLocal": "Continue offline",
 
       /* ---- roles / session ---- */
@@ -1749,8 +1767,21 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "login.badPassword": "Ese código de acceso no es válido.",
       "login.needName": "Por favor escribe tu nombre.",
       "login.offline": "No se pudo contactar el servidor. Trabajando en modo local.",
-      "login.roleHint": "El código que escribas define lo que puedes hacer: los viewers reportan problemas, los editores además editan el mapa.",
+      "login.roleHint": "Tu cuenta define lo que puedes hacer: los operadores reportan problemas; los editores además editan el mapa y gestionan reportes.",
       "login.localMode": "Modo local — no se detectó servidor. Los cambios quedan solo en este dispositivo.",
+      "login.unavailable": "El servidor no responde en este momento. Revisa la conexión e inténtalo de nuevo.",
+      "login.unavailableLocal": "Puedes continuar sin conexión, pero nada de lo que hagas llegará a otros dispositivos.",
+      "login.tooMany": "Demasiados intentos. Espera 15 minutos e inténtalo de nuevo.",
+      "login.signupClosed": "El registro está cerrado. Pide a un administrador que cree tu cuenta.",
+      "login.badInvite": "Ese código de invitación no es válido. Pide el código actual a tu supervisor.",
+      "login.invite": "Código de invitación",
+      "login.invitePh": "Te lo da tu supervisor",
+      "login.codeShort": "Elige un código de al menos 6 caracteres.",
+      "login.codeChoosePh": "Elige un código (6+ caracteres)",
+      "login.nameTaken": "Ese nombre ya está registrado. Intenta iniciar sesión.",
+      "login.createAccount": "Crear cuenta",
+      "login.haveAccount": "¿Ya tienes cuenta? Inicia sesión",
+      "login.newOperator": "¿Operador nuevo? Crea una cuenta",
       "login.continueLocal": "Continuar sin conexión",
 
       /* ---- roles / session ---- */
@@ -2237,6 +2268,10 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
   const LS_ALERTS = "tarter_yard_alerts_v6";
   const LS_QUEUE = "tarter_yard_queue_v6";
   const LS_NAME = "tarter_yard_name";
+  // The last signed-in account on this device. Lets the app start in online
+  // mode from its cache when the server cannot be reached, instead of
+  // dropping into local mode where nothing syncs.
+  const LS_SESSION = "tarter_yard_last_session";
   // Polling backs off when nobody is touching the screen. A phone left open
   // on the map all shift then costs ~60 requests/hour instead of ~450, which
   // keeps a whole crew inside Netlify's free function allowance.
@@ -2301,10 +2336,12 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       const r = await api("me");
       if (r.ok && r.body.role) {
         S.mode = "remote"; S.role = r.body.role; S.name = r.body.name || ""; S.onboarded = !!r.body.onboarded;
+        rememberSession();
         return { mode: "remote", authed: true, role: S.role, name: S.name };
       }
       if (r.status === 401) {
         S.mode = "remote";
+        forgetSession();
         return { mode: "remote", authed: false };
       }
       if (r.status === 503) {
@@ -2312,29 +2349,60 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
         S.mode = "remote";
         return { mode: "remote", authed: false, misconfigured: true };
       }
-      S.mode = "local"; S.role = "local";
-      return { mode: "local" };
+      // 404 means there is no API on this host at all (a static preview):
+      // local mode is the only thing that can work.
+      if (r.status === 404) {
+        S.mode = "local"; S.role = "local";
+        return { mode: "local" };
+      }
+      return unreachable();
     } catch (e) {
-      S.mode = "local"; S.role = "local";
-      return { mode: "local" };
+      if (location.protocol === "file:") { S.mode = "local"; S.role = "local"; return { mode: "local" }; }
+      return unreachable();
     }
   }
+
+  /* The API exists but did not answer (no signal in the yard, Supabase
+     down, a 5xx). This used to switch the app to local mode with full edit
+     rights, so a whole shift could work on a copy nobody else would ever
+     see. Now a device that was signed in keeps its online identity and runs
+     from its cache: reports queue, and everything syncs once the server
+     answers again. */
+  function unreachable() {
+    const last = lsGet(LS_SESSION, null);
+    S.online = false;
+    if (last && last.role) {
+      S.mode = "remote"; S.role = last.role; S.name = last.name || ""; S.onboarded = !!last.onboarded;
+      return { mode: "remote", authed: true, role: S.role, name: S.name, offline: true };
+    }
+    S.mode = "remote";
+    return { mode: "remote", authed: false, unavailable: true };
+  }
+  function rememberSession() { lsSet(LS_SESSION, { role: S.role, name: S.name, onboarded: S.onboarded }); }
+  function forgetSession() { try { localStorage.removeItem(LS_SESSION); } catch (e) {} }
 
   async function login(name, code) {
     const r = await api("login", { method: "POST", body: JSON.stringify({ name, code }) });
     if (r.ok) {
       S.mode = "remote"; S.role = r.body.role; S.name = r.body.name || name; S.onboarded = !!r.body.onboarded;
       try { localStorage.setItem(LS_NAME, S.name); } catch (e) {}
+      rememberSession();
       return { ok: true, role: S.role, name: S.name };
     }
     return { ok: false, status: r.status, error: r.body.error || "unknown" };
   }
 
-  async function signup(name, code) {
-    const r = await api("signup", { method: "POST", body: JSON.stringify({ name, code }) });
+  async function signupPolicy() {
+    try { const r = await api("signup"); return r.ok ? (r.body.signup || "open") : "open"; }
+    catch (e) { return "open"; }
+  }
+
+  async function signup(name, code, invite) {
+    const r = await api("signup", { method: "POST", body: JSON.stringify({ name, code, invite }) });
     if (r.ok) {
       S.mode = "remote"; S.role = r.body.role; S.name = r.body.name || name; S.onboarded = !!r.body.onboarded;
       try { localStorage.setItem(LS_NAME, S.name); } catch (e) {}
+      rememberSession();
       return { ok: true, role: S.role, name: S.name };
     }
     return { ok: false, status: r.status, error: r.body.error || "unknown" };
@@ -2348,6 +2416,7 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
 
   async function logout() {
     try { await api("logout", { method: "POST" }); } catch (e) {}
+    forgetSession();
     S.role = "local"; S.name = "";
   }
 
@@ -2563,12 +2632,16 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
     posted.forEach((p) => emit("posted", p));
   }
 
-  async function setAlertStatus(id, status, remove) {
+  /* `details` (optional) are payload fields that belong with this status
+     change -- the timeline entry, who acknowledged, the resolution note.
+     They travel in the same PATCH; they used to be added only to the local
+     copy afterwards, and the next poll threw them away. */
+  async function setAlertStatus(id, status, remove, details) {
     // Optimistic local update.
     S.alerts = remove
       ? S.alerts.filter((a) => a.id !== id)
       : S.alerts.map((a) => (a.id === id
-        ? Object.assign({}, a, {
+        ? Object.assign({}, a, details || {}, {
           status,
           resolvedAt: status === "resolved" ? new Date().toISOString() : null,
           resolvedBy: status === "resolved" ? (S.name || "—") : null,
@@ -2581,7 +2654,7 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
     try {
       const r = await api("alerts", {
         method: "PATCH",
-        body: JSON.stringify({ id, status, remove: !!remove }),
+        body: JSON.stringify(Object.assign({ id, status, remove: !!remove }, details ? { payload: details } : {})),
       });
       if (r.ok) {
         S.alertsRev = r.body.rev || S.alertsRev;
@@ -2633,7 +2706,7 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
     if (document.hidden) return;
     try {
       const r = await api(`sync?srev=${S.stateRev}&arev=${S.alertsRev}`);
-      if (r.status === 401) { emit("status", { unauthorized: true }); return; }
+      if (r.status === 401) { forgetSession(); emit("status", { unauthorized: true }); return; }
       if (!r.ok) return;
       S.online = true;
 
@@ -2707,7 +2780,7 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
   global.Sync = {
     state: S,
     api,
-    probe, login, signup, logout, useLocalMode, markOnboarded,
+    probe, login, signup, signupPolicy, logout, useLocalMode, markOnboarded,
     loadState, pushState, pushStateNow, flush,
     loadAlerts, addAlert, setAlertStatus, patchAlert, pollOnce, startPolling, stopPolling,
     onState: (fn) => listeners.state.push(fn),
@@ -5295,6 +5368,13 @@ function showLogin(opts){
     $("#loginSubmit").hidden = true;
   }
   if(opts.misconfigured) showLoginError(t("login.offline"));
+  if(opts.unavailable){
+    // The server exists but is not answering: keep the normal sign-in form
+    // (it will work again in a moment) and offer local mode as a last resort.
+    showLoginError(t("login.unavailable"));
+    $("#loginLocal").hidden = false;
+    const p = $("#loginLocal p"); if(p) p.textContent = t("login.unavailableLocal");
+  }
 }
 
 function showLoginError(msg){
@@ -5304,34 +5384,59 @@ function showLoginError(msg){
 }
 
 let loginSignupMode = false;
-$("#loginSignupToggle").onclick = () => {
-  loginSignupMode = !loginSignupMode;
-  $("#loginSubmit").textContent = loginSignupMode ? "Create account" : t("login.submit");
-  $("#loginSignupToggle").textContent = loginSignupMode ? "Already have an account? Sign in" : "New operator? Create an account";
-  $("#loginCode").placeholder = loginSignupMode ? "Choose a code (4+ characters)" : "";
+let signupPolicy = "open";
+function paintSignupMode(){
+  $("#loginSubmit").textContent = loginSignupMode ? t("login.createAccount") : t("login.submit");
+  $("#loginSignupToggle").textContent = loginSignupMode ? t("login.haveAccount") : t("login.newOperator");
+  $("#loginCode").placeholder = loginSignupMode ? t("login.codeChoosePh") : t("login.passwordPh");
+  $("#loginCode").autocomplete = loginSignupMode ? "new-password" : "current-password";
+  $("#loginInviteFld").hidden = !(loginSignupMode && signupPolicy === "invite");
+}
+$("#loginSignupToggle").onclick = async () => {
   showLoginError("");
+  if(!loginSignupMode){
+    // Ask the server which form to show before switching: open, invite-only,
+    // or closed (accounts are created by an admin).
+    signupPolicy = await Sync.signupPolicy();
+    if(signupPolicy === "closed"){ showLoginError(t("login.signupClosed")); return; }
+  }
+  loginSignupMode = !loginSignupMode;
+  paintSignupMode();
 };
+I18N.onLangChange(() => { if(!$("#loginScreen").classList.contains("hide")) paintSignupMode(); });
+
+const MIN_CODE = 6;
+function loginErrorText(r){
+  if(r.status === 429) return t("login.tooMany");
+  if(loginSignupMode){
+    if(r.error === "name_taken") return t("login.nameTaken");
+    if(r.error === "code_too_short") return t("login.codeShort");
+    if(r.error === "invalid_invite") return t("login.badInvite");
+    if(r.error === "signup_closed") return t("login.signupClosed");
+    return t("login.unavailable");
+  }
+  return r.status === 401 ? t("login.badPassword") : t("login.unavailable");
+}
 
 $("#loginForm").addEventListener("submit", async e => {
   e.preventDefault();
   const name = $("#loginName").value.trim();
   const code = $("#loginCode").value;
   if(!name){ showLoginError(t("login.needName")); return; }
-  if(loginSignupMode && code.length < 4){ showLoginError("Choose a code with at least 4 characters."); return; }
+  if(loginSignupMode && code.length < MIN_CODE){ showLoginError(t("login.codeShort")); return; }
   showLoginError("");
   const btn = $("#loginSubmit");
   btn.disabled = true;
   btn.textContent = t("login.working");
   try {
-    const r = loginSignupMode ? await Sync.signup(name, code) : await Sync.login(name, code);
+    const r = loginSignupMode ? await Sync.signup(name, code, $("#loginInvite").value.trim()) : await Sync.login(name, code);
     if(r.ok){ await startApp(); return; }
-    if(loginSignupMode) showLoginError(r.error === "name_taken" ? "That name is already registered. Try signing in instead." : r.error === "code_too_short" ? "Choose a code with at least 4 characters." : t("login.offline"));
-    else showLoginError(r.status === 401 ? t("login.badPassword") : t("login.offline"));
+    showLoginError(loginErrorText(r));
   } catch(err){
-    showLoginError(t("login.offline"));
+    showLoginError(t("login.unavailable"));
   }
   btn.disabled = false;
-  btn.textContent = loginSignupMode ? "Create account" : t("login.submit");
+  paintSignupMode();
 });
 
 $("#loginLocalBtn").onclick = async () => {
@@ -5476,7 +5581,7 @@ async function boot(){
   if(probe.mode === "local") showLogin({ local: true });
   // A deployed-but-unconfigured backend must still let people in offline,
   // otherwise a half-finished Supabase setup locks the whole yard out.
-  else if(!probe.authed) showLogin({ local: !!probe.misconfigured, misconfigured: probe.misconfigured });
+  else if(!probe.authed) showLogin({ local: !!probe.misconfigured, misconfigured: probe.misconfigured, unavailable: probe.unavailable });
   else await startApp();
 }
 
@@ -5833,7 +5938,7 @@ boot();
     };
     saveInventoryState(state);
     refreshInventoryUI();
-    pushServerInventory(state);
+    pushServerInventory(state, file);
     return state;
   }
 
@@ -5841,11 +5946,21 @@ boot();
   // upload -- push it to the server too so every other device picks it up
   // on its own next refresh, the same way editors already expect map edits
   // and alerts to show up everywhere.
-  async function pushServerInventory(state){
+  //
+  // Vercel refuses request bodies over 4.5 MB. A full FG report parsed to
+  // JSON can pass that, so above ~4 MB the original workbook is sent instead
+  // (it is zip-compressed, several times smaller) and the server parses it,
+  // keeping the catalog photos it already had.
+  const INVENTORY_JSON_LIMIT = 4_000_000;
+  async function pushServerInventory(state, file){
     try{
       if(!window.Sync || typeof Sync.api !== "function") return;
       if(typeof canEdit === "function" && !canEdit()) return;
-      const r = await Sync.api("inventory", {method:"PUT", body: JSON.stringify({data: state})});
+      const json = JSON.stringify({data: state});
+      const r = (json.length > INVENTORY_JSON_LIMIT && file)
+        ? await Sync.api("inventory", {method:"PUT", headers:{"content-type":"application/octet-stream","x-file-name":encodeURIComponent(file.name||"inventory.xlsx")}, body: file})
+        : await Sync.api("inventory", {method:"PUT", body: json});
+      if(!r.ok){ try{ toast(r.status===413 ? "The inventory report is too large to share with other devices." : "The inventory report loaded here but could not be shared with other devices."); }catch(e){} }
       if(r.ok && r.body && typeof r.body.rev === "number"){
         state.serverRev = r.body.rev;
         saveInventoryState(state);
@@ -6919,15 +7034,19 @@ boot();
   }
 
   /* ------------------------------ status workflow */
+  // The payload fields that go with a status change, sent in the same PATCH
+  // so the timeline survives the next sync instead of living on one device.
+  function statusDetails(r,status,comment){
+    const at=new Date().toISOString(), by=currentUser();
+    const d={timeline:(Array.isArray(r.timeline)?r.timeline:[]).concat({status,at,by,comment:comment||""})};
+    if(status==="acknowledged"){d.acknowledgedBy=by;}
+    if(status==="in_progress"){d.inProgressBy=by;}
+    if(status==="resolved"&&comment){d.resolutionNote=comment;}
+    return d;
+  }
   async function setDetailedStatus(id,status,comment){
     const r=allReports().find(a=>a.id===id); if(!r)return;
-    await Sync.setAlertStatus(id,status,false);
-    const fresh=Sync.state.alerts.find(a=>a.id===id); if(!fresh)return;
-    if(!Array.isArray(fresh.timeline)) fresh.timeline=[];
-    fresh.timeline.push({status,at:new Date().toISOString(),by:currentUser(),comment:comment||""});
-    if(status==="acknowledged"){fresh.acknowledgedAt=new Date().toISOString();fresh.acknowledgedBy=currentUser();}
-    if(status==="in_progress"){fresh.inProgressAt=new Date().toISOString();fresh.inProgressBy=currentUser();}
-    if(status==="resolved"){fresh.resolvedAt=fresh.resolvedAt||new Date().toISOString();fresh.resolvedBy=fresh.resolvedBy||currentUser();}
+    await Sync.setAlertStatus(id,status,false,statusDetails(r,status,comment));
     persistAlerts(); syncAlertUi();
   }
 
@@ -7255,7 +7374,7 @@ boot();
       if(files.length&&Sync.mode==="remote") retryPhotoUploads(alert.id,files,alert.sku||"",true);
     });
   }catch(e){}
-  window.YardOpsV2={showPhoto,reportPhotos,reportHasPhoto,MAX_REPORT_PHOTOS,openReport:openOpsReport,openControlCenter,exportReports,importBarcodeFile,PhotoStore,classifyInventory,openAlertEmailModal,getDefaultBarcodes:()=>DEFAULT_BARCODES};
+  window.YardOpsV2={statusDetails,showPhoto,reportPhotos,reportHasPhoto,MAX_REPORT_PHOTOS,openReport:openOpsReport,openControlCenter,exportReports,importBarcodeFile,PhotoStore,classifyInventory,openAlertEmailModal,getDefaultBarcodes:()=>DEFAULT_BARCODES};
 })();
 
 </script>
@@ -7330,8 +7449,42 @@ boot();
   function openReportsFor(sku){return allReportsFor(sku).filter(r=>r.status!=="resolved"&&r.inventoryResult!=="verified");}
   function skuTiles(sku){const S=String(sku||"").toUpperCase();try{return data.tiles.map((t,i)=>({t,i})).filter(x=>String(x.t.sku||"").toUpperCase()===S);}catch(e){return [];}}
   function secondaryFor(sku){const S=String(sku||"").toUpperCase();return readLocStore().items.filter(x=>x.sku===S&&x.status!=="dismissed");}
-  function addObservedLocation(sku,at,qty,sourceReportId){if(!at||at.x==null)return;const S=String(sku||"").toUpperCase(),st=readLocStore();const near=st.items.find(x=>x.sku===S&&x.status!=="dismissed"&&Math.hypot((x.x||0)-at.x,(x.y||0)-at.y)<35);if(near){near.qty=qty??near.qty;near.updatedAt=nowIso();near.sourceReportId=sourceReportId||near.sourceReportId;near.status=near.status||"observed";}else st.items.push({id:"loc_"+Date.now().toString(36),sku:S,type:"secondary",status:"observed",x:Math.round(at.x),y:Math.round(at.y),qty:qty??null,createdAt:nowIso(),createdBy:currentName(),sourceReportId:sourceReportId||null});saveLocStore(st);}
-  function setLocationStatus(id,status){const st=readLocStore(),loc=st.items.find(x=>x.id===id);if(!loc)return;loc.status=status;loc.updatedAt=nowIso();loc.updatedBy=currentName();saveLocStore(st);if(activeProduct)renderProductSheet(activeProduct,activeTileIdx);try{renderSecondaryPins();}catch(e){}}
+  function addObservedLocation(sku,at,qty,sourceReportId){if(!at||at.x==null)return;const S=String(sku||"").toUpperCase(),st=readLocStore();const near=st.items.find(x=>x.sku===S&&x.status!=="dismissed"&&Math.hypot((x.x||0)-at.x,(x.y||0)-at.y)<35);if(near){near.qty=qty??near.qty;near.updatedAt=nowIso();near.sourceReportId=sourceReportId||near.sourceReportId;near.status=near.status||"observed";}else st.items.push({id:"loc_"+Date.now().toString(36),sku:S,type:"secondary",status:"observed",x:Math.round(at.x),y:Math.round(at.y),qty:qty??null,createdAt:nowIso(),createdBy:currentName(),sourceReportId:sourceReportId||null});saveLocStore(st);pushLocationOp({op:"observe",item:{sku:S,x:Math.round(at.x),y:Math.round(at.y),qty:qty??null,sourceReportId:sourceReportId||null}});}
+  function setLocationStatus(id,status){const st=readLocStore(),loc=st.items.find(x=>x.id===id);if(!loc)return;loc.status=status;loc.updatedAt=nowIso();loc.updatedBy=currentName();saveLocStore(st);refreshLocationViews();pushLocationOp({op:"status",id,status});}
+
+  /* Secondary locations are shared through /api/locations. localStorage is
+     now only this device's cache of that list (so the map still draws them
+     offline); every change is sent to the server, and the server's answer
+     -- the whole list -- replaces the cache. */
+  const LOC_MIGRATED_KEY="tarter_yard_secondary_locations_uploaded";
+  function refreshLocationViews(){if(activeProduct)renderProductSheet(activeProduct,activeTileIdx);try{renderSecondaryPins();}catch(e){}}
+  function isRemote(){try{return Sync.mode==="remote";}catch(e){return false;}}
+  function acceptServerLocations(body){if(body&&Array.isArray(body.items)){saveLocStore({version:1,items:body.items});refreshLocationViews();}}
+  async function pushLocationOp(op){
+    if(!isRemote())return;
+    try{const r=await Sync.api("locations",{method:"POST",body:JSON.stringify(op)});
+      if(r.ok)acceptServerLocations(r.body);
+      else if(r.status===403){try{toast("Only an admin can approve or dismiss a location.");}catch(e){}}
+    }catch(e){/* offline: the next sync repaints from the server */}
+  }
+  async function syncLocations(){
+    if(!isRemote()||document.hidden)return;
+    try{
+      const r=await Sync.api("locations"); if(!r.ok)return;
+      // Whatever this device stored before locations were shared is uploaded
+      // once, so nothing approved on it is lost in the switch.
+      let uploaded=false;try{uploaded=localStorage.getItem(LOC_MIGRATED_KEY)==="1";}catch(e){}
+      const local=readLocStore().items, known=new Set((r.body.items||[]).map(x=>x.id));
+      const mine=local.filter(x=>!known.has(x.id));
+      if(!uploaded&&mine.length){
+        const up=await Sync.api("locations",{method:"POST",body:JSON.stringify({op:"import",items:mine})});
+        if(up.ok){try{localStorage.setItem(LOC_MIGRATED_KEY,"1");}catch(e){}acceptServerLocations(up.body);return;}
+      }
+      if(!uploaded){try{localStorage.setItem(LOC_MIGRATED_KEY,"1");}catch(e){}}
+      acceptServerLocations(r.body);
+    }catch(e){}
+  }
+  (function startLocationSync(){let tries=0;const boot=setInterval(()=>{if(isRemote()){clearInterval(boot);syncLocations();setInterval(syncLocations,60000);}else if(++tries>60)clearInterval(boot);},1000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)syncLocations();});})();
   function isAdmin(){try{return typeof canEdit==="function"?canEdit():false;}catch(e){return false;}}
   function reportTypeLabel(r){const m={quality:"Quality",seconds:"Seconds",inventory:"Inventory check",out_of_place:"Out of place",found:"Found",unknown:"Unknown"};return m[r.type]||r.type||"Report";}
   function statusLabel(r){if(r.inventoryResult==="verified")return "Verified";return String(r.status||"new").replace(/_/g," ");}
@@ -7661,7 +7814,7 @@ boot();
     if(Object.keys(serverPatch).length){ try{await Sync.patchAlert(id,serverPatch);}catch(e){} }
     return r;
   }
-  async function setStatus(id,status,comment){if(!window.Sync)return;await Sync.setAlertStatus(id,status,false);const r=Sync.state.alerts.find(x=>x.id===id);if(!r)return;const stamp=new Date().toISOString();r.timeline=Array.isArray(r.timeline)?r.timeline:[];r.timeline.push({status,at:stamp,by:currentUser(),comment:comment||""});if(status==="acknowledged"){r.acknowledgedAt=stamp;r.acknowledgedBy=currentUser()}if(status==="in_progress"){r.inProgressAt=stamp;r.inProgressBy=currentUser()}if(status==="resolved"){r.resolvedAt=r.resolvedAt||stamp;r.resolvedBy=r.resolvedBy||currentUser();if(comment)r.resolutionNote=comment}persistAlerts();render();openDetail(id);}
+  async function setStatus(id,status,comment){if(!window.Sync)return;const r0=Sync.state.alerts.find(x=>x.id===id);if(!r0)return;const details=window.YardOpsV2?.statusDetails?window.YardOpsV2.statusDetails(r0,status,comment):null;await Sync.setAlertStatus(id,status,false,details);persistAlerts();render();openDetail(id);}
   function classifyYard(){const open=reports().filter(openReport);const high=open.filter(r=>autoPriority(r)==="high");return {open,high,label:open.length?`${open.length} need attention`:"Yard clear"};}
   function shell(){
     const center=document.getElementById(OUTER_ID);if(!center)return;center.classList.add("cc-v23");center.innerHTML=`<div class="cc23-shell">
