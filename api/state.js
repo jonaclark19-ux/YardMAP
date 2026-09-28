@@ -1,7 +1,8 @@
 import { requireEditor, requireUser } from "./_lib/auth.js";
 import { getMeta, rest, rpc } from "./_lib/db.js";
 import { audit } from "./_lib/audit.js";
-import { alertToClient } from "./_lib/models.js";
+import { getAlerts } from "./_lib/alertsList.js";
+import { DOC_KEY, importItems, normalizeItems, observe, setStatus } from "./_lib/locations.js";
 import { json, readJson, errorResponse, methodNotAllowed } from "./_lib/http.js";
 
 /* Combines the map state endpoint with map history, the edit lock and the
@@ -102,13 +103,61 @@ async function handleSync(request) {
   const out = { srev: serverSrev, arev: serverArev };
   if (serverSrev !== srev) out.state = { rev: serverSrev, data: state.data, updatedBy: state.updated_by, updatedAt: state.updated_at };
   if (serverArev !== arev) {
-    // Keep in sync with the same cap in api/alerts.js -- this is the same
-    // "full list" the client syncs against, just delivered via polling
-    // instead of a direct GET.
-    const { data } = await rest("alerts", "select=*&order=created_at.desc&limit=1500");
-    out.alerts = { rev: serverArev, items: (data || []).map((a) => alertToClient(a)) };
+    // The same list GET /api/alerts returns -- one definition, so a poll can
+    // never swap the full list for a shorter one.
+    const list = await getAlerts();
+    out.alerts = { rev: serverArev, items: list.items, truncated: list.truncated };
   }
   return json(out);
+}
+
+/* ------------------------------------------- secondary locations ----
+   Read by everyone. Any signed-in user can record a sighting (it comes from
+   their own "additional stock" report); approving or dismissing one is an
+   editor action. Writes are compare-and-swap on the row's rev, retried a few
+   times, so two phones filing at once cannot erase each other's sighting. */
+async function readDoc() {
+  const { data } = await rest("shared_docs", `key=eq.${DOC_KEY}&select=rev,data,updated_at`);
+  const row = Array.isArray(data) ? data[0] : null;
+  return row ? { rev: Number(row.rev || 0), items: normalizeItems(row.data?.items), exists: true } : { rev: 0, items: [], exists: false };
+}
+
+async function writeDoc(doc, items, user) {
+  const body = { rev: doc.rev + 1, data: { items }, updated_by: user.name, updated_at: new Date().toISOString() };
+  if (!doc.exists) {
+    try {
+      await rest("shared_docs", "", { method: "POST", body: { key: DOC_KEY, ...body }, headers: { prefer: "return=minimal" } });
+      return true;
+    } catch (e) { if (e?.status === 409) return false; throw e; }
+  }
+  const { data } = await rest("shared_docs", `key=eq.${DOC_KEY}&rev=eq.${doc.rev}`, { method: "PATCH", body, headers: { prefer: "return=representation" } });
+  return Array.isArray(data) && data.length > 0;
+}
+
+async function handleLocations(request) {
+  const user = await requireUser(request);
+  if (request.method === "GET") {
+    const doc = await readDoc();
+    return json({ rev: doc.rev, items: doc.items });
+  }
+  if (request.method !== "POST") return methodNotAllowed(["GET", "POST"]);
+  const body = await readJson(request, 400_000);
+  const isEditor = user.role === "editor";
+  if (body.op === "status" && !isEditor) return json({ error: "forbidden" }, 403);
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const doc = await readDoc();
+    let result;
+    if (body.op === "observe") result = observe(doc.items, body.item || {}, user.name);
+    else if (body.op === "status") result = setStatus(doc.items, String(body.id || ""), body.status, user.name);
+    else if (body.op === "import") result = importItems(doc.items, body.items, user.name, isEditor);
+    else return json({ error: "unknown_op" }, 400);
+    if (!result.changed) return json({ rev: doc.rev, items: doc.items });
+    if (await writeDoc(doc, result.items, user)) {
+      if (body.op === "status") await audit(user, "location_status", "location", body.id, { status: body.status });
+      return json({ rev: doc.rev + 1, items: result.items });
+    }
+  }
+  return json({ error: "conflict" }, 409);
 }
 
 export default {
@@ -118,6 +167,7 @@ export default {
       if (route === "history") return await handleHistory(request);
       if (route === "lock") return await handleLock(request);
       if (route === "sync") return await handleSync(request);
+      if (route === "locations") return await handleLocations(request);
       return await handleState(request);
     } catch (error) { return errorResponse(error); }
   },

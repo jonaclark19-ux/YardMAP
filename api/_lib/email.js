@@ -65,9 +65,19 @@ export async function resolveRecipients({ to, groupIds }, max = 100) {
   return [...new Set(merged.map((e) => e.toLowerCase()))].slice(0, max);
 }
 
+/* EMAIL_ALLOWED_DOMAINS (comma-separated, e.g. "tarter.com,tarterusa.com")
+   limits every email the app sends to those domains. Unset means no limit.
+   With it set, an editor account -- or someone who got into one -- cannot use
+   the company's SMTP to mail arbitrary outside addresses. */
+export function allowedRecipients(list, domainsRaw = process.env.EMAIL_ALLOWED_DOMAINS) {
+  const domains = String(domainsRaw || "").split(/[,;\s]+/).map((d) => d.trim().toLowerCase().replace(/^@/, "")).filter(Boolean);
+  if (!domains.length) return list;
+  return list.filter((e) => domains.includes(String(e).split("@").pop().toLowerCase()));
+}
+
 export async function sendMail({ to, subject, html, text, attachments }) {
   const { from } = config();
-  const recipients = Array.isArray(to) ? to : [to];
+  const recipients = allowedRecipients(Array.isArray(to) ? to : [to]);
   if (!recipients.length) throw Object.assign(new Error("no_recipients"), { status: 400 });
   const tx = transporter();
   await tx.sendMail({

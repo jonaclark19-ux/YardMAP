@@ -24,8 +24,18 @@ test("normalizeUsername trims, lowercases, and collapses whitespace", () => {
   assert.equal(normalizeUsername(null), "");
 });
 
-test("hashAccessCode rejects codes under 4 characters", () => {
+test("hashAccessCode rejects codes under 6 characters", () => {
   assert.throws(() => hashAccessCode("abc"), /code_too_short/);
+  assert.throws(() => hashAccessCode("abcde"), /code_too_short/);
+  assert.ok(hashAccessCode("abcdef").startsWith("scrypt$"));
+});
+
+test("a shorter code set before the 6-character rule still verifies", async () => {
+  // Built by hand the way the old 4-character minimum allowed.
+  const { scryptSync, randomBytes } = await import("node:crypto");
+  const salt = randomBytes(16);
+  const stored = `scrypt$${salt.toString("hex")}$${scryptSync("1234", salt, 64).toString("hex")}`;
+  assert.equal(verifyAccessCode("1234", stored), true);
 });
 
 test("hashAccessCode + verifyAccessCode round-trip correctly", () => {

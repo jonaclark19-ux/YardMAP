@@ -62,8 +62,11 @@ async function handleHandoff(request) {
     const body = await readJson(request, 30_000);
     const summary = String(body.summary || "").trim().slice(0, 1800);
     if (!summary) return json({ error: "missing_summary" }, 400);
-    const { data: openAlerts } = await rest("alerts", "status=neq.resolved&select=id");
-    const row = { shift_label: String(body.shiftLabel || "Shift handoff").trim().slice(0, 120), summary, open_alerts_count: (openAlerts || []).length, created_by: editor.name };
+    // An exact count from the header, not the length of a page of rows: a
+    // page stops at Supabase's max-rows (1000) and would undercount.
+    const { headers } = await rest("alerts", "status=neq.resolved&select=id&limit=1", { headers: { prefer: "count=exact" } });
+    const openCount = Number(String(headers.get("content-range") || "").split("/")[1]) || 0;
+    const row = { shift_label: String(body.shiftLabel || "Shift handoff").trim().slice(0, 120), summary, open_alerts_count: openCount, created_by: editor.name };
     const { data } = await rest("shift_handoffs", "", { method: "POST", body: row, headers: { prefer: "return=representation" } });
     await audit(editor, "shift_handoff_created", "handoff", data?.[0]?.id, { openAlerts: row.open_alerts_count });
     return json({ item: data?.[0] || row }, 201);
@@ -132,7 +135,10 @@ async function handleWeeklyReport(request) {
    Named recipient lists the Control Center curates, so the email actions can
    offer "Quality team" instead of asking someone to retype four addresses.
    Reading one is open to any signed-in user (they need it to send); changing
-   one is an editor action, like every other piece of shared configuration. */
+   one is an editor action, like every other piece of shared configuration.
+   Reading is editor-only too: only editors can send email, and the groups
+   are the company's address book -- not something a self-signed-up account
+   should be able to download. */
 
 const MAX_GROUPS = 60;
 const MAX_EMAILS_PER_GROUP = 100;
@@ -166,7 +172,7 @@ function cleanGroupEmails(raw) {
 
 async function handleEmailGroups(request) {
   if (request.method === "GET") {
-    await requireUser(request);
+    await requireEditor(request);
     const { data } = await rest("email_groups", `select=*&order=name.asc&limit=${MAX_GROUPS}`);
     return json({ items: (data || []).map(groupToClient) });
   }

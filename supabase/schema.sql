@@ -11,7 +11,8 @@ create table if not exists public.yard_users (
   role text not null default 'viewer' check (role in ('viewer','editor')),
   active boolean not null default true,
   created_at timestamptz not null default now(),
-  last_login_at timestamptz
+  last_login_at timestamptz,
+  onboarded_at timestamptz
 );
 
 create table if not exists public.map_state (
@@ -138,6 +139,21 @@ create table if not exists public.shift_handoffs (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.auth_attempts (
+  key text primary key,
+  count integer not null default 0,
+  window_start timestamptz not null default now()
+);
+create index if not exists auth_attempts_window_idx on public.auth_attempts(window_start);
+
+create table if not exists public.shared_docs (
+  key text primary key,
+  rev bigint not null default 0,
+  data jsonb not null default '{}'::jsonb,
+  updated_by text,
+  updated_at timestamptz not null default now()
+);
+
 -- The browser never receives the server secret key. These tables are accessed
 -- only through Vercel Functions, so enable RLS and leave anon/authenticated
 -- without direct policies.
@@ -152,6 +168,8 @@ alter table public.sku_verifications enable row level security;
 alter table public.edit_lock enable row level security;
 alter table public.zone_status enable row level security;
 alter table public.shift_handoffs enable row level security;
+alter table public.auth_attempts enable row level security;
+alter table public.shared_docs enable row level security;
 
 -- Public bucket is used only for randomized alert-photo URLs. Uploads still go
 -- through the authenticated Vercel endpoint with the server secret.
@@ -286,3 +304,17 @@ begin
   where id='yard' and session_id=p_session_id;
 end;
 $$;
+
+-- Only the API (service key) calls these; Supabase would otherwise expose
+-- every public function to the anon role.
+do $$
+declare f record;
+begin
+  for f in
+    select p.oid::regprocedure as sig
+    from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.proname like 'yard\_%'
+  loop
+    execute format('revoke execute on function %s from public, anon, authenticated', f.sig);
+  end loop;
+end $$;

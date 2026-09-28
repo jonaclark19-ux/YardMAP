@@ -21,9 +21,10 @@ export async function readJson(request, maxBytes = 6_000_000) {
 
 export function errorResponse(error) {
   const status = error?.status || 500;
-  const message = status >= 500 ? "server_error" : (error?.message || "request_failed");
-  if (status >= 500) console.error(error);
-  return json({ error: message }, status);
+  const message = status >= 500 ? "server_error" : (error?.upstream ? "request_failed" : (error?.message || "request_failed"));
+  if (status >= 500 || error?.upstream) console.error(error);
+  const extra = status === 429 && error?.retryAfter ? { "retry-after": String(error.retryAfter) } : {};
+  return json({ error: message }, status, extra);
 }
 
 export function methodNotAllowed(allowed) {

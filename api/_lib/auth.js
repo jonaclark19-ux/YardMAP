@@ -18,6 +18,15 @@ function sign(input) {
   return createHmac("sha256", secret()).update(input).digest("base64url");
 }
 
+/* A short fingerprint of the user's current access-code hash rides in the
+   session, so changing someone's code (a lost phone, a person leaving the
+   crew) signs out every device still holding the old one instead of leaving
+   those sessions valid for up to twelve more hours. */
+export function codeVersion(accessCodeHash) {
+  if (!accessCodeHash) return "";
+  return createHmac("sha256", secret()).update(`cv:${accessCodeHash}`).digest("base64url").slice(0, 12);
+}
+
 export function createSession(user) {
   const payload = {
     uid: user.id,
@@ -25,6 +34,7 @@ export function createSession(user) {
     username: user.username,
     role: user.role,
     sid: randomBytes(12).toString("hex"),
+    cv: codeVersion(user.access_code_hash),
     exp: Math.floor(Date.now() / 1000) + SESSION_TTL_SEC,
   };
   const encoded = b64url(JSON.stringify(payload));
@@ -68,9 +78,14 @@ export function clearSessionCookie() {
 export async function requireUser(request) {
   const session = readSession(request);
   if (!session) throw Object.assign(new Error("unauthorized"), { status: 401 });
-  const { data } = await rest("yard_users", `id=eq.${encodeURIComponent(session.uid)}&active=eq.true&select=id,username,display_name,role,active,onboarded_at`, {});
+  const { data } = await rest("yard_users", `id=eq.${encodeURIComponent(session.uid)}&active=eq.true&select=id,username,display_name,role,active,onboarded_at,access_code_hash`, {});
   const user = Array.isArray(data) ? data[0] : null;
   if (!user) throw Object.assign(new Error("unauthorized"), { status: 401 });
+  // Sessions minted before this check existed carry no cv; they age out on
+  // their own within SESSION_TTL_SEC.
+  if (session.cv && session.cv !== codeVersion(user.access_code_hash)) {
+    throw Object.assign(new Error("unauthorized"), { status: 401 });
+  }
   return { ...session, name: user.display_name || user.username, role: user.role, onboarded: !!user.onboarded_at };
 }
 
@@ -84,9 +99,14 @@ export function normalizeUsername(name) {
   return String(name || "").trim().toLowerCase().replace(/\s+/g, " ");
 }
 
+/* New and changed codes need six characters. Existing shorter codes still
+   verify, so nobody is locked out by the change; they just cannot be set
+   again. Login throttling (ratelimit.js) is what protects those meanwhile. */
+export const MIN_CODE_LENGTH = 6;
+
 export function hashAccessCode(code) {
   const value = String(code || "");
-  if (value.length < 4) throw Object.assign(new Error("code_too_short"), { status: 400 });
+  if (value.length < MIN_CODE_LENGTH) throw Object.assign(new Error("code_too_short"), { status: 400 });
   const salt = randomBytes(16);
   const hash = scryptSync(value, salt, 64);
   return `scrypt$${salt.toString("hex")}$${hash.toString("hex")}`;

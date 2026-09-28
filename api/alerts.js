@@ -1,5 +1,7 @@
 import { requireEditor, requireUser } from "./_lib/auth.js";
 import { getMeta, rest, rpc } from "./_lib/db.js";
+import { getAlerts } from "./_lib/alertsList.js";
+import { MAX_PHOTOS, cleanPhotoUrls } from "./_lib/photos.js";
 import { audit } from "./_lib/audit.js";
 import { alertToClient, mapAlertInput, mergePayload } from "./_lib/models.js";
 import { esc, resolveRecipients, sendMail } from "./_lib/email.js";
@@ -11,61 +13,50 @@ import { json, readJson, errorResponse, methodNotAllowed } from "./_lib/http.js"
    12-function cap. vercel.json rewrites /api/recurring and /api/alert-email
    here with a ?route= query param; /api/alerts itself is unchanged. */
 
-async function recurrenceMap(days = 30) {
-  try {
-    const rows = await rpc("yard_alert_recurrence", { p_days: days });
-    return new Map((rows || []).map((r) => [String(r.sku || ""), Number(r.report_count || 0)]));
-  } catch { return new Map(); }
+async function bumpAlertsRev() {
+  const revRows = await rpc("yard_bump_alerts_rev");
+  return Number(Array.isArray(revRows) ? revRows[0]?.alerts_rev : revRows?.alerts_rev) || 0;
 }
 
-/* The client treats this response as the whole authoritative list, so a flat
-   "newest 1500" meant that once the yard passed 1500 reports the oldest
-   simply stopped existing as far as the app was concerned -- and the ones to
-   go first are the oldest, which is where the open backlog lives. A silent
-   wrong answer, not a slow one.
+// A reporter may add photos to their own report for this long after filing
+// it -- long enough for a photo upload that failed on bad yard signal to be
+// retried, short enough that old reports are not open for editing.
+const AUTHOR_PHOTO_WINDOW_MS = 24 * 3600 * 1000;
 
-   Pagination was the obvious fix and the wrong one: it would still have the
-   client download every report ever filed, just in instalments. What the app
-   actually needs is narrower than "everything":
+/* photoUrls (the list) or photoUrl (one, from older clients), validated.
+   undefined when the request did not touch photos at all. */
+function photosFromBody(body) {
+  if (Array.isArray(body.photoUrls)) return cleanPhotoUrls(body.photoUrls);
+  if (body.photoUrl !== undefined) return cleanPhotoUrls(body.photoUrl ? [body.photoUrl] : []);
+  return undefined;
+}
 
-     - every report that is not resolved, at any age. Age is what makes an
-       unresolved report matter more, so these are never bounded by date.
-     - resolved reports inside the window the UI can actually display. The
-       Control Center's widest range is 30 days and repeatedSkus() runs on
-       30, so nothing older is reachable by any screen.
-
-   Note this asks the server for status != resolved, while the client also
-   treats a verified inventory check as closed. That makes the first query a
-   superset of what the app calls open -- which is the safe direction: a
-   report can be fetched and then filtered out, never missed.
-
-   With retention deleting resolved reports at 30 days, the second query is
-   already close to a no-op. The window is wider than retention on purpose,
-   so turning retention off does not start hiding rows the UI still shows. */
-const OPEN_LIMIT = 4000;
-const RESOLVED_LIMIT = 4000;
-const RESOLVED_WINDOW_DAYS = Math.max(30, Number(process.env.ALERTS_RESOLVED_WINDOW_DAYS || 60));
-
-async function getAlerts() {
-  const since = new Date(Date.now() - RESOLVED_WINDOW_DAYS * 86400000).toISOString();
-  const [openRes, doneRes] = await Promise.all([
-    rest("alerts", `status=neq.resolved&select=*&order=created_at.desc&limit=${OPEN_LIMIT}`),
-    rest("alerts", `status=eq.resolved&created_at=gte.${encodeURIComponent(since)}&select=*&order=created_at.desc&limit=${RESOLVED_LIMIT}`),
-  ]);
-  const open = openRes.data || [];
-  const done = doneRes.data || [];
-
-  // Hitting either cap would put us back where we started, so say so instead
-  // of quietly returning a short list. A yard with 4000 unresolved reports
-  // has a problem the app should not be hiding.
-  const truncated = open.length >= OPEN_LIMIT || done.length >= RESOLVED_LIMIT;
-  if (truncated) {
-    console.warn("alerts: list truncated", { open: open.length, resolved: done.length, openLimit: OPEN_LIMIT, resolvedLimit: RESOLVED_LIMIT });
-  }
-
-  const rec = await recurrenceMap(30);
-  const rows = open.concat(done).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-  return { items: rows.map((a) => alertToClient(a, rec.get(String(a.sku || "")) || 0)), truncated };
+/* The one change a viewer may make to a report: adding photos to one they
+   filed themselves, shortly after filing it. The report form uploads photos
+   before creating the report, so this is the retry path for an upload that
+   finished late -- without it, an operator's photo was uploaded, refused
+   here with 403, and never linked to anything. */
+async function attachOwnPhotos(user, id, body) {
+  const extra = Object.keys(body).filter((k) => !["id", "photoUrls", "photoUrl"].includes(k));
+  const photos = photosFromBody(body);
+  if (extra.length || !photos) return json({ error: "forbidden" }, 403);
+  const { data } = await rest("alerts", `id=eq.${encodeURIComponent(id)}&select=by_name,created_at,payload,photo_url`);
+  const row = Array.isArray(data) ? data[0] : null;
+  if (!row) return json({ error: "not_found" }, 404);
+  const age = Date.now() - new Date(row.created_at).getTime();
+  if (row.by_name !== user.name || !(age < AUTHOR_PHOTO_WINDOW_MS)) return json({ error: "forbidden" }, 403);
+  // Additive only: a viewer can add photos but never remove what is there.
+  const existing = cleanPhotoUrls(Array.isArray(row.payload?.photoUrls) ? row.payload.photoUrls : row.photo_url);
+  const merged = cleanPhotoUrls(existing.concat(photos), MAX_PHOTOS);
+  await rest("alerts", `id=eq.${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: { photo_url: merged[0] || null, payload: { ...(row.payload || {}), photoUrls: merged }, updated_at: new Date().toISOString() },
+    headers: { prefer: "return=minimal" },
+  });
+  const rev = await bumpAlertsRev();
+  await audit(user, "alert_photos_added", "alert", id, { count: merged.length });
+  const list = await getAlerts();
+  return json({ rev, items: list.items, truncated: list.truncated });
 }
 
 async function handleAlerts(request) {
@@ -79,34 +70,42 @@ async function handleAlerts(request) {
     const user = await requireUser(request);
     const body = await readJson(request, 6_000_000);
     const input = mapAlertInput(body.alert || {});
+    // A physical count that matches the system is a verification, not an open
+    // problem. It is closed here, at creation, because the operators who file
+    // most counts are viewers and cannot resolve a report afterwards -- the
+    // follow-up PATCH the app used to send was refused, and the count stayed
+    // "new" on the server forever.
+    const verified = input.type === "inventory" && input.payload?.inventoryResult === "verified";
+    const nowIso = new Date().toISOString();
     const { data } = await rest("alerts", "", {
       method: "POST",
       body: {
         ...input,
-        status: "new",
+        status: verified ? "resolved" : "new",
+        ...(verified ? { resolved_at: nowIso, resolved_by: user.name } : {}),
         by_name: user.name,
         by_role: user.role,
       },
       headers: { prefer: "return=representation" },
     });
     const created = data?.[0];
-    const revRows = await rpc("yard_bump_alerts_rev");
-    const rev = Number(Array.isArray(revRows) ? revRows[0]?.alerts_rev : revRows?.alerts_rev) || 0;
+    const rev = await bumpAlertsRev();
     await audit(user, "alert_created", "alert", created?.id, { type: created?.type, sku: created?.sku, priority: created?.priority });
     return json({ rev, alert: alertToClient(created) }, 201);
   }
 
   if (request.method === "PATCH") {
-    const user = await requireEditor(request);
+    const user = await requireUser(request);
     const body = await readJson(request, 50_000);
     const id = String(body.id || "");
     if (!id) return json({ error: "missing_id" }, 400);
     if (!UUID_RE.test(id)) return json({ error: "not_found" }, 404);
 
+    if (user.role !== "editor") return await attachOwnPhotos(user, id, body);
+
     if (body.remove) {
       await rest("alerts", `id=eq.${encodeURIComponent(id)}`, { method: "DELETE", headers: { prefer: "return=minimal" } });
-      const revRows = await rpc("yard_bump_alerts_rev");
-      const rev = Number(Array.isArray(revRows) ? revRows[0]?.alerts_rev : revRows?.alerts_rev) || 0;
+      const rev = await bumpAlertsRev();
       await audit(user, "alert_deleted", "alert", id);
       const list = await getAlerts();
       return json({ rev, items: list.items, truncated: list.truncated });
@@ -127,15 +126,19 @@ async function handleAlerts(request) {
     }
     if (["low", "normal", "high", "critical"].includes(body.priority)) patch.priority = body.priority;
     if (body.assignedTo !== undefined) patch.assigned_to = String(body.assignedTo || "").trim().slice(0, 160) || null;
-    if (body.photoUrl !== undefined) patch.photo_url = String(body.photoUrl || "").trim().slice(0, 2000) || null;
+    const photos = photosFromBody(body);
 
     // Workflow edits (owner, resolution note, the appended timeline entry)
     // live in the payload. Read-modify-write it, so changing one field never
     // drops the rest of the report.
-    if (body.payload && typeof body.payload === "object") {
+    if ((body.payload && typeof body.payload === "object") || photos) {
       const { data: current } = await rest("alerts", `id=eq.${encodeURIComponent(id)}&select=payload`);
       const existing = Array.isArray(current) ? current[0]?.payload : null;
-      patch.payload = mergePayload(existing, body.payload);
+      patch.payload = body.payload && typeof body.payload === "object" ? mergePayload(existing, body.payload) : (existing || {});
+      if (photos) {
+        patch.payload = { ...patch.payload, photoUrls: photos };
+        patch.photo_url = photos[0] || null;
+      }
     }
 
     await rest("alerts", `id=eq.${encodeURIComponent(id)}`, {
@@ -143,8 +146,7 @@ async function handleAlerts(request) {
       body: patch,
       headers: { prefer: "return=minimal" },
     });
-    const revRows = await rpc("yard_bump_alerts_rev");
-    const rev = Number(Array.isArray(revRows) ? revRows[0]?.alerts_rev : revRows?.alerts_rev) || 0;
+    const rev = await bumpAlertsRev();
     await audit(user, "alert_updated", "alert", id, patch);
     const list = await getAlerts();
     return json({ rev, items: list.items, truncated: list.truncated });
@@ -237,8 +239,8 @@ function alertHtml(a, user, note) {
   // whole message. The width *attribute* is the one sizing hint every client
   // honours, so it carries the real constraint and the CSS only keeps the
   // image from overflowing a narrow screen.
-  const photo = a.photoUrl
-    ? `<p><img src="cid:alertphoto" alt="photo" width="${PHOTO_EMAIL_WIDTH}" style="width:${PHOTO_EMAIL_WIDTH}px;max-width:100%;height:auto;border:1px solid #ddd;border-radius:6px"/></p>`
+  const photo = (a.photoCids || []).length
+    ? `<p>${a.photoCids.map((cid) => `<img src="cid:${cid}" alt="photo" width="${PHOTO_EMAIL_WIDTH}" style="width:${PHOTO_EMAIL_WIDTH}px;max-width:100%;height:auto;border:1px solid #ddd;border-radius:6px;margin:0 6px 6px 0"/>`).join("")}</p>`
     : "";
   const shared = note ? `<p style="color:#444"><strong>Message from ${esc(user.name)}:</strong> ${esc(note)}</p>` : "";
   return `
@@ -251,20 +253,29 @@ function alertHtml(a, user, note) {
     </div>`;
 }
 
-// Reports carry photoUrl as a link to Supabase storage; embedding it by
+// Reports carry their photos as links to Supabase storage; embedding them by
 // reference alone gets stripped by most mail clients' remote-image blocking,
-// so fetch it once and attach the bytes with a cid the html can reference.
-async function photoAttachment(photoUrl) {
-  if (!photoUrl) return [];
-  try {
-    const res = await fetch(photoUrl);
-    if (!res.ok) return [];
-    const contentType = res.headers.get("content-type") || "image/jpeg";
-    if (!contentType.startsWith("image/")) return [];
-    const buf = Buffer.from(await res.arrayBuffer());
-    if (buf.length > 8_000_000) return [];
-    return [{ filename: "foto.jpg", content: buf, contentType, cid: "alertphoto" }];
-  } catch { return []; }
+// so fetch each once and attach the bytes with a cid the html can reference.
+// Only our own bucket is ever fetched (cleanPhotoUrls), so a report cannot
+// make the server request an arbitrary address.
+const EMAIL_PHOTO_BUDGET = 15_000_000;
+
+async function photoAttachments(urls) {
+  const out = [];
+  let total = 0;
+  for (const [i, url] of cleanPhotoUrls(urls).entries()) {
+    try {
+      const res = await fetch(url, { redirect: "error" });
+      if (!res.ok) continue;
+      const contentType = res.headers.get("content-type") || "image/jpeg";
+      if (!contentType.startsWith("image/")) continue;
+      const buf = Buffer.from(await res.arrayBuffer());
+      if (total + buf.length > EMAIL_PHOTO_BUDGET) break;
+      total += buf.length;
+      out.push({ filename: `foto-${i + 1}.jpg`, content: buf, contentType, cid: `alertphoto${i}` });
+    } catch { /* a missing photo must not block the email */ }
+  }
+  return out;
 }
 
 async function handleEmail(request) {
@@ -284,7 +295,8 @@ async function handleEmail(request) {
   const alert = alertToClient(row);
 
   const subject = `[Tarter Yard Map] Alerta ${TYPE_LABEL[alert.type] || alert.type}: ${alert.sku || alert.rawCode || id}`;
-  const attachments = await photoAttachment(alert.photoUrl);
+  const attachments = await photoAttachments(alert.photoUrls);
+  alert.photoCids = attachments.map((a) => a.cid);
   await sendMail({ to, subject, html: alertHtml(alert, user, note), attachments });
   await audit(user, "alert_emailed", "alert", id, { to, count: to.length });
   return json({ ok: true, to });

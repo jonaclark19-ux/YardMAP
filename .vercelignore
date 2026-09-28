@@ -1,0 +1,14 @@
+# Everything at the repository root is served as a static file on Vercel, so
+# anything that is not part of the running app is kept out of the deployment
+# entirely: setup notes, the database schema, seed data, tests, and working
+# spreadsheets. (package.json has to ship for the Functions build; vercel.json
+# redirects it instead.)
+README_SETUP.md
+IMPLEMENTATION_STATUS.md
+supabase/
+seed/
+test/
+theme/
+fotos3point.xlsx
+*.md
+.github/

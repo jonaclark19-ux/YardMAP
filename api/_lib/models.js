@@ -1,3 +1,5 @@
+import { cleanPhotoUrls } from "./photos.js";
+
 export function alertToClient(a, recurringCount = undefined) {
   // The client payload rides first so every V2 field (opsVersion, quantity,
   // reason, disposition, the inventory comparison, the timeline, the owner)
@@ -26,6 +28,14 @@ export function alertToClient(a, recurringCount = undefined) {
     homeGroup: a.home_group,
     photoUrl: a.photo_url,
   };
+  // photoUrls is the list (up to five); photoUrl stays as the first one for
+  // older clients and for the columns that index it. Reports filed before
+  // multi-photo only have the column, so it seeds the list.
+  const list = cleanPhotoUrls(a.payload && Array.isArray(a.payload.photoUrls) ? a.payload.photoUrls : []);
+  if (!list.length && a.photo_url) list.push(a.photo_url);
+  out.photoUrls = list;
+  out.photoUrl = list[0] || a.photo_url || null;
+  if (list.length) out.hasCloudPhoto = true;
   if (recurringCount !== undefined) out.recurringCount = recurringCount;
   return out;
 }
@@ -38,8 +48,10 @@ const PAYLOAD_MAX_BYTES = 120_000;
    report. */
 function payloadFor(input) {
   if (!input || typeof input !== "object") return null;
+  // Photo URLs are never taken from the payload as-is: they are validated and
+  // set explicitly by mapAlertInput / the PATCH handler.
   const { status, createdAt, acknowledgedAt, inProgressAt, resolvedAt, resolvedBy,
-          by, role, id, ...rest } = input;
+          by, role, id, photoUrl, photoUrls, hasPhoto, hasCloudPhoto, ...rest } = input;
   if (!Object.keys(rest).length) return null;
   try {
     const json = JSON.stringify(rest);
@@ -50,8 +62,11 @@ function payloadFor(input) {
 
 export function mapAlertInput(input = {}) {
   const clean = (v, max = 1000) => v == null ? null : String(v).trim().slice(0, max);
+  const photos = cleanPhotoUrls(Array.isArray(input.photoUrls) ? input.photoUrls : input.photoUrl);
+  let payload = payloadFor(input);
+  if (photos.length) payload = { ...(payload || {}), photoUrls: photos };
   return {
-    payload: payloadFor(input),
+    payload,
     type: clean(input.type, 40) || "empty",
     sku: clean(input.sku, 120),
     raw_code: clean(input.rawCode, 200),
@@ -60,7 +75,7 @@ export function mapAlertInput(input = {}) {
     found_at: input.foundAt && typeof input.foundAt === "object" ? input.foundAt : null,
     home_at: input.homeAt && typeof input.homeAt === "object" ? input.homeAt : null,
     home_group: clean(input.homeGroup, 160),
-    photo_url: clean(input.photoUrl, 2000),
+    photo_url: photos[0] || null,
   };
 }
 

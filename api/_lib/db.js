@@ -24,7 +24,9 @@ export async function supabase(path, { method = "GET", body, headers = {} } = {}
   }
   if (!res.ok) {
     const detail = typeof data === "object" && data ? (data.message || data.error || data.details) : data;
-    const err = Object.assign(new Error(detail || `supabase_${res.status}`), { status: res.status, data });
+    // upstream marks this as PostgREST's own wording: errorResponse keeps the
+    // status but never forwards the text, which names tables and constraints.
+    const err = Object.assign(new Error(detail || `supabase_${res.status}`), { status: res.status, data, upstream: true });
     throw err;
   }
   return { data, status: res.status, headers: res.headers };
