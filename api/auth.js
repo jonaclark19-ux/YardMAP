@@ -63,30 +63,41 @@ async function handleLogin(request) {
   return json({ role: user.role, name: user.display_name || user.username, onboarded: !!user.onboarded_at }, 200, { "set-cookie": sessionCookie(token) });
 }
 
-/* SIGNUP_INVITE_CODE turns self-signup from "anyone who finds the URL" into
-   "anyone the yard gave the invite code to". SIGNUP_DISABLED=1 closes it
-   entirely, leaving account creation to editors in the Control Center. */
-function inviteMatches(given) {
-  const expected = String(process.env.SIGNUP_INVITE_CODE || "");
-  if (!expected) return true;
-  const a = Buffer.from(String(given || ""));
-  const b = Buffer.from(expected);
+/* Invite codes decide who can sign up and as what:
+   - SIGNUP_INVITE_CODE: signs up a viewer (operator). Unset, viewer signup
+     is open to anyone who finds the URL.
+   - SIGNUP_EDITOR_INVITE_CODE: signs up an editor directly. Unset, editors
+     can only be made in the Control Center. Whoever holds it gets full
+     admin rights, so it goes only to the people who should have them.
+   - SIGNUP_DISABLED=1 closes signup entirely.
+   Codes are compared in constant time. */
+function sameCode(given, expected) {
+  if (!expected) return false;
+  const a = Buffer.from(String(given || "").trim());
+  const b = Buffer.from(String(expected));
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-export function signupPolicy() {
-  if (process.env.SIGNUP_DISABLED === "1") return "closed";
-  return process.env.SIGNUP_INVITE_CODE ? "invite" : "open";
+export function inviteRole(given, env = process.env) {
+  if (sameCode(given, env.SIGNUP_EDITOR_INVITE_CODE)) return "editor";
+  if (!env.SIGNUP_INVITE_CODE) return "viewer";
+  return sameCode(given, env.SIGNUP_INVITE_CODE) ? "viewer" : null;
 }
 
-// Self-signup, always as "viewer" -- editor accounts stay admin-created
+export function signupPolicy(env = process.env) {
+  if (env.SIGNUP_DISABLED === "1") return "closed";
+  return env.SIGNUP_INVITE_CODE ? "invite" : "open";
+}
+
+// Self-signup: a viewer, or an editor when the editor invite code is used
+// (see inviteRole). Without that code, editor accounts stay admin-created
 // (via handleUsers) so only the people already trusted with reviewing and
 // emailing alerts can hand that access to someone else. A viewer can file
 // reports but nothing that requireEditor gates (resolve, email, users...).
 async function handleSignup(request) {
   // GET tells the login screen which signup form to draw (open, invite code
   // field, or none) without anyone having to try and fail first.
-  if (request.method === "GET") return json({ signup: signupPolicy() });
+  if (request.method === "GET") return json({ signup: signupPolicy(), editorInvite: !!process.env.SIGNUP_EDITOR_INVITE_CODE });
   if (request.method !== "POST") return methodNotAllowed(["GET", "POST"]);
   if (!backendReady()) return json({ error: "backend_not_configured" }, 503);
   if (signupPolicy() === "closed") return json({ error: "signup_closed" }, 403);
@@ -98,7 +109,8 @@ async function handleSignup(request) {
   // Counted before any answer that reveals something (a taken name, a wrong
   // invite), so the endpoint cannot be used to list who has an account.
   await recordHit(ipLimit);
-  if (!inviteMatches(body.invite)) return json({ error: "invalid_invite" }, 403);
+  const role = inviteRole(body.invite);
+  if (!role) return json({ error: "invalid_invite" }, 403);
   if (!name) return json({ error: "missing_name" }, 400);
   const username = normalizeUsername(name);
   const { data: existing } = await rest("yard_users", `username=eq.${encodeURIComponent(username)}&select=id&limit=1`);
@@ -108,7 +120,7 @@ async function handleSignup(request) {
   try {
     ({ data } = await rest("yard_users", "", {
       method: "POST",
-      body: { username, display_name: name, access_code_hash: hashAccessCode(code), role: "viewer", active: true },
+      body: { username, display_name: name, access_code_hash: hashAccessCode(code), role, active: true },
       headers: { prefer: "return=representation" },
     }));
   } catch (e) {
@@ -117,15 +129,19 @@ async function handleSignup(request) {
   }
   const user = data?.[0];
   if (!user) return json({ error: "signup_failed" }, 500);
-  await audit({ name, role: "viewer" }, "user_signed_up", "user", user.id);
+  await audit({ name, role }, "user_signed_up", "user", user.id, { role, via: role === "editor" ? "editor_invite" : "invite" });
 
   try {
     const to = parseRecipients(process.env.ALERT_SUMMARY_RECIPIENTS);
     if (to.length) {
       await sendMail({
         to,
-        subject: `[Tarter Yard Map] Nuevo operador registrado: ${name}`,
-        html: `<p><strong>${esc(name)}</strong> se registró como operador (rol: viewer) en Tarter Yard Map. Puede reportar problemas del yard, pero no puede resolver alertas, enviarlas por correo ni administrar usuarios.</p>`,
+        subject: role === "editor"
+          ? `[Tarter Yard Map] Nuevo EDITOR registrado: ${name}`
+          : `[Tarter Yard Map] Nuevo operador registrado: ${name}`,
+        html: role === "editor"
+          ? `<p><strong>${esc(name)}</strong> se registró como <strong>editor</strong> en Tarter Yard Map usando el código de invitación de editor. Puede resolver reportes, enviarlos por correo, editar el mapa y administrar usuarios. Si no lo esperabas, desactívalo en Centro de Control → Usuarios.</p>`
+          : `<p><strong>${esc(name)}</strong> se registró como operador (rol: viewer) en Tarter Yard Map. Puede reportar problemas del yard, pero no puede resolver alertas, enviarlas por correo ni administrar usuarios.</p>`,
       });
     }
   } catch (e) { /* the account exists either way -- the notification is best-effort */ }
@@ -164,7 +180,7 @@ async function handleUsers(request) {
   const editor = await requireEditor(request);
   if (request.method === "GET") {
     const { data } = await rest("yard_users", "select=id,username,display_name,role,active,last_login_at,created_at&order=display_name.asc");
-    return json({ items: (data || []).map(safeUser) });
+    return json({ items: (data || []).map((u) => ({ ...safeUser(u), self: u.id === editor.uid })) });
   }
   if (request.method === "POST") {
     const body = await readJson(request, 30_000);

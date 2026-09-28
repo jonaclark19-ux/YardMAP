@@ -90,3 +90,27 @@ test("readSession rejects an expired token", () => {
   const session = readSession(fakeRequest(`${COOKIE_NAME}=${encodeURIComponent(`${payload}.${sig}`)}`));
   assert.equal(session, null);
 });
+
+import { inviteRole, signupPolicy } from "../api/auth.js";
+
+test("inviteRole: the editor code signs up an editor, the viewer code a viewer", () => {
+  const env = { SIGNUP_INVITE_CODE: "VIEW-1234", SIGNUP_EDITOR_INVITE_CODE: "EDIT-9876" };
+  assert.equal(inviteRole("EDIT-9876", env), "editor");
+  assert.equal(inviteRole("VIEW-1234", env), "viewer");
+  assert.equal(inviteRole(" VIEW-1234 ", env), "viewer", "stray spaces from a pasted text are forgiven");
+  assert.equal(inviteRole("nope", env), null);
+  assert.equal(inviteRole("", env), null);
+});
+
+test("inviteRole: without a viewer code signup is open, but only the editor code makes editors", () => {
+  assert.equal(inviteRole("", {}), "viewer");
+  assert.equal(inviteRole("EDIT-9876", {}), "viewer", "no editor code configured, so nothing grants editor");
+  assert.equal(inviteRole("EDIT-9876", { SIGNUP_EDITOR_INVITE_CODE: "EDIT-9876" }), "editor");
+  assert.equal(inviteRole("whatever", { SIGNUP_EDITOR_INVITE_CODE: "EDIT-9876" }), "viewer");
+});
+
+test("signupPolicy reflects the environment", () => {
+  assert.equal(signupPolicy({}), "open");
+  assert.equal(signupPolicy({ SIGNUP_INVITE_CODE: "x" }), "invite");
+  assert.equal(signupPolicy({ SIGNUP_DISABLED: "1", SIGNUP_INVITE_CODE: "x" }), "closed");
+});

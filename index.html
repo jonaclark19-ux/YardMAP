@@ -7801,6 +7801,24 @@ boot();
 .cc23-ann-msg{font-size:12px;color:#e3e9ee;line-height:1.4}
 .cc23-ann-meta{font-size:9.5px;color:#7d8a99;margin-top:3px}
 .cc23-ann-row button{flex:none;height:32px;border:1px solid #344351;border-radius:8px;background:#16202a;color:#acb8c2;padding:0 9px;font-size:9px;font-weight:800}
+/* Users tab */
+.cc23-user-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;align-items:center;padding:11px 4px;border-bottom:1px solid #273440}
+.cc23-user-row:last-child{border-bottom:0}
+.cc23-user-row.off{opacity:.55}
+.cc23-user-name{font-size:13px;font-weight:800;color:#e9eef3}
+.cc23-user-name small{font-weight:700;color:#7ebcff;margin-left:6px;font-size:10px}
+.cc23-user-meta{font-size:10px;color:#7d8a99;margin-top:3px}
+.cc23-user-acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.cc23-user-acts select,.cc23-user-acts button,.cc23-user-code input,.cc23-user-code button{height:34px;border:1px solid #344351;border-radius:8px;background:#16202a;color:#dbe3ea;padding:0 10px;font-size:11px;font-weight:700}
+.cc23-user-acts button.danger{color:#ff8a83;border-color:#5a2b2b}
+.cc23-user-code{grid-column:1/-1;display:flex;gap:6px}
+.cc23-user-code input{flex:1;min-width:0}
+.cc23-role{display:inline-block;padding:1px 7px;border-radius:999px;font-size:9.5px;font-weight:900;letter-spacing:.3px;text-transform:uppercase;background:#1d2a36;color:#9fb0bf;margin-left:6px}
+.cc23-role.editor{background:rgba(227,58,50,.16);color:#ff8a83}
+.cc23-invite-info{display:grid;gap:8px;font-size:12px;color:#aebbc6;line-height:1.45}
+.cc23-invite-info b{color:#e9eef3}
+.cc23-invite-info .ok{color:#5fd39b;font-weight:800}.cc23-invite-info .no{color:#ffbf27;font-weight:800}
+@media(max-width:560px){.cc23-user-row{grid-template-columns:1fr}.cc23-user-acts{justify-content:flex-start}}
 </style>
 <script id="tarter-control-center-v23-js">
 (function(){
@@ -7808,6 +7826,25 @@ boot();
   const OUTER_ID="opsCenter", ALERTS_KEY="tarter_yard_alerts_v6";
   const state={tab:"overview",range:"7d",type:"all",status:"open",age:"all",query:"",selected:null};
   let announcements=null, announcementsBusy=false;
+  /* Users tab: the account list and the signup setup, loaded on first visit.
+     codeFor holds the id of the one row whose "set new code" field is open. */
+  let users=null, usersBusy=false, signupInfo=null, codeFor=null;
+  async function loadUsers(force){
+    if(usersBusy||(users&&!force))return;
+    usersBusy=true;
+    try{
+      const [r,p]=await Promise.all([Sync.api("users"),Sync.api("signup")]);
+      users=r.ok?(r.body.items||[]):[];
+      if(p.ok)signupInfo=p.body;
+    }catch(e){users=users||[];}
+    finally{usersBusy=false;if(state.tab==="users")render();}
+  }
+  const USER_ERR={last_editor:"There has to be at least one active editor.",cannot_deactivate_self:"You can't deactivate your own account.",name_taken:"Someone already uses that name.",code_too_short:"Access codes need at least 6 characters.",missing_name:"Enter a name.",forbidden:"Only editors can manage users."};
+  async function userCall(method,body){
+    const r=await Sync.api("users",{method,body:JSON.stringify(body)});
+    if(!r.ok){toast(USER_ERR[r.body.error]||"Could not save the change.");return false;}
+    return true;
+  }
   async function loadAnnouncements(force){
     if(announcementsBusy||(announcements&&!force))return;
     announcementsBusy=true;
@@ -7867,7 +7904,7 @@ boot();
     const center=document.getElementById(OUTER_ID);if(!center)return;center.classList.add("cc-v23");center.innerHTML=`<div class="cc23-shell">
       <header class="cc23-topbar"><button class="cc23-back" id="cc23Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15.2 5.2 8.4 12l6.8 6.8"/></svg><span>Map</span></button><div class="cc23-brandmark">T</div><div class="cc23-title"><h2>Yard Control Center</h2><p id="cc23Subtitle"></p></div><div class="cc23-yard-state" id="cc23YardState"><i></i><span></span></div><div class="cc23-top-actions"><div class="cc23-range" id="cc23Range"><button data-range="today">Today</button><button data-range="7d">7D</button><button data-range="30d">30D</button></div><button class="cc23-action" id="cc23Export"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.6v11M12 14.6 8.1 10.7M12 14.6l3.9-3.9"/><path d="M4.4 15.4v3a2 2 0 0 0 2 2h11.2a2 2 0 0 0 2-2v-3"/></svg><span class="label">Export</span></button><button class="cc23-action primary" id="cc23NewReport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5.2v13.6M5.2 12h13.6"/></svg><span class="label">New report</span></button></div></header>
       <div class="cc23-main"><nav class="cc23-nav" id="cc23Nav"><div class="cc23-nav-label">Workspace</div>
-        <button data-tab="overview"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 10.6 12 3.9l8.4 6.7V19a1.6 1.6 0 0 1-1.6 1.6h-3.3v-6H8.5v6H5.2A1.6 1.6 0 0 1 3.6 19Z"/></svg></span><span>Overview</span></button><button data-tab="queue"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.6 6.6h10.8M9.6 12h10.8M9.6 17.4h10.8"/><path d="m3.3 6.2 1.3 1.3 2.3-2.5M3.3 11.6l1.3 1.3 2.3-2.5M3.3 17l1.3 1.3 2.3-2.5"/></svg></span><span>Action Queue</span><span class="count" id="cc23NavQueue">0</span></button><button data-tab="inventory"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 7.6 12 3.3 3.5 7.6v8.8L12 20.7l8.5-4.3Z"/><path d="M3.5 7.6 12 12l8.5-4.4M12 12v8.7"/></svg></span><span>Inventory</span></button><button data-tab="quality"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.3 4.7 6v6c0 4.4 3 7.6 7.3 8.9 4.3-1.3 7.3-4.5 7.3-8.9V6Z"/><path d="m9.2 11.9 2 2 3.7-4"/></svg></span><span>Quality</span></button><button data-tab="locations"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.9s-6.9-5.2-6.9-10.8a6.9 6.9 0 1 1 13.8 0c0 5.6-6.9 10.8-6.9 10.8Z"/><circle cx="12" cy="10" r="2.5"/></svg></span><span>Locations</span><span class="count" id="cc23NavLoc">0</span></button><button data-tab="weekly"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.4" y="5" width="17.2" height="15.6" rx="2.6"/><path d="M3.4 9.8h17.2M8.2 3.4v3.2M15.8 3.4v3.2"/></svg></span><span>Weekly Brief</span></button><button data-tab="activity"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.2h3.9l2.4-6.7 4.2 12.9 2.5-6.2H21"/></svg></span><span>Activity</span></button><button data-tab="announcements"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.5v3a1.3 1.3 0 0 0 1.3 1.3h1.4l3.6 3.4v-12l-3.6 3.3H4.8a1.3 1.3 0 0 0-1.3 1.3Z"/><path d="M14.5 8.6a4.6 4.6 0 0 1 0 6.8M17.6 6a8.8 8.8 0 0 1 0 12"/></svg></span><span>Announcements</span></button><button data-tab="data"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="7.5" ry="3"/><path d="M4.5 6v12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6"/><path d="M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3"/></svg></span><span>Data</span></button><div class="cc23-nav-spacer"></div><div class="cc23-sync-card" id="cc23Sync"></div>
+        <button data-tab="overview"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 10.6 12 3.9l8.4 6.7V19a1.6 1.6 0 0 1-1.6 1.6h-3.3v-6H8.5v6H5.2A1.6 1.6 0 0 1 3.6 19Z"/></svg></span><span>Overview</span></button><button data-tab="queue"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.6 6.6h10.8M9.6 12h10.8M9.6 17.4h10.8"/><path d="m3.3 6.2 1.3 1.3 2.3-2.5M3.3 11.6l1.3 1.3 2.3-2.5M3.3 17l1.3 1.3 2.3-2.5"/></svg></span><span>Action Queue</span><span class="count" id="cc23NavQueue">0</span></button><button data-tab="inventory"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 7.6 12 3.3 3.5 7.6v8.8L12 20.7l8.5-4.3Z"/><path d="M3.5 7.6 12 12l8.5-4.4M12 12v8.7"/></svg></span><span>Inventory</span></button><button data-tab="quality"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.3 4.7 6v6c0 4.4 3 7.6 7.3 8.9 4.3-1.3 7.3-4.5 7.3-8.9V6Z"/><path d="m9.2 11.9 2 2 3.7-4"/></svg></span><span>Quality</span></button><button data-tab="locations"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.9s-6.9-5.2-6.9-10.8a6.9 6.9 0 1 1 13.8 0c0 5.6-6.9 10.8-6.9 10.8Z"/><circle cx="12" cy="10" r="2.5"/></svg></span><span>Locations</span><span class="count" id="cc23NavLoc">0</span></button><button data-tab="weekly"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.4" y="5" width="17.2" height="15.6" rx="2.6"/><path d="M3.4 9.8h17.2M8.2 3.4v3.2M15.8 3.4v3.2"/></svg></span><span>Weekly Brief</span></button><button data-tab="activity"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.2h3.9l2.4-6.7 4.2 12.9 2.5-6.2H21"/></svg></span><span>Activity</span></button><button data-tab="announcements"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.5v3a1.3 1.3 0 0 0 1.3 1.3h1.4l3.6 3.4v-12l-3.6 3.3H4.8a1.3 1.3 0 0 0-1.3 1.3Z"/><path d="M14.5 8.6a4.6 4.6 0 0 1 0 6.8M17.6 6a8.8 8.8 0 0 1 0 12"/></svg></span><span>Announcements</span></button><button data-tab="users"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.4"/><path d="M2.8 19.6c.7-3.4 3.2-5.4 6.2-5.4s5.5 2 6.2 5.4"/><path d="M16 5.2a3.2 3.2 0 0 1 0 6.1M18.2 14.6c1.7.8 2.8 2.4 3.1 4.6"/></svg></span><span>Users</span></button><button data-tab="data"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="7.5" ry="3"/><path d="M4.5 6v12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6"/><path d="M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3"/></svg></span><span>Data</span></button><div class="cc23-nav-spacer"></div><div class="cc23-sync-card" id="cc23Sync"></div>
       </nav><main class="cc23-content"><div class="cc23-page" id="cc23Page"></div></main></div></div>
       <div class="cc23-detail-scrim" id="cc23DetailScrim"></div><aside class="cc23-detail" id="cc23Detail"><div class="cc23-detail-head"><div class="cc23-detail-title"><h3 id="cc23DetailTitle">Report</h3><small id="cc23DetailSub"></small></div><button class="cc23-detail-x" id="cc23DetailX">×</button></div><div class="cc23-detail-body" id="cc23DetailBody"></div></aside>`;
     center.querySelector("#cc23Back").onclick=close;
@@ -7940,7 +7977,7 @@ boot();
       ${rows}
     </div></div>`;
   }
-  function render(){const c=document.getElementById(OUTER_ID);if(!c||!c.classList.contains("cc-v23"))return;const yard=classifyYard(),inv=inventoryState(),pending=locationState().filter(l=>l.status==="observed").length;c.querySelector("#cc23Subtitle").innerHTML=`${esc(currentUser())} · <span>${Sync.mode==="local"?"Local pilot":"Connected"}</span> · <span>${esc(inv?.fileName||"No FG report loaded")}</span>`;const ys=c.querySelector("#cc23YardState");ys.classList.toggle("attn",yard.open.length>0);ys.querySelector("span").textContent=yard.label;c.querySelector("#cc23NavQueue").textContent=yard.open.length;c.querySelector("#cc23NavLoc").textContent=pending;c.querySelector("#cc23Sync").innerHTML=`<b><i></i>${Sync.mode==="local"?"Local mode":"Connected"}</b>${Sync.mode==="local"?"Changes stay on this device during the pilot.":"Report state is synchronized."}`;c.querySelectorAll("#cc23Nav [data-tab]").forEach(b=>b.classList.toggle("on",b.dataset.tab===state.tab));c.querySelectorAll("#cc23Range [data-range]").forEach(b=>b.classList.toggle("on",b.dataset.range===state.range));const page=c.querySelector("#cc23Page");page.innerHTML=state.tab==="queue"?queuePage():state.tab==="inventory"?inventoryPage():state.tab==="quality"?qualityPage():state.tab==="locations"?locationsPage():state.tab==="weekly"?weeklyPage():state.tab==="activity"?activityPage():state.tab==="data"?dataPage():state.tab==="announcements"?announcementsPage():overview();bindPage(page);}
+  function render(){const c=document.getElementById(OUTER_ID);if(!c||!c.classList.contains("cc-v23"))return;const yard=classifyYard(),inv=inventoryState(),pending=locationState().filter(l=>l.status==="observed").length;c.querySelector("#cc23Subtitle").innerHTML=`${esc(currentUser())} · <span>${Sync.mode==="local"?"Local pilot":"Connected"}</span> · <span>${esc(inv?.fileName||"No FG report loaded")}</span>`;const ys=c.querySelector("#cc23YardState");ys.classList.toggle("attn",yard.open.length>0);ys.querySelector("span").textContent=yard.label;c.querySelector("#cc23NavQueue").textContent=yard.open.length;c.querySelector("#cc23NavLoc").textContent=pending;c.querySelector("#cc23Sync").innerHTML=`<b><i></i>${Sync.mode==="local"?"Local mode":"Connected"}</b>${Sync.mode==="local"?"Changes stay on this device during the pilot.":"Report state is synchronized."}`;c.querySelectorAll("#cc23Nav [data-tab]").forEach(b=>b.classList.toggle("on",b.dataset.tab===state.tab));c.querySelectorAll("#cc23Range [data-range]").forEach(b=>b.classList.toggle("on",b.dataset.range===state.range));const page=c.querySelector("#cc23Page");page.innerHTML=state.tab==="queue"?queuePage():state.tab==="inventory"?inventoryPage():state.tab==="quality"?qualityPage():state.tab==="locations"?locationsPage():state.tab==="weekly"?weeklyPage():state.tab==="activity"?activityPage():state.tab==="data"?dataPage():state.tab==="announcements"?announcementsPage():state.tab==="users"?usersPage():overview();bindPage(page);}
   /* The email-groups panel is the only place in the Control Center that
      writes shared configuration from inline controls, so its handlers live
      together here rather than scattered through bindPage. Each one re-renders
@@ -8012,6 +8049,72 @@ boot();
   }
 
   const SEV_LABEL={info:"Info",warning:"Warning",urgent:"Urgent"};
+  function usersPage(){
+    const head=pageHeader("Users","Who can use the app, and what they can do.");
+    if(Sync.mode!=="remote")return `${head}<div class="cc23-empty">User accounts need the online server.</div>`;
+    if(users===null){loadUsers();return `${head}<div class="cc23-empty">Loading…</div>`;}
+    const policy=signupInfo?.signup||"open", editorInvite=!!signupInfo?.editorInvite;
+    const active=users.filter(u=>u.active), editors=active.filter(u=>u.role==="editor").length;
+    const sorted=users.slice().sort((a,b)=>(b.active-a.active)||(a.role===b.role?0:a.role==="editor"?-1:1)||String(a.name).localeCompare(String(b.name)));
+    const row=u=>`<div class="cc23-user-row ${u.active?"":"off"}">
+      <div><div class="cc23-user-name">${esc(u.name)}<span class="cc23-role ${u.role==="editor"?"editor":""}">${u.role==="editor"?"Editor":"Viewer"}</span>${u.self?"<small>you</small>":""}</div>
+      <div class="cc23-user-meta">${u.active?"Active":"Deactivated"} · Last sign-in ${u.lastLoginAt?esc(fmtDT(u.lastLoginAt)):"never"} · Joined ${esc(fmtDT(u.createdAt))}</div></div>
+      <div class="cc23-user-acts">
+        <select data-user-role="${esc(u.id)}" aria-label="Role for ${esc(u.name)}"><option value="viewer" ${u.role==="viewer"?"selected":""}>Viewer</option><option value="editor" ${u.role==="editor"?"selected":""}>Editor</option></select>
+        <button data-user-code="${esc(u.id)}">New code</button>
+        ${u.self?"":`<button data-user-active="${esc(u.id)}" data-on="${u.active?"1":"0"}" class="${u.active?"danger":""}">${u.active?"Deactivate":"Activate"}</button>`}
+      </div>
+      ${codeFor===u.id?`<div class="cc23-user-code"><input type="text" id="cc23UserCode" placeholder="New access code (6+ characters)" autocomplete="off" /><button data-user-code-save="${esc(u.id)}">Save</button><button data-user-code-cancel="1">Cancel</button></div>`:""}
+    </div>`;
+    return `${head}
+    <div class="cc23-grid2"><div>
+      <div class="cc23-panel"><div class="cc23-panel-head"><h4>People</h4><small>${active.length} active · ${editors} editor${editors===1?"":"s"}</small></div><div class="cc23-panel-body">${sorted.length?sorted.map(row).join(""):'<div class="cc23-empty">No accounts yet.</div>'}</div></div>
+    </div><div>
+      <div class="cc23-panel"><div class="cc23-panel-head"><h4>How people join</h4></div><div class="cc23-panel-body"><div class="cc23-invite-info">
+        <div><b>Operators (viewers)</b>: ${policy==="closed"?'<span class="no">Signup is closed.</span> Add them here.':policy==="invite"?'<span class="ok">Invite code required.</span> They sign up with the viewer invite code.':'<span class="no">Open.</span> Anyone with the link can sign up as a viewer.'}</div>
+        <div><b>Editors</b>: ${editorInvite?'<span class="ok">Editor invite code set.</span> Signing up with it makes an editor right away.':'No editor invite code. Sign them up as viewers, then switch them to Editor here.'}</div>
+        <div>Codes are set in Vercel (SIGNUP_INVITE_CODE, SIGNUP_EDITOR_INVITE_CODE). Deactivating someone signs them out on every device.</div>
+      </div></div></div>
+      <div class="cc23-panel"><div class="cc23-panel-head"><h4>Add a person</h4></div><div class="cc23-panel-body">
+        <div class="cc23-field"><label>Full name</label><input id="cc23NewUserName" maxlength="80" autocomplete="off" /></div>
+        <div class="cc23-field" style="margin-top:8px"><label>Role</label><select id="cc23NewUserRole"><option value="viewer">Viewer</option><option value="editor">Editor</option></select></div>
+        <div class="cc23-field" style="margin-top:8px"><label>Access code (6+ characters, give it to them)</label><input id="cc23NewUserCode" autocomplete="off" /></div>
+        <div style="margin-top:8px"><button class="cc23-btn primary" id="cc23NewUserSave">Add person</button></div>
+      </div></div>
+    </div></div>`;
+  }
+  function bindUsers(page){
+    const add=page.querySelector("#cc23NewUserSave");
+    if(add)add.onclick=async()=>{
+      const name=page.querySelector("#cc23NewUserName").value.trim(),code=page.querySelector("#cc23NewUserCode").value,role=page.querySelector("#cc23NewUserRole").value;
+      if(!name){toast(USER_ERR.missing_name);return;}
+      if(code.length<6){toast(USER_ERR.code_too_short);return;}
+      add.disabled=true;
+      if(await userCall("POST",{name,code,role})){toast(`${name} added as ${role}.`);await loadUsers(true);}
+      add.disabled=false;
+    };
+    page.querySelectorAll("[data-user-role]").forEach(sel=>sel.onchange=async()=>{
+      const u=users.find(x=>x.id===sel.dataset.userRole);if(!u)return;
+      if(sel.value==="editor"&&!confirm(`Make ${u.name} an editor? Editors can resolve and email reports, edit the map and manage users.`)){sel.value=u.role;return;}
+      if(await userCall("PATCH",{id:u.id,role:sel.value}))toast(`${u.name} is now ${sel.value==="editor"?"an editor":"a viewer"}.`);
+      await loadUsers(true);
+    });
+    page.querySelectorAll("[data-user-active]").forEach(b=>b.onclick=async()=>{
+      const u=users.find(x=>x.id===b.dataset.userActive);if(!u)return;
+      const on=b.dataset.on==="1";
+      if(on&&!confirm(`Deactivate ${u.name}? They are signed out everywhere and can't sign in until reactivated.`))return;
+      if(await userCall("PATCH",{id:u.id,active:!on}))toast(`${u.name} ${on?"deactivated":"reactivated"}.`);
+      await loadUsers(true);
+    });
+    page.querySelectorAll("[data-user-code]").forEach(b=>b.onclick=()=>{codeFor=b.dataset.userCode;render();setTimeout(()=>document.getElementById("cc23UserCode")?.focus(),0);});
+    const cancel=page.querySelector("[data-user-code-cancel]");if(cancel)cancel.onclick=()=>{codeFor=null;render();};
+    const save=page.querySelector("[data-user-code-save]");
+    if(save)save.onclick=async()=>{
+      const u=users.find(x=>x.id===save.dataset.userCodeSave),code=page.querySelector("#cc23UserCode").value;
+      if(code.length<6){toast(USER_ERR.code_too_short);return;}
+      if(await userCall("PATCH",{id:u.id,code})){toast(`New code saved for ${u.name}. Their other devices are signed out.`);codeFor=null;await loadUsers(true);}
+    };
+  }
   function announcementsPage(){
     if(announcements===null){loadAnnouncements();return `${pageHeader("Announcements","Board messages visible to everyone in the app.")}<div class="cc23-empty">Loading…</div>`;}
     const now=Date.now();
@@ -8027,6 +8130,7 @@ boot();
   }
   function bindPage(page){bindRows(page);page.querySelectorAll("[data-go-tab]").forEach(b=>b.onclick=()=>{state.tab=b.dataset.goTab;render()});const s=page.querySelector("#cc23Search");if(s){s.oninput=()=>{state.query=s.value;clearTimeout(s._t);s._t=setTimeout(render,180)}}const ty=page.querySelector("#cc23Type");if(ty)ty.onchange=()=>{state.type=ty.value;render()};const st=page.querySelector("#cc23Status");if(st)st.onchange=()=>{state.status=st.value;render()};const ag=page.querySelector("#cc23Age");if(ag)ag.onchange=()=>{state.age=ag.value;render()};const load=page.querySelector("#cc23LoadInv");if(load)load.onclick=()=>document.getElementById("inventoryFile")?.click();const li2=page.querySelector("#cc23LoadInvData");if(li2)li2.onclick=()=>document.getElementById("inventoryFile")?.click();const lbc=page.querySelector("#cc23LoadBarcode");if(lbc)lbc.onclick=()=>document.getElementById("opsBarcodeFile")?.click();const we=page.querySelector("#cc23WeeklyExport");if(we)we.onclick=exportWeekly;const wem=page.querySelector("#cc23WeeklyEmail");if(wem)wem.onclick=()=>openReportEmailModal("Send weekly report",buildWeeklyReportHtml);page.querySelectorAll("[data-product]").forEach(b=>b.onclick=()=>{close();window.YardProductUX?.open?.(b.dataset.product)});page.querySelectorAll("[data-loc]").forEach(b=>b.onclick=()=>{const status=b.dataset.loc==="approve"?"approved":"dismissed";window.YardProductUX?.locations?.setStatus?.(b.dataset.id,status);render()});
     bindEmailGroups(page);
+    bindUsers(page);
     const annPost=page.querySelector("#cc23AnnPost");if(annPost)annPost.onclick=async()=>{
       const msg=(page.querySelector("#cc23AnnMsg").value||"").trim();
       if(!msg){toast("Enter a message.");return;}
@@ -11236,6 +11340,16 @@ body.fieldmode .tnav-ico{width:27px;height:27px}
     "Control Center":"Centro de Control","Submit Report":"Enviar reporte","Report type":"Tipo de reporte",
     "Report Issue":"Reportar problema","Evidence":"Evidencia","Take / Add Photo":"Tomar / Agregar foto",
     "Assigned location:":"Ubicación asignada:","· System On Hand:":"· Existencia en sistema:",
+    "Users":"Usuarios","Who can use the app, and what they can do.":"Quién puede usar la app y qué puede hacer.",
+    "People":"Personas","How people join":"Cómo entran las personas","Add a person":"Agregar una persona",
+    "Full name":"Nombre completo","Role":"Rol","Access code (6+ characters, give it to them)":"Código de acceso (6+ caracteres, dáselo a la persona)",
+    "Add person":"Agregar persona","New code":"Nuevo código","Deactivate":"Desactivar","Activate":"Activar","Save":"Guardar","Cancel":"Cancelar",
+    "Viewer":"Viewer","Editor":"Editor","you":"tú","Operators (viewers)":"Operadores (viewers)","Editors":"Editores",
+    "Invite code required.":"Requiere código de invitación.","They sign up with the viewer invite code.":"Se registran con el código de invitación de viewer.",
+    "Editor invite code set.":"Código de editor configurado.","Signing up with it makes an editor right away.":"Quien se registre con él queda como editor de inmediato.",
+    "No editor invite code. Sign them up as viewers, then switch them to Editor here.":"Sin código de editor. Que se registren como viewers y luego cámbialos a Editor aquí.",
+    "Codes are set in Vercel (SIGNUP_INVITE_CODE, SIGNUP_EDITOR_INVITE_CODE). Deactivating someone signs them out on every device.":"Los códigos se configuran en Vercel (SIGNUP_INVITE_CODE, SIGNUP_EDITOR_INVITE_CODE). Desactivar a alguien cierra su sesión en todos los dispositivos.",
+    "User accounts need the online server.":"Las cuentas de usuario requieren el servidor en línea.","No accounts yet.":"Todavía no hay cuentas.",
     "Take photo":"Tomar foto","From gallery":"Desde galería","View photos":"Ver fotos","📷 Photos":"📷 Fotos",
     "Up to 5 photos. They upload with the report so every device can see them.":"Hasta 5 fotos. Se suben con el reporte para que se vean en todos los dispositivos.",
     "Add up to 5 clear photos so Quality can review the condition.":"Agrega hasta 5 fotos claras para que Calidad revise la condición.",
