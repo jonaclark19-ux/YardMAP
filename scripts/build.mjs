@@ -17,7 +17,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const out = join(root, "public");
 const MIN_XLSX = [0, 20, 0];
 
-const STATIC = ["index.html", "sw.js", "manifest.webmanifest", "barcodes.json", "icons"];
+const STATIC = ["index.html", "catalog.js", "sw.js", "manifest.webmanifest", "barcodes.json", "icons"];
 
 function version(v) { return String(v).split(".").map((n) => parseInt(n, 10) || 0); }
 function atLeast(v, min) {
