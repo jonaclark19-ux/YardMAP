@@ -9411,13 +9411,16 @@ body.fieldmode .audit-help{font-size:13px;color:var(--muted)}
   /** Every evidence photo of a report (cloud first, else this device's
       copies), resolved once and cached per report. */
   async function reportPhotoSrcs(r){
-    if(!r || missing.has(r.id)) return [];
+    if(!r) return [];
+    // Keyed on the photo count too, so photos that arrive later (a retried
+    // upload, another device) are picked up instead of staying "missing".
     const key = r.id + "|" + ((r.photoUrls || []).length);
+    if(missing.has(key)) return [];
     if(urls.has(key)) return urls.get(key);
     const fn = window.YardOpsV2 && window.YardOpsV2.reportPhotos;
     let list = [];
     try { list = fn ? (await fn(r)).map(p => p.src) : []; } catch(e){ list = []; }
-    if(!list.length){ missing.add(r.id); return []; }
+    if(!list.length){ missing.add(key); return []; }
     urls.set(key, list);
     return list;
   }
