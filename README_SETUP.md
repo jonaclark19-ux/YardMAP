@@ -482,11 +482,17 @@ Si GitHub quedó con la estructura correcta, no tienes que seleccionar una subca
 
 ### Build Command
 
-Déjalo sin un comando personalizado.
+Déjalo sin un comando personalizado: `vercel.json` ya define `npm run build`.
+Ese paso arma la carpeta `public/` (lo único que se publica como sitio) y
+copia ahí la librería de Excel (SheetJS 0.20), que npm descarga desde
+`cdn.sheetjs.com`.
 
 ### Output Directory
 
-Déjalo sin un directorio personalizado.
+Déjalo sin un directorio personalizado: `vercel.json` ya define `public`.
+
+Para probar en tu computadora: `npm install`, luego `npm run build`, y sirve
+la carpeta `public/`.
 
 ### Install Command
 

@@ -7,11 +7,12 @@
     "node": ">=20"
   },
   "scripts": {
-    "check": "for f in api/*.js api/_lib/*.js; do node --check \"$f\" || exit 1; done && npm test",
-    "test": "node --test"
+    "check": "for f in api/*.js api/_lib/*.js scripts/*.mjs; do node --check \"$f\" || exit 1; done && npm test",
+    "test": "node --test",
+    "build": "node scripts/build.mjs"
   },
   "dependencies": {
     "nodemailer": "^6.9.15",
-    "xlsx": "^0.18.5"
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   }
 }
