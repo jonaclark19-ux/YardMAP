@@ -39,14 +39,38 @@ function isZipBuffer(buffer) {
   return buffer.length > 4 && buffer[0] === 0x50 && buffer[1] === 0x4b;
 }
 
-async function handleImport(request) {
-  checkImportSecret(request);
-  const body = await readJson(request, 25_000_000);
+/* Vercel rejects request bodies over 4.5 MB before a Function runs. Base64
+   in JSON spends a third of that on encoding, so the workbook can also be
+   sent as the raw request body (content-type application/octet-stream or the
+   xlsx type, file name in x-file-name), which fits a ~4.4 MB file. */
+const MAX_BODY = 4_500_000;
+
+function isBinaryUpload(request) {
+  const type = String(request.headers.get("content-type") || "").toLowerCase();
+  return type.startsWith("application/octet-stream") || type.includes("spreadsheetml") || type.includes("ms-excel");
+}
+
+async function readWorkbook(request) {
+  if (isBinaryUpload(request)) {
+    const len = Number(request.headers.get("content-length") || 0);
+    if (len > MAX_BODY) throw Object.assign(new Error("file_too_large"), { status: 413 });
+    const buffer = Buffer.from(await request.arrayBuffer());
+    if (!buffer.length) throw Object.assign(new Error("missing_file"), { status: 400 });
+    if (buffer.length > MAX_BODY) throw Object.assign(new Error("file_too_large"), { status: 413 });
+    let fileName = "inventory.xlsx";
+    try { fileName = decodeURIComponent(request.headers.get("x-file-name") || fileName); } catch { /* keep default */ }
+    return { buffer, fileName: fileName.slice(0, 200) };
+  }
+  const body = await readJson(request, MAX_BODY);
   const fileName = String(body.fileName || "inventory.xlsx").slice(0, 200);
   const base64 = String(body.fileBase64 || body.dataBase64 || "");
-  if (!base64) return json({ error: "missing_file" }, 400);
-  let buffer = Buffer.from(base64, "base64");
-  if (buffer.length > 20_000_000) return json({ error: "file_too_large" }, 413);
+  if (!base64) throw Object.assign(new Error("missing_file"), { status: 400 });
+  return { buffer: Buffer.from(base64, "base64"), fileName };
+}
+
+async function handleImport(request) {
+  checkImportSecret(request);
+  let { buffer, fileName } = await readWorkbook(request);
 
   // Some automation tools (observed with Power Automate's HTTP action
   // against certain attachment expressions) end up base64-encoding the
@@ -59,13 +83,7 @@ async function handleImport(request) {
   }
 
   const state = parseInventoryWorkbook(buffer, fileName);
-  const rev = (await currentRev()) + 1;
-
-  await rest("inventory_state", "id=eq.yard", {
-    method: "PATCH",
-    body: { rev, data: state, updated_at: new Date().toISOString() },
-    headers: { prefer: "return=minimal" },
-  });
+  const rev = await saveState(state);
 
   return json({
     ok: true,
@@ -82,18 +100,41 @@ async function handleImport(request) {
 // report") doesn't hold the Power Automate shared secret, so this lets that
 // same already-parsed state become the shared server copy every device
 // picks up, instead of staying stuck on whichever single device loaded it.
+//
+// The browser now sends the workbook itself (binary) rather than the parsed
+// JSON: the xlsx is zip-compressed and several times smaller than its parsed
+// form, which for a full FG report ran past Vercel's 4.5 MB body limit. The
+// JSON form is still accepted from older clients.
 async function handlePut(request) {
   const editor = await requireEditor(request);
-  const body = await readJson(request, 20_000_000);
-  if (!body.data || typeof body.data !== "object" || !body.data.items) return json({ error: "invalid_data" }, 400);
+  let data;
+  if (isBinaryUpload(request)) {
+    const { buffer, fileName } = await readWorkbook(request);
+    data = parseInventoryWorkbook(buffer, fileName);
+    // The workbook has no catalog photos or day-over-day history; those were
+    // added in the browser. Carry over what the shared copy already had.
+    const { data: rows } = await rest("inventory_state", "id=eq.yard&select=data");
+    const prev = Array.isArray(rows) ? rows[0]?.data : null;
+    if (prev?.photos) data.photos = prev.photos;
+    if (Array.isArray(prev?.history)) data.history = prev.history;
+  } else {
+    const body = await readJson(request, MAX_BODY);
+    if (!body.data || typeof body.data !== "object" || !body.data.items) return json({ error: "invalid_data" }, 400);
+    data = body.data;
+  }
+  const rev = await saveState(data);
+  await audit(editor, "inventory_synced", "inventory", "yard", { rev, rowCount: data.rowCount, fileName: data.fileName });
+  return json({ ok: true, rev, rowCount: data.rowCount });
+}
+
+async function saveState(data) {
   const rev = (await currentRev()) + 1;
   await rest("inventory_state", "id=eq.yard", {
     method: "PATCH",
-    body: { rev, data: body.data, updated_at: new Date().toISOString() },
+    body: { rev, data, updated_at: new Date().toISOString() },
     headers: { prefer: "return=minimal" },
   });
-  await audit(editor, "inventory_synced", "inventory", "yard", { rev, rowCount: body.data.rowCount, fileName: body.data.fileName });
-  return json({ ok: true, rev });
+  return rev;
 }
 
 export default {

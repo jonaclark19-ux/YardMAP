@@ -1,4 +1,6 @@
+import { timingSafeEqual } from "node:crypto";
 import { createSession, hashAccessCode, normalizeUsername, requireEditor, requireUser, sessionCookie, verifyAccessCode, clearSessionCookie, readSession } from "./_lib/auth.js";
+import { LIMITS, assertNotLimited, clearHits, clientIp, recordHit } from "./_lib/ratelimit.js";
 import { rest } from "./_lib/db.js";
 import { audit } from "./_lib/audit.js";
 import { json, readJson, errorResponse, methodNotAllowed } from "./_lib/http.js";
@@ -39,10 +41,21 @@ async function handleLogin(request) {
   const code = String(body.code || "");
   if (!name || !code) return json({ error: "invalid_credentials" }, 401);
   const username = normalizeUsername(name);
+  // Per name, so one account cannot be walked through its code space; per IP,
+  // so one client cannot spread the same attack across many names.
+  const limits = [
+    { key: `login:${username}`, limit: LIMITS.loginName },
+    { key: `login-ip:${clientIp(request)}`, limit: LIMITS.loginIp },
+  ];
+  await assertNotLimited(limits);
   const { data } = await rest("yard_users", `username=eq.${encodeURIComponent(username)}&active=eq.true&select=*`);
   let user = Array.isArray(data) ? data[0] : null;
   if (!user) user = await bootstrapIfEmpty(name, code);
-  if (!user || !verifyAccessCode(code, user.access_code_hash)) return json({ error: "invalid_credentials" }, 401);
+  if (!user || !verifyAccessCode(code, user.access_code_hash)) {
+    await recordHit(limits);
+    return json({ error: "invalid_credentials" }, 401);
+  }
+  await clearHits([limits[0].key]);
 
   await rest("yard_users", `id=eq.${encodeURIComponent(user.id)}`, { method: "PATCH", body: { last_login_at: new Date().toISOString() }, headers: { prefer: "return=minimal" } });
   const token = createSession(user);
@@ -50,27 +63,58 @@ async function handleLogin(request) {
   return json({ role: user.role, name: user.display_name || user.username, onboarded: !!user.onboarded_at }, 200, { "set-cookie": sessionCookie(token) });
 }
 
+/* SIGNUP_INVITE_CODE turns self-signup from "anyone who finds the URL" into
+   "anyone the yard gave the invite code to". SIGNUP_DISABLED=1 closes it
+   entirely, leaving account creation to editors in the Control Center. */
+function inviteMatches(given) {
+  const expected = String(process.env.SIGNUP_INVITE_CODE || "");
+  if (!expected) return true;
+  const a = Buffer.from(String(given || ""));
+  const b = Buffer.from(expected);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
+export function signupPolicy() {
+  if (process.env.SIGNUP_DISABLED === "1") return "closed";
+  return process.env.SIGNUP_INVITE_CODE ? "invite" : "open";
+}
+
 // Self-signup, always as "viewer" -- editor accounts stay admin-created
 // (via handleUsers) so only the people already trusted with reviewing and
 // emailing alerts can hand that access to someone else. A viewer can file
 // reports but nothing that requireEditor gates (resolve, email, users...).
 async function handleSignup(request) {
-  if (request.method !== "POST") return methodNotAllowed(["POST"]);
+  // GET tells the login screen which signup form to draw (open, invite code
+  // field, or none) without anyone having to try and fail first.
+  if (request.method === "GET") return json({ signup: signupPolicy() });
+  if (request.method !== "POST") return methodNotAllowed(["GET", "POST"]);
   if (!backendReady()) return json({ error: "backend_not_configured" }, 503);
+  if (signupPolicy() === "closed") return json({ error: "signup_closed" }, 403);
   const body = await readJson(request, 20_000);
-  const name = String(body.name || "").trim().slice(0, 160);
+  const name = String(body.name || "").trim().slice(0, 80);
   const code = String(body.code || "");
+  const ipLimit = [{ key: `signup-ip:${clientIp(request)}`, limit: LIMITS.signupIp }];
+  await assertNotLimited(ipLimit);
+  // Counted before any answer that reveals something (a taken name, a wrong
+  // invite), so the endpoint cannot be used to list who has an account.
+  await recordHit(ipLimit);
+  if (!inviteMatches(body.invite)) return json({ error: "invalid_invite" }, 403);
   if (!name) return json({ error: "missing_name" }, 400);
-  if (code.length < 4) return json({ error: "code_too_short" }, 400);
   const username = normalizeUsername(name);
   const { data: existing } = await rest("yard_users", `username=eq.${encodeURIComponent(username)}&select=id&limit=1`);
   if (Array.isArray(existing) && existing.length) return json({ error: "name_taken" }, 409);
 
-  const { data } = await rest("yard_users", "", {
-    method: "POST",
-    body: { username, display_name: name, access_code_hash: hashAccessCode(code), role: "viewer", active: true },
-    headers: { prefer: "return=representation" },
-  });
+  let data;
+  try {
+    ({ data } = await rest("yard_users", "", {
+      method: "POST",
+      body: { username, display_name: name, access_code_hash: hashAccessCode(code), role: "viewer", active: true },
+      headers: { prefer: "return=representation" },
+    }));
+  } catch (e) {
+    if (e?.status === 409) return json({ error: "name_taken" }, 409);
+    throw e;
+  }
   const user = data?.[0];
   if (!user) return json({ error: "signup_failed" }, 500);
   await audit({ name, role: "viewer" }, "user_signed_up", "user", user.id);
@@ -128,11 +172,17 @@ async function handleUsers(request) {
     const code = String(body.code || "");
     const role = body.role === "editor" ? "editor" : "viewer";
     if (!name) return json({ error: "missing_name" }, 400);
-    const { data } = await rest("yard_users", "", {
-      method: "POST",
-      body: { username: normalizeUsername(name), display_name: name, access_code_hash: hashAccessCode(code), role, active: true },
-      headers: { prefer: "return=representation" },
-    });
+    let data;
+    try {
+      ({ data } = await rest("yard_users", "", {
+        method: "POST",
+        body: { username: normalizeUsername(name), display_name: name, access_code_hash: hashAccessCode(code), role, active: true },
+        headers: { prefer: "return=representation" },
+      }));
+    } catch (e) {
+      if (e?.status === 409) return json({ error: "name_taken" }, 409);
+      throw e;
+    }
     const user = data?.[0];
     await audit(editor, "user_created", "user", user?.id, { name, role });
     return json({ user: safeUser(user) }, 201);
@@ -151,11 +201,25 @@ async function handleUsers(request) {
     if (["editor", "viewer"].includes(body.role)) patch.role = body.role;
     if (typeof body.active === "boolean") patch.active = body.active;
     if (body.code !== undefined) patch.access_code_hash = hashAccessCode(String(body.code || ""));
-    const { data } = await rest("yard_users", `id=eq.${encodeURIComponent(id)}`, {
-      method: "PATCH",
-      body: patch,
-      headers: { prefer: "return=representation" },
-    });
+    // Nobody can take away the last editor's access -- not even that editor
+    // -- because there would be no one left to give it back.
+    if (patch.active === false && id === editor.uid) return json({ error: "cannot_deactivate_self" }, 400);
+    if (patch.role === "viewer" || patch.active === false) {
+      const { data: editors } = await rest("yard_users", "role=eq.editor&active=eq.true&select=id");
+      const others = (editors || []).filter((u) => u.id !== id);
+      if ((editors || []).some((u) => u.id === id) && others.length === 0) return json({ error: "last_editor" }, 400);
+    }
+    let data;
+    try {
+      ({ data } = await rest("yard_users", `id=eq.${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        body: patch,
+        headers: { prefer: "return=representation" },
+      }));
+    } catch (e) {
+      if (e?.status === 409) return json({ error: "name_taken" }, 409);
+      throw e;
+    }
     const user = data?.[0];
     await audit(editor, "user_updated", "user", id, { fields: Object.keys(patch) });
     return json({ user: user ? safeUser(user) : null });

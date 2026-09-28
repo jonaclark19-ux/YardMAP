@@ -268,6 +268,7 @@ una por una, con el mismo procedimiento de copiar y pegar:
 supabase/migration-ops-v2.sql
 supabase/migration-inventory.sql
 supabase/migration-email-groups.sql
+supabase/migration-security.sql
 ```
 
 Cada una se puede volver a ejecutar sin problema si tienes dudas de si ya
@@ -275,6 +276,14 @@ la corriste. `migration-email-groups.sql` crea la tabla `email_groups`, que
 es la que guarda los grupos de correo del Centro de Control; sin ella, la
 sección **Datos → Grupos de correo** aparecerá vacía y los envíos seguirán
 funcionando solo con correos escritos a mano.
+
+`migration-security.sql` agrega la columna `onboarded_at` (sin ella el login
+falla en una instalación nueva), la tabla `auth_attempts` que limita los
+intentos de login, registro y subida de fotos, la tabla `shared_docs` donde
+se comparten las ubicaciones secundarias entre dispositivos, y quita a los
+roles públicos de Supabase el permiso de llamar a las funciones `yard_*`.
+Si no la ejecutas la app sigue funcionando, pero sin límite de intentos y
+sin compartir ubicaciones secundarias.
 
 ---
 
@@ -661,6 +670,20 @@ Production
 Si también quieres probar Preview deployments, puedes habilitarlas para Preview.
 
 Para evitar confusión durante el primer lanzamiento, lo importante es que estén disponibles en el deployment que vas a abrir.
+
+## Variables opcionales de seguridad (recomendadas)
+
+```text
+SIGNUP_INVITE_CODE      Código que un operador nuevo debe escribir para crear su cuenta.
+                        Sin esta variable, cualquiera que encuentre la URL puede registrarse.
+SIGNUP_DISABLED=1       Cierra el registro por completo; solo los editores crean cuentas.
+EMAIL_ALLOWED_DOMAINS   Dominios a los que la app puede enviar correo, separados por comas
+                        (por ejemplo: tarter.com,tarterusa.com). Sin ella, cualquier dominio.
+```
+
+Los códigos de acceso nuevos o cambiados deben tener al menos 6 caracteres.
+Los códigos antiguos más cortos siguen funcionando. Cambiar el código de un
+usuario cierra sus sesiones abiertas en todos los dispositivos.
 
 ### `YARD_ID`
 

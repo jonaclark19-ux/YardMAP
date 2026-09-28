@@ -1,4 +1,6 @@
+import { timingSafeEqual } from "node:crypto";
 import { rest, supabase } from "./_lib/db.js";
+import { photoPath } from "./_lib/photos.js";
 import { alertToClient } from "./_lib/models.js";
 import { esc, parseRecipients, sendMail } from "./_lib/email.js";
 import { json, errorResponse, methodNotAllowed } from "./_lib/http.js";
@@ -20,8 +22,9 @@ const TYPE_LABEL = {
 function isAuthorized(request) {
   const secret = process.env.CRON_SECRET || "";
   if (!secret) return false;
-  const header = request.headers.get("authorization") || "";
-  return header === `Bearer ${secret}`;
+  const a = Buffer.from(request.headers.get("authorization") || "");
+  const b = Buffer.from(`Bearer ${secret}`);
+  return a.length === b.length && timingSafeEqual(a, b);
 }
 
 function summaryHtml(items, sinceDate) {
@@ -98,10 +101,9 @@ const daysAgo = (n) => new Date(Date.now() - n * 86400000).toISOString();
    that fails to delete is logged and skipped: the report row still goes,
    and a leftover object is cheaper than aborting the whole sweep. */
 async function deletePhoto(photoUrl) {
-  const marker = "/storage/v1/object/public/yard-alerts/";
-  const at = String(photoUrl || "").indexOf(marker);
-  if (at < 0) return false;
-  const path = String(photoUrl).slice(at + marker.length);
+  // photoPath only accepts our own bucket and a plain path, so a report whose
+  // URL was tampered with can never steer this delete somewhere else.
+  const path = photoPath(photoUrl);
   if (!path) return false;
   try {
     await supabase(`/storage/v1/object/yard-alerts/${path}`, { method: "DELETE" });
@@ -118,14 +120,17 @@ async function purgeResolvedAlerts() {
   // one run can never time out; whatever is left goes on the next pass.
   const { data } = await rest(
     "alerts",
-    `status=eq.resolved&created_at=lt.${encodeURIComponent(cutoff)}&select=id,photo_url&limit=500`,
+    `status=eq.resolved&created_at=lt.${encodeURIComponent(cutoff)}&select=id,photo_url,payload&limit=500`,
   );
   const rows = data || [];
   if (!rows.length) return { alerts: 0, photos: 0 };
 
   let photos = 0;
   for (const row of rows) {
-    if (row.photo_url && (await deletePhoto(row.photo_url))) photos += 1;
+    const list = Array.isArray(row.payload?.photoUrls) ? row.payload.photoUrls : [];
+    for (const url of new Set([row.photo_url, ...list].filter(Boolean))) {
+      if (await deletePhoto(url)) photos += 1;
+    }
   }
   const ids = rows.map((r) => r.id).filter(Boolean);
   if (ids.length) {

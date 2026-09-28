@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { fetchPaged, PAGE_SIZE } from "../api/_lib/alertsList.js";
 
 /* The list endpoint stopped being "newest N" and became two scoped queries.
    What matters is that the pair can never lose a report the app would have
@@ -63,4 +64,36 @@ test("truncation is reported rather than silently shortening the list", () => {
   assert.equal(atCap(4000, 12), true);
   assert.equal(atCap(12, 4000), true);
   assert.equal(atCap(3999, 3999), false);
+});
+
+/* Supabase answers at most its "Max rows" (1000 by default) per request, no
+   matter what limit= asks for. The list has to be read in pages or it is
+   silently cut at 1000 again. */
+function fakeTable(total, maxRows = 1000) {
+  const calls = [];
+  const read = async (_table, query) => {
+    calls.push(query);
+    const limit = Number(/limit=(\d+)/.exec(query)[1]);
+    const offset = Number(/offset=(\d+)/.exec(query)[1]);
+    const n = Math.max(0, Math.min(limit, maxRows, total - offset));
+    return { data: Array.from({ length: n }, (_, i) => ({ id: offset + i })) };
+  };
+  return { read, calls };
+}
+
+test("fetchPaged reads past the 1000-row response cap", async () => {
+  const t = fakeTable(2500);
+  const rows = await fetchPaged("alerts", "select=*", 4000, t.read);
+  assert.equal(rows.length, 2500);
+  assert.equal(new Set(rows.map((r) => r.id)).size, 2500, "no page read twice");
+  assert.equal(t.calls.length, 3);
+});
+
+test("fetchPaged stops at the cap and after a short page", async () => {
+  const big = fakeTable(10_000);
+  assert.equal((await fetchPaged("alerts", "select=*", 4000, big.read)).length, 4000);
+  const small = fakeTable(12);
+  assert.equal((await fetchPaged("alerts", "select=*", 4000, small.read)).length, 12);
+  assert.equal(small.calls.length, 1);
+  assert.equal(PAGE_SIZE, 1000);
 });

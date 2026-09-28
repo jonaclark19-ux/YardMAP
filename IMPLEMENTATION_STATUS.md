@@ -6,7 +6,10 @@
 - Supabase schema with RLS enabled and server-side-only privileged access
 - Shared map state, revision conflicts and polling sync
 - Four-step alert workflow, priority, assignment and time-open display
-- Alert evidence photos via Supabase Storage
+- Alert evidence photos via Supabase Storage: up to 5 per report, from the camera or the gallery
+- Login/signup/upload throttling, invite-only signup (SIGNUP_INVITE_CODE), sessions revoked on code change
+- Shared secondary product locations (/api/locations)
+- SheetJS loaded on demand from vendor/ instead of inlined
 - Found-out-of-place admin actions
 - Per-SKU last verification
 - Map history / restore
@@ -22,7 +25,7 @@
 
 ## Requires external setup before online features run
 - Create a Supabase project
-- Run `supabase/schema.sql`
+- Run `supabase/schema.sql` and the migrations (including `migration-security.sql`)
 - Add Vercel environment variables from `.env.example`
 - Deploy repository on Vercel
 
