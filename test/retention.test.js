@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { resolvedSweepQuery } from "../api/alerts-weekly-summary.js";
 
 /* The purge helpers talk to PostgREST, so the unit under test here is the
    part that decides *what* to delete: the URL filters each sweep builds.
@@ -9,13 +10,15 @@ import assert from "node:assert/strict";
 const RESOLVED_DAYS = 30;
 const daysAgo = (n) => new Date(Date.now() - n * 86400000).toISOString();
 
-test("the resolved-alert sweep filters on resolved AND older than the window", () => {
+test("the resolved-alert sweep filters on resolved AND resolved before the window", () => {
   const cutoff = daysAgo(RESOLVED_DAYS);
-  const query = `status=eq.resolved&created_at=lt.${encodeURIComponent(cutoff)}&select=id,photo_url&limit=500`;
+  const query = resolvedSweepQuery(cutoff);
   // Both conditions present: an open report of any age must never match, and
-  // a resolved one inside the window must never match either.
-  assert.match(query, /status=eq\.resolved/);
-  assert.match(query, /created_at=lt\./);
+  // one resolved inside the window must never match either -- however long
+  // it was open before that.
+  assert.match(query, /^status=eq\.resolved&/);
+  assert.match(query, /resolved_at\.lt\./);
+  assert.match(query, /and\(resolved_at\.is\.null,created_at\.lt\./, "old rows without resolved_at still age out");
   assert.doesNotMatch(query, /status=eq\.(new|acknowledged|in_progress)/);
 });
 

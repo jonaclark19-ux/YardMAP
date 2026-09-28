@@ -114,14 +114,22 @@ async function deletePhoto(photoUrl) {
   }
 }
 
+/* The window counts from when a report was *resolved*, not when it was
+   filed: a report open for 40 days and resolved yesterday is fresh work, and
+   counting from creation deleted it that night. Rows resolved before
+   resolved_at was recorded fall back to their creation date. */
+export function resolvedSweepQuery(cutoff) {
+  // Quoted: inside or=(...) PostgREST treats the ":" and "." of a timestamp
+  // as syntax unless the value is in double quotes.
+  const c = encodeURIComponent(`"${cutoff}"`);
+  return `status=eq.resolved&or=(resolved_at.lt.${c},and(resolved_at.is.null,created_at.lt.${c}))&select=id,photo_url,payload&limit=500`;
+}
+
 async function purgeResolvedAlerts() {
   const cutoff = daysAgo(RESOLVED_DAYS);
   // Selected before deleting so the photos can be chased down, and capped so
   // one run can never time out; whatever is left goes on the next pass.
-  const { data } = await rest(
-    "alerts",
-    `status=eq.resolved&created_at=lt.${encodeURIComponent(cutoff)}&select=id,photo_url,payload&limit=500`,
-  );
+  const { data } = await rest("alerts", resolvedSweepQuery(cutoff));
   const rows = data || [];
   if (!rows.length) return { alerts: 0, photos: 0 };
 
