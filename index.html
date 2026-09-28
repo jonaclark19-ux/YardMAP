@@ -2245,7 +2245,7 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
   const IDLE_AFTER_MS = 120000;
   const PUSH_DEBOUNCE_MS = 1200;
 
-  const listeners = { state: [], alerts: [], status: [] };
+  const listeners = { state: [], alerts: [], status: [], posted: [] };
   const emit = (kind, payload) => listeners[kind].forEach((fn) => {
     try { fn(payload); } catch (e) { console.error(e); }
   });
@@ -2536,7 +2536,9 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       }
     } catch (e) { /* queue below */ }
 
-    const q = queued(); q.push(input); setQueued(q);
+    // The local id rides along so whoever kept data under it (the report's
+    // photos) can move it to the real report once the queue is flushed.
+    const q = queued(); q.push(Object.assign({}, input, { _localId: optimistic.id })); setQueued(q);
     return { ok: false, queued: true, alert: optimistic };
   }
 
@@ -2545,9 +2547,12 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
     let q = queued();
     if (!q.length) return;
     const rest = [];
+    const posted = [];
     for (const item of q) {
       try {
-        const r = await api("alerts", { method: "POST", body: JSON.stringify({ alert: item }) });
+        const { _localId, ...alert } = item;
+        const r = await api("alerts", { method: "POST", body: JSON.stringify({ alert }) });
+        if (r.ok && _localId && r.body.alert) posted.push({ localId: _localId, alert: r.body.alert });
         // Same rule as addAlert: a 4xx is a permanent rejection, not a
         // transient failure, so drop it instead of requeuing it forever.
         if (!r.ok && !(r.status >= 400 && r.status < 500)) rest.push(item);
@@ -2555,6 +2560,7 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
     }
     setQueued(rest);
     if (rest.length !== q.length) await loadAlerts();
+    posted.forEach((p) => emit("posted", p));
   }
 
   async function setAlertStatus(id, status, remove) {
@@ -2707,6 +2713,7 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
     onState: (fn) => listeners.state.push(fn),
     onAlerts: (fn) => listeners.alerts.push(fn),
     onStatus: (fn) => listeners.status.push(fn),
+    onPosted: (fn) => listeners.posted.push(fn),
     get role() { return S.role; },
     get name() { return S.name; },
     get mode() { return S.mode; },
@@ -6324,6 +6331,30 @@ boot();
   .ops-event{grid-template-columns:68px 12px 1fr}
 }
 
+
+/* ---- Report evidence: up to five photos from the camera or the gallery ---- */
+#opsReportModal .ops-photos{display:grid;gap:10px;margin-bottom:10px}
+#opsReportModal .ops-photo-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+#opsReportModal .ops-photo-grid[hidden]{display:none}
+#opsReportModal .ops-photo-cell{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;
+  border:1px solid var(--line2,#34434f);background:#0d141b}
+#opsReportModal .ops-photo-cell img{width:100%;height:100%;object-fit:cover;display:block}
+#opsReportModal .ops-photo-remove{position:absolute;top:3px;right:3px;width:26px;height:26px;border-radius:50%;
+  border:1px solid rgba(255,255,255,.25);background:rgba(8,12,16,.78);color:#fff;font-size:16px;line-height:1;
+  display:grid;place-items:center;padding:0;cursor:pointer}
+#opsReportModal .ops-photo-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#opsReportModal .ops-photo-add{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;
+  border:1.5px dashed var(--line2,#34434f);border-radius:12px;background:rgba(255,255,255,.02);
+  color:var(--ink,#e9eef3);font:inherit;font-weight:700;font-size:14px;cursor:pointer}
+#opsReportModal .ops-photo-add svg{width:20px;height:20px;flex:none}
+#opsReportModal .ops-photo-add:hover:not(:disabled){border-color:var(--brand,#e33a32);background:var(--brand-softer,rgba(227,58,50,.08))}
+#opsReportModal .ops-photo-add:disabled{opacity:.45;cursor:not-allowed}
+#opsReportModal .ops-photo-help{font-size:12.5px;color:var(--muted);line-height:1.4}
+#opsReportModal .ops-photo-count{display:inline-block;min-width:34px;padding:1px 7px;border-radius:999px;
+  background:var(--panel2,#1b242e);color:var(--ink,#e9eef3);font-weight:800;font-size:11.5px;text-align:center}
+#opsReportModal .ops-photo-count.full{background:var(--brand,#e33a32);color:#fff}
+#opsReportSubmit:disabled{opacity:.6;cursor:progress}
+@media(max-width:420px){#opsReportModal .ops-photo-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 </style>
 <script id="ops-v2-module">
 /* ============================================================
@@ -6342,7 +6373,10 @@ boot();
   const BARCODE_KEY = "tarter_yard_barcodes_v1";
   const OPS_VERSION = 2;
   let reportCtxV2 = null;
-  let selectedPhotoFile = null;
+  // Up to MAX_REPORT_PHOTOS images per report, from the camera or the gallery.
+  const MAX_REPORT_PHOTOS = 5;
+  let selectedPhotoFiles = [];
+  let submittingReport = false;
   let currentCenterTab = "overview";
   let currentReportFilter = "open";
   let activePhotoUrl = null;
@@ -6572,14 +6606,16 @@ boot();
             <div class="ops-section" id="opsDynamicFields"></div>
             <div class="ops-section">
               <div class="ops-section-title">Evidence</div>
-              <button type="button" class="ops-photo-row" id="opsPhotoBtn">
-                <div id="opsPhotoThumb" class="ops-photo-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.3 8.7a2.2 2.2 0 0 1 2.2-2.2h1.8l1.3-2.1h6.8l1.3 2.1h1.8a2.2 2.2 0 0 1 2.2 2.2v8.6a2.2 2.2 0 0 1-2.2 2.2H5.5a2.2 2.2 0 0 1-2.2-2.2Z"/><circle cx="12" cy="12.8" r="3.5"/></svg></div>
-                <div class="ops-photo-copy">
-                  <b>Take / Add Photo</b>
-                  <div class="help">Photo is stored only on this device. Recommended for Quality, Seconds and inventory discrepancies.</div>
+              <div class="ops-photos" id="opsPhotos">
+                <div class="ops-photo-grid" id="opsPhotoGrid"></div>
+                <div class="ops-photo-actions">
+                  <button type="button" class="ops-photo-add" id="opsPhotoCameraBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.3 8.7a2.2 2.2 0 0 1 2.2-2.2h1.8l1.3-2.1h6.8l1.3 2.1h1.8a2.2 2.2 0 0 1 2.2 2.2v8.6a2.2 2.2 0 0 1-2.2 2.2H5.5a2.2 2.2 0 0 1-2.2-2.2Z"/><circle cx="12" cy="12.8" r="3.4"/></svg><span>Take photo</span></button>
+                  <button type="button" class="ops-photo-add" id="opsPhotoGalleryBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2.4"/><circle cx="9" cy="10" r="1.7"/><path d="m20.5 16-4.6-4.6-8.4 8.1"/></svg><span>From gallery</span></button>
                 </div>
-              </button>
+                <div class="help ops-photo-help"><span class="ops-photo-count" id="opsPhotoCount">0/5</span> <span id="opsPhotoHelpText">Up to 5 photos. They upload with the report so every device can see them.</span></div>
+              </div>
               <input id="opsPhotoInput" type="file" accept="image/*" capture="environment" hidden />
+              <input id="opsGalleryInput" type="file" accept="image/*" multiple hidden />
               <div class="ops-field"><label for="opsNotes">Notes (optional)</label><textarea id="opsNotes" placeholder="Describe what you found..."></textarea></div>
             </div>
             <div class="ops-timestamp-preview" id="opsTimestampPreview"></div>
@@ -6616,8 +6652,13 @@ boot();
     document.getElementById("opsSkuInput").addEventListener("input",refreshReportSku);
     document.getElementById("opsSkuInput").addEventListener("change",refreshReportSku);
     document.getElementById("opsScanBtn").onclick=scanIntoReport;
-    document.getElementById("opsPhotoBtn").onclick=()=>document.getElementById("opsPhotoInput").click();
-    document.getElementById("opsPhotoInput").onchange=onPhotoSelected;
+    // Two pickers because phones treat them differently: capture= opens the
+    // camera straight away, while the plain multiple picker offers the
+    // gallery (and lets several photos be chosen at once).
+    document.getElementById("opsPhotoCameraBtn").onclick=()=>document.getElementById("opsPhotoInput").click();
+    document.getElementById("opsPhotoGalleryBtn").onclick=()=>document.getElementById("opsGalleryInput").click();
+    document.getElementById("opsPhotoInput").onchange=e=>onPhotosSelected(e.target);
+    document.getElementById("opsGalleryInput").onchange=e=>onPhotosSelected(e.target);
     document.getElementById("opsReportSubmit").onclick=submitOpsReport;
     document.getElementById("opsPhotoViewerClose").onclick=closePhotoViewer;
     document.getElementById("opsPhotoViewer").addEventListener("click",e=>{if(e.target.id==="opsPhotoViewer")closePhotoViewer();});
@@ -6661,18 +6702,18 @@ boot();
   /* ------------------------------ report modal */
   function openOpsReport(opts={}){
     reportCtxV2={type:opts.type||null,sku:opts.sku||"",tileIdx:opts.tileIdx??null,homeAt:opts.homeAt||null,homeGroup:opts.homeGroup||"",foundAt:opts.foundAt||null,lookup:null};
-    selectedPhotoFile=null;
+    selectedPhotoFiles=[];
     document.getElementById("opsSkuInput").value=reportCtxV2.sku||"";
     document.getElementById("opsNotes").value=opts.note||"";
     document.getElementById("opsPhotoInput").value="";
-    document.getElementById("opsPhotoThumb").className="ops-photo-placeholder";
-    document.getElementById("opsPhotoThumb").innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.3 8.7a2.2 2.2 0 0 1 2.2-2.2h1.8l1.3-2.1h6.8l1.3 2.1h1.8a2.2 2.2 0 0 1 2.2 2.2v8.6a2.2 2.2 0 0 1-2.2 2.2H5.5a2.2 2.2 0 0 1-2.2-2.2Z"/><circle cx="12" cy="12.8" r="3.5"/></svg>`;
+    document.getElementById("opsGalleryInput").value="";
+    renderPhotoPicker();
     document.getElementById("opsTimestampPreview").innerHTML=`<span>Timestamp will be saved automatically</span> · ${escOps(fmtDateTime(new Date().toISOString()))}`;
     document.querySelectorAll("#opsTypeGrid .ops-type").forEach(b=>b.classList.toggle("on",b.dataset.type===reportCtxV2.type));
     renderDynamicFields(); refreshReportSku();
     document.getElementById("opsReportModal").classList.add("show");
   }
-  function closeOpsReport(){ document.getElementById("opsReportModal").classList.remove("show"); reportCtxV2=null; selectedPhotoFile=null; }
+  function closeOpsReport(){ document.getElementById("opsReportModal").classList.remove("show"); reportCtxV2=null; selectedPhotoFiles=[]; renderPhotoPicker(); }
   function setReportType(type){ if(!reportCtxV2) reportCtxV2={}; reportCtxV2.type=type; document.querySelectorAll("#opsTypeGrid .ops-type").forEach(b=>b.classList.toggle("on",b.dataset.type===type)); renderDynamicFields(); refreshReportSku(); }
   function scanIntoReport(){
     if(!reportCtxV2) return;
@@ -6682,12 +6723,37 @@ boot();
       onCancel:()=>{document.getElementById("opsReportModal").classList.add("show");}
     });
   }
-  function onPhotoSelected(){
-    const f=document.getElementById("opsPhotoInput").files?.[0]||null; selectedPhotoFile=f;
-    const box=document.getElementById("opsPhotoThumb");
-    if(!f){box.className="ops-photo-placeholder";box.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.3 8.7a2.2 2.2 0 0 1 2.2-2.2h1.8l1.3-2.1h6.8l1.3 2.1h1.8a2.2 2.2 0 0 1 2.2 2.2v8.6a2.2 2.2 0 0 1-2.2 2.2H5.5a2.2 2.2 0 0 1-2.2-2.2Z"/><circle cx="12" cy="12.8" r="3.5"/></svg>`;return;}
-    const url=URL.createObjectURL(f); box.className=""; box.innerHTML=`<img class="ops-photo-preview" src="${url}" alt="Selected report photo" />`;
-    const im=box.querySelector("img"); if(im) im.onload=()=>setTimeout(()=>URL.revokeObjectURL(url),500);
+  const photoText=(en,es)=>(window.I18N?.getLang?.()==="es"?es:en);
+  function onPhotosSelected(input){
+    const files=[...(input.files||[])].filter(f=>f&&(!f.type||f.type.startsWith("image/")));
+    input.value="";
+    if(!files.length) return;
+    const room=MAX_REPORT_PHOTOS-selectedPhotoFiles.length;
+    if(room<=0){toast(photoText(`You can attach up to ${MAX_REPORT_PHOTOS} photos.`,`Puedes adjuntar hasta ${MAX_REPORT_PHOTOS} fotos.`));return;}
+    if(files.length>room) toast(photoText(`Only ${room} more photo${room===1?"":"s"} fit — the first ${room} were added.`,`Solo caben ${room} foto${room===1?"":"s"} más — se agregaron las primeras ${room}.`));
+    selectedPhotoFiles=selectedPhotoFiles.concat(files.slice(0,room));
+    renderPhotoPicker();
+  }
+  // Object URLs for the thumbnails, revoked on every repaint so picking and
+  // removing photos all shift long never leaks memory.
+  let pickerUrls=[];
+  function renderPhotoPicker(){
+    const grid=document.getElementById("opsPhotoGrid"); if(!grid) return;
+    pickerUrls.forEach(u=>URL.revokeObjectURL(u)); pickerUrls=[];
+    grid.innerHTML="";
+    selectedPhotoFiles.forEach((f,i)=>{
+      const url=URL.createObjectURL(f); pickerUrls.push(url);
+      const cell=document.createElement("div"); cell.className="ops-photo-cell";
+      const im=document.createElement("img"); im.src=url; im.alt=photoText(`Photo ${i+1}`,`Foto ${i+1}`);
+      const rm=document.createElement("button"); rm.type="button"; rm.className="ops-photo-remove"; rm.textContent="×";
+      rm.setAttribute("aria-label",photoText(`Remove photo ${i+1}`,`Quitar foto ${i+1}`));
+      rm.onclick=()=>{selectedPhotoFiles.splice(i,1);renderPhotoPicker();};
+      cell.append(im,rm); grid.appendChild(cell);
+    });
+    const n=selectedPhotoFiles.length, full=n>=MAX_REPORT_PHOTOS;
+    grid.hidden=!n;
+    const count=document.getElementById("opsPhotoCount"); if(count){count.textContent=`${n}/${MAX_REPORT_PHOTOS}`;count.classList.toggle("full",full);}
+    ["opsPhotoCameraBtn","opsPhotoGalleryBtn"].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=full;});
   }
   function refreshReportSku(){
     if(!reportCtxV2) return;
@@ -6792,7 +6858,7 @@ boot();
       status:"new",priority:"normal",note:document.getElementById("opsNotes").value.trim(),
       systemInventory:system,inventoryReportFile:inventoryState()?.fileName||null,inventoryReportDate:inventoryState()?.reportDate||null,inventoryImportedAt:inventoryState()?.importedAt||null,
       homeAt:reportCtxV2.homeAt||info.at||null,homeGroup:reportCtxV2.homeGroup||info.group||"",foundAt:reportCtxV2.foundAt||null,
-      timeline:[{status:"new",at:now,by:currentUser()}],hasPhoto:!!selectedPhotoFile
+      timeline:[{status:"new",at:now,by:currentUser()}],hasPhoto:selectedPhotoFiles.length>0
     };
     if(type==="quality"||type==="seconds"||type==="out_of_place"){
       const qtyEl=document.getElementById("opsQty");
@@ -6815,17 +6881,38 @@ boot();
       toast("Pick the location where you found the product.");return;
     }
 
-    const res=await Sync.addAlert(payload); const alert=res&&res.alert;
-    if(alert&&selectedPhotoFile){
-      try{await PhotoStore.put(alert.id,selectedPhotoFile);alert.hasPhoto=true;}catch(e){console.error(e);alert.hasPhoto=false;toast("Report saved, but the photo could not be stored on this device.");}
-      // Also push the photo to cloud storage so it survives on other devices
-      // and can be attached to "send by email" -- PhotoStore alone only
-      // keeps it on the device that took it.
-      if(Sync.mode==="remote") uploadAlertPhoto(alert.id,selectedPhotoFile,sku).catch(()=>{});
+    if(submittingReport) return;
+    submittingReport=true;
+    const submitBtn=document.getElementById("opsReportSubmit"); if(submitBtn) submitBtn.disabled=true;
+    const photos=selectedPhotoFiles.slice(0,MAX_REPORT_PHOTOS);
+    let res,alert,pending=[];
+    try{
+      // Photos go up first so the report is created already carrying them:
+      // attaching afterwards needed an editor-only call, which is why an
+      // operator's photo never reached any other device.
+      if(photos.length&&Sync.mode==="remote"){
+        const up=await uploadPhotoFiles(photos,sku);
+        if(up.urls.length) payload.photoUrls=up.urls;
+        pending=up.failed;
+      }
+      res=await Sync.addAlert(payload); alert=res&&res.alert;
+    }finally{
+      submittingReport=false; if(submitBtn) submitBtn.disabled=false;
+    }
+    if(alert&&photos.length){
+      // A local copy of every photo too: it shows instantly on this device and
+      // still exists if the report was queued offline.
+      try{await Promise.all(photos.map((f,i)=>PhotoStore.put(photoKey(alert.id,i),f)));alert.hasPhoto=true;alert.photoCount=photos.length;}
+      catch(e){console.error(e);toast(photoText("Report saved, but the photos could not be stored on this device.","Reporte guardado, pero las fotos no se pudieron guardar en este dispositivo."));}
+      // Retry the uploads that failed (bad signal) against the report that now
+      // exists; the server lets a reporter add photos to their own report.
+      if(pending.length&&res&&res.ok&&isServerId(alert.id)) retryPhotoUploads(alert.id,pending,sku);
     }
     // A matching inventory count is a verification event, not an open problem.
+    // The server creates it already resolved; locally it only needs the label.
     if(alert&&type==="inventory"&&payload.inventoryResult==="verified"){
-      await setDetailedStatus(alert.id,"resolved","Inventory verified");
+      if(alert.status!=="resolved") await setDetailedStatus(alert.id,"resolved","Inventory verified");
+      else persistAlerts();
     }else persistAlerts();
     syncAlertUi(); closeOpsReport();
     toast(type==="inventory"&&payload.inventoryResult==="verified"?"Inventory verified ✓":"Report saved locally");
@@ -6881,14 +6968,14 @@ boot();
     if(!compact){
       actions=`<div class="ops-card-actions">
         ${r.homeAt||r.foundAt?`<button data-op="goto" data-id="${escOps(r.id)}">Show on map</button>`:""}
-        ${r.hasPhoto?`<button data-op="photo" data-id="${escOps(r.id)}">📷 Photo</button>`:""}
+        ${reportHasPhoto(r)?`<button data-op="photo" data-id="${escOps(r.id)}">📷 ${photoText("Photos","Fotos")}</button>`:""}
         ${r.status!=="resolved"&&r.status!=="acknowledged"&&r.status!=="in_progress"?`<button data-op="ack" data-id="${escOps(r.id)}">Acknowledge</button>`:""}
         ${r.status!=="resolved"&&r.status!=="in_progress"?`<button data-op="progress" data-id="${escOps(r.id)}">Start work</button>`:""}
         ${r.status!=="resolved"?`<button data-op="resolve" data-id="${escOps(r.id)}">Resolve</button>`:""}
         ${r.type==="out_of_place"&&r.status!=="resolved"&&r.foundAt?`<button data-op="keep" data-id="${escOps(r.id)}">Keep original + resolve</button><button data-op="move" data-id="${escOps(r.id)}">Move primary here</button><button data-op="secondary" data-id="${escOps(r.id)}">Add secondary spot</button>`:""}
       </div>`;
     }
-    return `<div class="ops-report-card"><div><div class="top"><span class="ops-pill ${escOps(r.type)}">${escOps(meta.label)}</span><span class="sku">${escOps(r.sku||"?")}</span><span class="ops-pill ${r.status==="resolved"?"resolved":""}">${escOps(st)}</span></div><div class="desc">${escOps(cardSummary(r))}${r.note?` · ${escOps(r.note)}`:""}</div><div class="meta">${escOps(fmtDateTime(r.createdAt))} · ${escOps(r.by||"—")} · ${escOps(r.homeGroup||"No fixed location")}${r.hasPhoto?" · 📷":""}</div></div><div class="right">${v}</div>${actions}</div>`;
+    return `<div class="ops-report-card"><div><div class="top"><span class="ops-pill ${escOps(r.type)}">${escOps(meta.label)}</span><span class="sku">${escOps(r.sku||"?")}</span><span class="ops-pill ${r.status==="resolved"?"resolved":""}">${escOps(st)}</span></div><div class="desc">${escOps(cardSummary(r))}${r.note?` · ${escOps(r.note)}`:""}</div><div class="meta">${escOps(fmtDateTime(r.createdAt))} · ${escOps(r.by||"—")} · ${escOps(r.homeGroup||"No fixed location")}${reportHasPhoto(r)?" · 📷":""}</div></div><div class="right">${v}</div>${actions}</div>`;
   }
   function bindReportActions(root){
     root.querySelectorAll("[data-op]").forEach(b=>b.onclick=async()=>{
@@ -6953,14 +7040,21 @@ boot();
 
   /* ------------------------------ photos */
   async function showPhoto(id){
-    try{const blob=await PhotoStore.get(id);if(!blob){toast("Photo is not available on this device.");return;}closePhotoViewer();activePhotoUrl=URL.createObjectURL(blob);document.getElementById("opsPhotoViewerImg").src=activePhotoUrl;document.getElementById("opsPhotoViewer").classList.add("show");}catch(e){console.error(e);toast("Could not open the photo.");}
+    try{
+      const r=allReports().find(x=>x.id===id);
+      const list=await reportPhotos(r||{id});
+      if(!list.length){toast(photoText("Photo is not available on this device.","La foto no está disponible en este dispositivo."));return;}
+      const title=`${r&&r.sku?r.sku+" · ":""}${photoText("Evidence","Evidencia")}`;
+      if(window.YardCCMedia?.openGallery){window.YardCCMedia.openGallery(list.map(p=>p.src),0,title);return;}
+      closePhotoViewer();activePhotoUrl=list[0].local?list[0].src:null;document.getElementById("opsPhotoViewerImg").src=list[0].src;document.getElementById("opsPhotoViewer").classList.add("show");
+    }catch(e){console.error(e);toast("Could not open the photo.");}
   }
   function closePhotoViewer(){document.getElementById("opsPhotoViewer")?.classList.remove("show");if(activePhotoUrl){URL.revokeObjectURL(activePhotoUrl);activePhotoUrl=null;}}
 
   /* ------------------------------ Excel export */
   function exportRows(list){ return list.map(r=>({
     "Report ID":r.id,"Date / Time":fmtDateTime(r.createdAt),"Type":TYPE_META[r.type]?.label||r.type,"Status":STATUS_LABEL[r.status]||r.status,"SKU":r.sku,
-    "System On Hand":r.systemInventory??"","Physical Qty":r.physicalQuantity??"","Variance":r.variance??"","Quantity Affected":r.quantity??"","Result":r.inventoryResult||"","Reason":r.reason||"","Location":r.homeGroup||"","Notes":r.note||"","Photo":r.hasPhoto?"Yes":"No","Reported By":r.by||"","Resolved At":r.resolvedAt?fmtDateTime(r.resolvedAt):"","Resolved By":r.resolvedBy||"","Inventory Report":r.inventoryReportFile||""
+    "System On Hand":r.systemInventory??"","Physical Qty":r.physicalQuantity??"","Variance":r.variance??"","Quantity Affected":r.quantity??"","Result":r.inventoryResult||"","Reason":r.reason||"","Location":r.homeGroup||"","Notes":r.note||"","Photo":reportHasPhoto(r)?"Yes":"No","Reported By":r.by||"","Resolved At":r.resolvedAt?fmtDateTime(r.resolvedAt):"","Resolved By":r.resolvedBy||"","Inventory Report":r.inventoryReportFile||""
   })); }
   function exportReports(){
     if(typeof XLSX==="undefined"){toast("Excel library is not available.");return;}
@@ -6989,7 +7083,7 @@ boot();
       updateAlertBadge(); const body=document.getElementById("alertsBody"); if(!body)return;
       const list=ALERTS.filter(a=>alertFilter==="all"?true:alertFilter==="done"?a.status==="resolved":a.status!=="resolved");
       if(!list.length){body.innerHTML=`<div class="alerts-none">${t("alerts.none")}</div>`;return;}
-      body.innerHTML=list.map(a=>{const done=a.status==="resolved";const canGo=!!(a.foundAt&&a.foundAt.x!=null)||!!findTileBySku(a.sku);const label=alertTypeLabel(a.type);return `<div class="alert-item ${done?"done":""}" data-aid="${escOps(a.id)}"><div class="atitle"><span class="atype ${escOps(a.type)}">${escOps(label)}</span><span>${escOps(a.sku||a.rawCode||"?")}</span></div><div class="amsg">${escOps(alertMessage(a))}${a.note?" · "+escOps(a.note):""}</div><div class="ameta">${escOps(fmtDateTime(a.createdAt))} · ${escOps(a.by||"—")} · ${escOps(STATUS_LABEL[a.status]||a.status||"New")}${a.hasPhoto?" · 📷":""}</div><div class="aacts">${canGo?`<button data-act="go">Show on map</button>`:""}${a.hasPhoto?`<button data-act="photo">Photo</button>`:""}${canEdit()?`<button data-act="email"${a.emailedAt?" class=\"emailed\"":""}>${a.emailedAt?"Email sent":"Send by email"}</button>`:""}${(!done&&canEdit())?`<button data-act="resolve">Resolve</button>`:""}</div></div>`;}).join("");
+      body.innerHTML=list.map(a=>{const done=a.status==="resolved";const canGo=!!(a.foundAt&&a.foundAt.x!=null)||!!findTileBySku(a.sku);const label=alertTypeLabel(a.type);return `<div class="alert-item ${done?"done":""}" data-aid="${escOps(a.id)}"><div class="atitle"><span class="atype ${escOps(a.type)}">${escOps(label)}</span><span>${escOps(a.sku||a.rawCode||"?")}</span></div><div class="amsg">${escOps(alertMessage(a))}${a.note?" · "+escOps(a.note):""}</div><div class="ameta">${escOps(fmtDateTime(a.createdAt))} · ${escOps(a.by||"—")} · ${escOps(STATUS_LABEL[a.status]||a.status||"New")}${reportHasPhoto(a)?" · 📷":""}</div><div class="aacts">${canGo?`<button data-act="go">Show on map</button>`:""}${reportHasPhoto(a)?`<button data-act="photo">Photo</button>`:""}${canEdit()?`<button data-act="email"${a.emailedAt?" class=\"emailed\"":""}>${a.emailedAt?"Email sent":"Send by email"}</button>`:""}${(!done&&canEdit())?`<button data-act="resolve">Resolve</button>`:""}</div></div>`;}).join("");
       body.querySelectorAll(".alert-item").forEach(item=>{const id=item.dataset.aid,a=ALERTS.find(x=>x.id===id);item.querySelectorAll("[data-act]").forEach(btn=>btn.onclick=e=>{e.stopPropagation();if(btn.dataset.act==="go")focusAlert(a);else if(btn.dataset.act==="resolve")setDetailedStatus(id,"resolved");else if(btn.dataset.act==="photo")showPhoto(id);else if(btn.dataset.act==="email")openAlertEmailModal(id);});item.onclick=()=>focusAlert(a);});
     };
   }
@@ -7013,18 +7107,54 @@ boot();
       img.src=url;
     });
   }
-  // Uploads the report photo to cloud storage and records the public URL on
-  // the alert, so it's visible from any device and can be attached to
-  // "send by email" -- PhotoStore (IndexedDB) alone only keeps it locally.
-  async function uploadAlertPhoto(alertId, file, sku){
-    try{
-      const dataUrl=await photoToDataUrl(file);
-      const up=await Sync.api("upload",{method:"POST",body:JSON.stringify({dataUrl,sku})});
-      if(!up.ok||!up.body.url) return null;
-      await Sync.api("alerts",{method:"PATCH",body:JSON.stringify({id:alertId,photoUrl:up.body.url})});
-      return up.body.url;
-    }catch(e){console.error(e);return null;}
+  // Local copies: the first photo keeps the report id as its key (so photos
+  // stored before multi-photo still resolve), the rest get "#1".."#4".
+  function photoKey(id,i){return i?`${id}#${i}`:id;}
+  function isServerId(id){return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(id||""));}
+  async function uploadPhotoFile(file,sku){
+    const dataUrl=await photoToDataUrl(file);
+    const up=await Sync.api("upload",{method:"POST",body:JSON.stringify({dataUrl,sku})});
+    return up.ok&&up.body.url?up.body.url:null;
   }
+  // Sequential on purpose: five parallel 500 KB uploads on one bar of yard
+  // signal fail together, one at a time mostly get through.
+  async function uploadPhotoFiles(files,sku){
+    const urls=[],failed=[];
+    for(let i=0;i<files.length;i++){
+      if(files.length>1) toast(photoText(`Uploading photo ${i+1} of ${files.length}…`,`Subiendo foto ${i+1} de ${files.length}…`));
+      let url=null; try{url=await uploadPhotoFile(files[i],sku);}catch(e){console.error(e);}
+      if(url) urls.push(url); else failed.push(files[i]);
+    }
+    if(failed.length) toast(photoText(`${failed.length} photo(s) did not upload yet — retrying in the background.`,`${failed.length} foto(s) no se subieron todavía — se reintentará en segundo plano.`));
+    return {urls,failed};
+  }
+  async function retryPhotoUploads(alertId,files,sku,immediate){
+    for(let attempt=0;attempt<3&&files.length;attempt++){
+      if(!(immediate&&attempt===0)) await new Promise(r=>setTimeout(r,4000*(attempt+1)));
+      const up=await uploadPhotoFiles(files,sku).catch(()=>({urls:[],failed:files}));
+      if(up.urls.length){
+        const r=await Sync.api("alerts",{method:"PATCH",body:JSON.stringify({id:alertId,photoUrls:up.urls})}).catch(()=>null);
+        if(r&&r.ok){try{await Sync.loadAlerts();}catch(e){} syncAlertUi();}
+      }
+      files=up.failed;
+    }
+  }
+  // Every photo a report has, as displayable sources: the cloud copies when
+  // there are any (they are what every device shares), otherwise whatever
+  // this device kept locally.
+  async function reportPhotos(r){
+    if(!r) return [];
+    const cloud=Array.isArray(r.photoUrls)&&r.photoUrls.length?r.photoUrls:(r.photoUrl?[r.photoUrl]:[]);
+    if(cloud.length) return cloud.map(src=>({src,local:false}));
+    const out=[];
+    for(let i=0;i<MAX_REPORT_PHOTOS;i++){
+      let blob=null; try{blob=await PhotoStore.get(photoKey(r.id,i));}catch(e){}
+      if(blob) out.push({src:URL.createObjectURL(blob),local:true});
+      else if(i>0) break;
+    }
+    return out;
+  }
+  function reportHasPhoto(r){return !!(r&&(r.hasPhoto||(Array.isArray(r.photoUrls)&&r.photoUrls.length)||r.photoUrl));}
 
   // In-app modal for the "Send by email" action, replacing the browser prompt().
   let alertEmailTargetId=null;
@@ -7109,7 +7239,23 @@ boot();
   try{ Sync.onAlerts(()=>{if(document.getElementById("opsCenter")?.classList.contains("show"))renderControlCenter();}); }catch(e){}
 
   createUi();
-  window.YardOpsV2={openReport:openOpsReport,openControlCenter,exportReports,importBarcodeFile,PhotoStore,classifyInventory,openAlertEmailModal,getDefaultBarcodes:()=>DEFAULT_BARCODES};
+  // A report filed offline was stored under a temporary id with its photos.
+  // Once the queue reaches the server, move the photos to the real id and
+  // upload them, so the report ends up with its evidence like any other.
+  try{
+    Sync.onPosted(async({localId,alert})=>{
+      if(!alert||!isServerId(alert.id)) return;
+      const files=[];
+      for(let i=0;i<MAX_REPORT_PHOTOS;i++){
+        let blob=null; try{blob=await PhotoStore.get(photoKey(localId,i));}catch(e){}
+        if(!blob){ if(i>0) break; else continue; }
+        files.push(blob);
+        try{await PhotoStore.put(photoKey(alert.id,i),blob);await PhotoStore.del(photoKey(localId,i));}catch(e){}
+      }
+      if(files.length&&Sync.mode==="remote") retryPhotoUploads(alert.id,files,alert.sku||"",true);
+    });
+  }catch(e){}
+  window.YardOpsV2={showPhoto,reportPhotos,reportHasPhoto,MAX_REPORT_PHOTOS,openReport:openOpsReport,openControlCenter,exportReports,importBarcodeFile,PhotoStore,classifyInventory,openAlertEmailModal,getDefaultBarcodes:()=>DEFAULT_BARCODES};
 })();
 
 </script>
@@ -7321,7 +7467,7 @@ boot();
     const syncDisp=()=>{if(dispOther)dispOther.closest(".ops-field").classList.toggle("pro-field-hidden",!disp||disp.value!=="other");if(hint&&disp){const v=disp.value;if(v==="corrected_now"){hint.className="pro-result-note good";hint.textContent="The Quality event will be recorded and treated as resolved so the map does not keep showing this piece as defective.";}else if(v==="sent_to_seconds"){hint.className="pro-result-note warn";hint.textContent="The Quality event will be recorded as dispositioned to Seconds and will not remain an open defect.";}else{hint.className="pro-result-note";hint.textContent="Choose what happened to the product so the alert reflects its real condition.";}}};if(disp){disp.addEventListener("change",syncDisp);syncDisp();}
     updateEvidenceForType(type);
   }
-  function updateEvidenceForType(type){const sections=reportSections(),evidence=sections[3];if(!evidence)return;evidence.classList.add("pro-evidence-section");if(!type){evidence.style.display="none";return;}evidence.style.display="";const photo=evidence.querySelector(".ops-photo-row");evidence.classList.remove("photo-hidden");if(photo){photo.style.display="";const help=photo.querySelector(".help");const helpText={quality:"Add a clear photo when it helps Quality review the condition.",seconds:"Add a photo of the defect or reason for downgrading.",inventory:"Add a photo to support the discrepancy, if useful.",out_of_place:"Add a photo of where the product was found."};if(help)help.textContent=helpText[type]||"Photo is stored only on this device.";}const notes=evidence.querySelector(".ops-field label");if(notes)notes.textContent=type==="quality"?"Quality notes (optional)":type==="seconds"?"Seconds notes (optional)":type==="inventory"?"Inventory note (optional)":"Location note (optional)";}
+  function updateEvidenceForType(type){const sections=reportSections(),evidence=sections[3];if(!evidence)return;evidence.classList.add("pro-evidence-section");if(!type){evidence.style.display="none";return;}evidence.style.display="";const photo=evidence.querySelector(".ops-photos");evidence.classList.remove("photo-hidden");if(photo){photo.style.display="";const help=photo.querySelector("#opsPhotoHelpText");const helpText={quality:"Add up to 5 clear photos so Quality can review the condition.",seconds:"Add up to 5 photos of the defect or reason for downgrading.",inventory:"Add up to 5 photos to support the discrepancy, if useful.",out_of_place:"Add up to 5 photos of where the product was found."};if(help)help.textContent=helpText[type]||"Up to 5 photos. They upload with the report so every device can see them.";}const notes=evidence.querySelector(".ops-field label");if(notes)notes.textContent=type==="quality"?"Quality notes (optional)":type==="seconds"?"Seconds notes (optional)":type==="inventory"?"Inventory note (optional)":"Location note (optional)";}
   function upgradeReportModal(){const secs=reportSections();if(secs[0])secs[0].classList.add("pro-type-section");if(secs[1])ensureProductToggle(secs[1]);if(secs[2])secs[2].classList.add("pro-dynamic-section");if(secs[3])secs[3].classList.add("pro-evidence-section");enhanceDynamic();updateEvidenceForType(currentType());}
   const dyn=$p("opsDynamicFields");if(dyn){new MutationObserver(()=>setTimeout(enhanceDynamic,0)).observe(dyn,{childList:true});}
 
@@ -7702,8 +7848,8 @@ boot();
       b.disabled=false;
     });
   }
-  function openDetail(id){const r=reports().find(x=>x.id===id);if(!r)return;state.selected=id;const d=document.getElementById("cc23Detail"),scr=document.getElementById("cc23DetailScrim"),m=META[r.type]||{label:r.type||"Report",cls:""},inv=window.YardInventory?.get?.(r.sku),timeline=(Array.isArray(r.timeline)?r.timeline:[]).slice().sort((a,b)=>dateMs(b.at)-dateMs(a.at));document.getElementById("cc23DetailTitle").textContent=`${r.sku||"?"} · ${m.label}`;document.getElementById("cc23DetailSub").textContent=`${STATUS[r.status]||r.status||"New"} · ${ageText(r)} old · ${fmtDT(r.createdAt)}`;const detailRows=[];if(r.type==="quality"){detailRows.push(["Quantity",r.quantity??"—"],["Reason",r.reason||"—"],["Disposition",r.disposition?String(r.disposition).replace(/_/g," "):"—"],["Destination",r.destination||"—"])}else if(r.type==="seconds"){detailRows.push(["Quantity",r.quantity??"—"],["Reason",r.reason||"—"],["Destination","Seconds"],["System On Hand",r.systemInventory??inv?.onHand??"—"])}else if(r.type==="inventory"){detailRows.push(["System",r.systemInventory??"—"],["Physical",r.physicalQuantity??"—"],["Variance",`${(num(r.variance)||0)>0?"+":""}${r.variance??"—"}`],["Result",r.inventoryResult?String(r.inventoryResult).replace(/_/g," "):"—"])}else if(r.type==="out_of_place"){detailRows.push(["Finding",r.locationFinding==="additional_stock"?"Additional stock":"Wrong location"],["Quantity",r.quantity??"—"],["Assigned group",r.homeGroup||"—"],["Found point",r.foundAt?`${r.foundAt.x}, ${r.foundAt.y}`:"—"])}const body=document.getElementById("cc23DetailBody");body.innerHTML=`<div class="cc23-detail-block"><h5>Report context</h5><div class="cc23-detail-grid">${detailRows.map(([k,v])=>`<div class="cc23-detail-kv"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join("")}<div class="cc23-detail-kv"><span>Reporter</span><b>${esc(r.by||"—")}</b></div><div class="cc23-detail-kv"><span>Created</span><b>${esc(fmtDT(r.createdAt))}</b></div></div>${r.note?`<div class="cc23-detail-copy"><b style="color:#dbe2e8">Note:</b> ${esc(r.note)}</div>`:""}</div><div class="cc23-detail-block"><h5>Product context</h5><div class="cc23-detail-grid"><div class="cc23-detail-kv"><span>System On Hand</span><b>${esc(inv?.onHand??r.systemInventory??"—")}</b></div><div class="cc23-detail-kv"><span>Product group</span><b>${esc(inv?.productGroup||r.homeGroup||"—")}</b></div></div><div class="cc23-inline-actions" style="padding:10px 11px"><button id="cc23OpenProduct">Open product</button><button id="cc23ShowMap">Show on map</button>${r.hasPhoto?`<button id="cc23OpenPhoto">View photo</button>`:""}${canEdit()?`<button id="cc23EmailReport">${r.emailedAt?"Email sent":"Send by email"}</button>`:""}</div></div><div class="cc23-detail-block"><h5>Owner & priority</h5><div style="padding:10px 11px"><div class="cc23-owner-row"><input id="cc23Owner" value="${esc(r.owner||"")}" placeholder="Owner / team"/><button id="cc23AssignMe">Assign to me</button></div><div class="cc23-field" style="margin-top:8px"><label>Priority</label><select id="cc23Priority"><option value="" ${!r.priority?"selected":""}>Auto (${autoPriority(r)})</option><option value="normal" ${r.priority==="normal"?"selected":""}>Normal</option><option value="high" ${r.priority==="high"?"selected":""}>High</option></select></div></div></div><div class="cc23-detail-block"><h5>Workflow</h5><div style="padding:10px 11px"><textarea class="cc23-detail-note" id="cc23Resolution" placeholder="Optional status / resolution note...">${esc(r.resolutionNote||"")}</textarea><div class="cc23-detail-actions" style="margin-top:7px"><button id="cc23Ack" ${r.status==="resolved"?"disabled":""}>Acknowledge</button><button id="cc23Start" ${r.status==="resolved"?"disabled":""}>Start work</button><button class="ok" id="cc23Resolve" ${r.status==="resolved"?"disabled":""}>Resolve</button><button id="cc23SaveNote">Save note</button><button class="primary" id="cc23SaveMeta">Save owner / priority</button></div></div></div><div class="cc23-detail-block"><h5>Activity</h5><div style="padding:10px 11px"><div class="cc23-activity">${timeline.length?timeline.map(e=>`<div class="cc23-event"><div class="time">${esc(fmtDT(e.at))}</div><div class="rail"><i></i></div><div class="text"><b>${esc(e.by||"—")}</b> · ${esc(STATUS[e.status]||e.status||"")}${e.comment?`<br><span class="comment">${esc(e.comment)}</span>`:""}</div></div>`).join(""):'<div class="cc23-empty">No workflow activity recorded yet.</div>'}</div></div></div>`;d.classList.add("show");scr.classList.add("show");const note=()=>body.querySelector("#cc23Resolution")?.value.trim()||"";body.querySelector("#cc23Ack").onclick=()=>setStatus(id,"acknowledged",note()||"Acknowledged in Control Center");body.querySelector("#cc23Start").onclick=()=>setStatus(id,"in_progress",note()||"Work started in Control Center");body.querySelector("#cc23Resolve").onclick=()=>setStatus(id,"resolved",note()||"Resolved in Control Center");body.querySelector("#cc23SaveNote").onclick=async()=>{const n=note();if(!n){toast("Write a note first.");return;}await patchReport(id,{},n);render();openDetail(id);try{toast("Note saved")}catch(e){}};body.querySelector("#cc23AssignMe").onclick=()=>{body.querySelector("#cc23Owner").value=currentUser()};body.querySelector("#cc23SaveMeta").onclick=()=>{const owner=body.querySelector("#cc23Owner").value.trim(),priority=body.querySelector("#cc23Priority").value;patchReport(id,{owner,priority:priority||undefined,ownerAssignedAt:owner?new Date().toISOString():null,ownerAssignedBy:owner?currentUser():null},`Control Center metadata updated${owner?` · owner ${owner}`:""}${priority?` · priority ${priority}`:""}`);render();openDetail(id);try{toast("Report updated")}catch(e){}};body.querySelector("#cc23OpenProduct").onclick=()=>{close();window.YardProductUX?.open?.(r.sku)};body.querySelector("#cc23ShowMap").onclick=()=>{close();window.YardProductUX?.focusLocations?.(r.sku)};const pb=body.querySelector("#cc23OpenPhoto");if(pb)pb.onclick=()=>showPhoto(r.id);const eb=body.querySelector("#cc23EmailReport");if(eb)eb.onclick=()=>window.YardOpsV2?.openAlertEmailModal?.(r.id);}
-  async function showPhoto(id){try{const blob=await window.YardOpsV2?.PhotoStore?.get?.(id);if(!blob){toast?.("Photo is not available on this device.");return}const url=URL.createObjectURL(blob),viewer=document.getElementById("opsPhotoViewer"),img=document.getElementById("opsPhotoViewerImg");if(!viewer||!img)return;img.src=url;viewer.classList.add("show");const closeBtn=document.getElementById("opsPhotoViewerClose");const revoke=()=>{setTimeout(()=>URL.revokeObjectURL(url),500)};closeBtn?.addEventListener("click",revoke,{once:true})}catch(e){console.error(e)}}
+  function openDetail(id){const r=reports().find(x=>x.id===id);if(!r)return;state.selected=id;const d=document.getElementById("cc23Detail"),scr=document.getElementById("cc23DetailScrim"),m=META[r.type]||{label:r.type||"Report",cls:""},inv=window.YardInventory?.get?.(r.sku),timeline=(Array.isArray(r.timeline)?r.timeline:[]).slice().sort((a,b)=>dateMs(b.at)-dateMs(a.at));document.getElementById("cc23DetailTitle").textContent=`${r.sku||"?"} · ${m.label}`;document.getElementById("cc23DetailSub").textContent=`${STATUS[r.status]||r.status||"New"} · ${ageText(r)} old · ${fmtDT(r.createdAt)}`;const detailRows=[];if(r.type==="quality"){detailRows.push(["Quantity",r.quantity??"—"],["Reason",r.reason||"—"],["Disposition",r.disposition?String(r.disposition).replace(/_/g," "):"—"],["Destination",r.destination||"—"])}else if(r.type==="seconds"){detailRows.push(["Quantity",r.quantity??"—"],["Reason",r.reason||"—"],["Destination","Seconds"],["System On Hand",r.systemInventory??inv?.onHand??"—"])}else if(r.type==="inventory"){detailRows.push(["System",r.systemInventory??"—"],["Physical",r.physicalQuantity??"—"],["Variance",`${(num(r.variance)||0)>0?"+":""}${r.variance??"—"}`],["Result",r.inventoryResult?String(r.inventoryResult).replace(/_/g," "):"—"])}else if(r.type==="out_of_place"){detailRows.push(["Finding",r.locationFinding==="additional_stock"?"Additional stock":"Wrong location"],["Quantity",r.quantity??"—"],["Assigned group",r.homeGroup||"—"],["Found point",r.foundAt?`${r.foundAt.x}, ${r.foundAt.y}`:"—"])}const body=document.getElementById("cc23DetailBody");body.innerHTML=`<div class="cc23-detail-block"><h5>Report context</h5><div class="cc23-detail-grid">${detailRows.map(([k,v])=>`<div class="cc23-detail-kv"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join("")}<div class="cc23-detail-kv"><span>Reporter</span><b>${esc(r.by||"—")}</b></div><div class="cc23-detail-kv"><span>Created</span><b>${esc(fmtDT(r.createdAt))}</b></div></div>${r.note?`<div class="cc23-detail-copy"><b style="color:#dbe2e8">Note:</b> ${esc(r.note)}</div>`:""}</div><div class="cc23-detail-block"><h5>Product context</h5><div class="cc23-detail-grid"><div class="cc23-detail-kv"><span>System On Hand</span><b>${esc(inv?.onHand??r.systemInventory??"—")}</b></div><div class="cc23-detail-kv"><span>Product group</span><b>${esc(inv?.productGroup||r.homeGroup||"—")}</b></div></div><div class="cc23-inline-actions" style="padding:10px 11px"><button id="cc23OpenProduct">Open product</button><button id="cc23ShowMap">Show on map</button>${(r.hasPhoto||(r.photoUrls&&r.photoUrls.length))?`<button id="cc23OpenPhoto">View photos</button>`:""}${canEdit()?`<button id="cc23EmailReport">${r.emailedAt?"Email sent":"Send by email"}</button>`:""}</div></div><div class="cc23-detail-block"><h5>Owner & priority</h5><div style="padding:10px 11px"><div class="cc23-owner-row"><input id="cc23Owner" value="${esc(r.owner||"")}" placeholder="Owner / team"/><button id="cc23AssignMe">Assign to me</button></div><div class="cc23-field" style="margin-top:8px"><label>Priority</label><select id="cc23Priority"><option value="" ${!r.priority?"selected":""}>Auto (${autoPriority(r)})</option><option value="normal" ${r.priority==="normal"?"selected":""}>Normal</option><option value="high" ${r.priority==="high"?"selected":""}>High</option></select></div></div></div><div class="cc23-detail-block"><h5>Workflow</h5><div style="padding:10px 11px"><textarea class="cc23-detail-note" id="cc23Resolution" placeholder="Optional status / resolution note...">${esc(r.resolutionNote||"")}</textarea><div class="cc23-detail-actions" style="margin-top:7px"><button id="cc23Ack" ${r.status==="resolved"?"disabled":""}>Acknowledge</button><button id="cc23Start" ${r.status==="resolved"?"disabled":""}>Start work</button><button class="ok" id="cc23Resolve" ${r.status==="resolved"?"disabled":""}>Resolve</button><button id="cc23SaveNote">Save note</button><button class="primary" id="cc23SaveMeta">Save owner / priority</button></div></div></div><div class="cc23-detail-block"><h5>Activity</h5><div style="padding:10px 11px"><div class="cc23-activity">${timeline.length?timeline.map(e=>`<div class="cc23-event"><div class="time">${esc(fmtDT(e.at))}</div><div class="rail"><i></i></div><div class="text"><b>${esc(e.by||"—")}</b> · ${esc(STATUS[e.status]||e.status||"")}${e.comment?`<br><span class="comment">${esc(e.comment)}</span>`:""}</div></div>`).join(""):'<div class="cc23-empty">No workflow activity recorded yet.</div>'}</div></div></div>`;d.classList.add("show");scr.classList.add("show");const note=()=>body.querySelector("#cc23Resolution")?.value.trim()||"";body.querySelector("#cc23Ack").onclick=()=>setStatus(id,"acknowledged",note()||"Acknowledged in Control Center");body.querySelector("#cc23Start").onclick=()=>setStatus(id,"in_progress",note()||"Work started in Control Center");body.querySelector("#cc23Resolve").onclick=()=>setStatus(id,"resolved",note()||"Resolved in Control Center");body.querySelector("#cc23SaveNote").onclick=async()=>{const n=note();if(!n){toast("Write a note first.");return;}await patchReport(id,{},n);render();openDetail(id);try{toast("Note saved")}catch(e){}};body.querySelector("#cc23AssignMe").onclick=()=>{body.querySelector("#cc23Owner").value=currentUser()};body.querySelector("#cc23SaveMeta").onclick=()=>{const owner=body.querySelector("#cc23Owner").value.trim(),priority=body.querySelector("#cc23Priority").value;patchReport(id,{owner,priority:priority||undefined,ownerAssignedAt:owner?new Date().toISOString():null,ownerAssignedBy:owner?currentUser():null},`Control Center metadata updated${owner?` · owner ${owner}`:""}${priority?` · priority ${priority}`:""}`);render();openDetail(id);try{toast("Report updated")}catch(e){}};body.querySelector("#cc23OpenProduct").onclick=()=>{close();window.YardProductUX?.open?.(r.sku)};body.querySelector("#cc23ShowMap").onclick=()=>{close();window.YardProductUX?.focusLocations?.(r.sku)};const pb=body.querySelector("#cc23OpenPhoto");if(pb)pb.onclick=()=>showPhoto(r.id);const eb=body.querySelector("#cc23EmailReport");if(eb)eb.onclick=()=>window.YardOpsV2?.openAlertEmailModal?.(r.id);}
+  async function showPhoto(id){try{if(window.YardOpsV2?.showPhoto){await window.YardOpsV2.showPhoto(id);return}toast?.("Photo is not available on this device.")}catch(e){console.error(e)}}
   function exportWeekly(){if(!window.XLSX){try{toast("Excel export is unavailable in this build.")}catch(e){}return}const cut=now()-7*86400000,rr=reports().filter(r=>dateMs(r.createdAt)>=cut),open=reports().filter(openReport),repeat=repeatedSkus(7),summary=[{Metric:"Reports created",Value:rr.length},{Metric:"Quality reports",Value:rr.filter(r=>r.type==="quality").length},{Metric:"Seconds units",Value:rr.filter(r=>r.type==="seconds").reduce((a,r)=>a+(num(r.quantity)||0),0)},{Metric:"Inventory discrepancies",Value:rr.filter(r=>r.type==="inventory"&&r.inventoryResult!=="verified").length},{Metric:"Out-of-place findings",Value:rr.filter(r=>r.type==="out_of_place").length},{Metric:"Resolved / verified",Value:rr.filter(r=>r.status==="resolved"||r.inventoryResult==="verified").length},{Metric:"Current open backlog",Value:open.length}];const detail=rr.map(r=>({"Date / Time":fmtDT(r.createdAt),Type:META[r.type]?.label||r.type,SKU:r.sku,Status:STATUS[r.status]||r.status,Quantity:r.quantity??"",Reason:r.reason||"",Disposition:r.disposition||"","System On Hand":r.systemInventory??"","Physical Qty":r.physicalQuantity??"",Variance:r.variance??"",Owner:r.owner||"",Reporter:r.by||"",Notes:r.note||""})),pending=open.map(r=>({Type:META[r.type]?.label||r.type,SKU:r.sku,Status:STATUS[r.status]||r.status,Age:ageText(r),Priority:autoPriority(r),Owner:r.owner||"Unassigned",Summary:reportSummary(r)})),rep=repeat.map(([sku,count])=>({SKU:sku,"Reports (7d)":count}));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(summary),"Summary");XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(detail),"Week Detail");XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(pending),"Open Carryover");XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rep),"Repeat SKUs");const d=new Date(),name=`Tarter_Yard_Weekly_Brief_${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}.xlsx`;XLSX.writeFile(wb,name)}
 
   // ---- Report email builder (Tarter-brand layout, shared by the Weekly
@@ -8961,6 +9107,15 @@ body.fieldmode .audit-help{font-size:13px;color:var(--muted)}
   border:1px solid #3b4a58;background:rgba(16,23,31,.9);color:#e9eef3;font-size:19px;line-height:1}
 .ccm-box-hint{position:absolute;bottom:calc(16px + env(safe-area-inset-bottom));left:0;right:0;
   text-align:center;color:#7f8d9b;font-size:11px;pointer-events:none}
+.ccm-nav{position:absolute;top:50%;transform:translateY(-50%);width:46px;height:46px;border-radius:50%;
+  border:1px solid #3b4a58;background:rgba(16,23,31,.85);color:#e9eef3;font-size:24px;line-height:1;
+  display:grid;place-items:center;cursor:pointer;z-index:2}
+.ccm-nav[hidden]{display:none}
+.ccm-prev{left:12px}.ccm-next{right:12px}
+.ccm-media.many{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}
+.ccm-media.many .ccm-figure img{height:110px;max-height:none;object-fit:cover}
+.ccm-count{position:absolute;right:3px;bottom:3px;padding:0 5px;border-radius:6px;background:rgba(0,0,0,.7);
+  color:#fff;font-size:10px;font-weight:800}
 `;
   document.body.appendChild(style);
 
@@ -8969,6 +9124,8 @@ body.fieldmode .audit-help{font-size:13px;color:var(--muted)}
   box.className = "ccm-box";
   box.innerHTML = `<div class="ccm-box-bar"><span id="ccmBoxTitle"></span><button type="button" id="ccmBoxClose">×</button></div>
     <img id="ccmBoxImg" alt="" />
+    <button type="button" class="ccm-nav ccm-prev" id="ccmPrev" aria-label="Previous">‹</button>
+    <button type="button" class="ccm-nav ccm-next" id="ccmNext" aria-label="Next">›</button>
     <div class="ccm-box-hint" id="ccmBoxHint"></div>`;
   document.body.appendChild(box);
 
@@ -8981,20 +9138,46 @@ body.fieldmode .audit-help{font-size:13px;color:var(--muted)}
   }
   function resetZoom(){ zoom = 1; panX = 0; panY = 0; applyZoom(); }
 
-  function openLightbox(src, title){
-    if(!src) return;
-    boxImg.src = src;
-    box.querySelector("#ccmBoxTitle").textContent = title || tx("photo");
-    box.querySelector("#ccmBoxHint").textContent = tx("zoom");
+  /* A report can have up to five photos: the lightbox walks through them
+     with the arrows, the keyboard or a horizontal swipe. */
+  let gallery = [], galleryIdx = 0, galleryTitle = "";
+  function showGalleryItem(){
+    boxImg.src = gallery[galleryIdx];
+    const n = gallery.length;
+    box.querySelector("#ccmBoxTitle").textContent = (galleryTitle || tx("photo")) + (n > 1 ? ` · ${galleryIdx + 1}/${n}` : "");
+    box.querySelector("#ccmPrev").hidden = n < 2;
+    box.querySelector("#ccmNext").hidden = n < 2;
     resetZoom();
+  }
+  function openGallery(srcs, idx, title){
+    gallery = (srcs || []).filter(Boolean);
+    if(!gallery.length) return;
+    galleryIdx = Math.max(0, Math.min(gallery.length - 1, idx || 0));
+    galleryTitle = title || "";
+    box.querySelector("#ccmBoxHint").textContent = tx("zoom");
+    showGalleryItem();
     box.classList.add("show");
   }
+  function step(d){ if(gallery.length < 2) return; galleryIdx = (galleryIdx + d + gallery.length) % gallery.length; showGalleryItem(); }
+  function openLightbox(src, title){ openGallery([src], 0, title); }
   function closeLightbox(){ box.classList.remove("show"); boxImg.src = ""; }
 
   box.querySelector("#ccmBoxClose").onclick = closeLightbox;
+  box.querySelector("#ccmPrev").onclick = e => { e.stopPropagation(); step(-1); };
+  box.querySelector("#ccmNext").onclick = e => { e.stopPropagation(); step(1); };
+  let swipeX = null;
+  box.addEventListener("touchstart", e => { if(zoom <= 1 && e.touches.length === 1) swipeX = e.touches[0].clientX; }, {passive:true});
+  box.addEventListener("touchend", e => {
+    if(swipeX == null) return;
+    const dx = (e.changedTouches[0]?.clientX ?? swipeX) - swipeX; swipeX = null;
+    if(Math.abs(dx) > 50) step(dx < 0 ? 1 : -1);
+  });
   box.addEventListener("click", e => { if(e.target === box) closeLightbox(); });
   document.addEventListener("keydown", e => {
-    if(e.key === "Escape" && box.classList.contains("show")) closeLightbox();
+    if(!box.classList.contains("show")) return;
+    if(e.key === "Escape") closeLightbox();
+    if(e.key === "ArrowLeft") step(-1);
+    if(e.key === "ArrowRight") step(1);
   });
   // Double-tap / double-click toggles between fit and 2.5x, the gesture people
   // already expect from a photo viewer.
@@ -9025,20 +9208,21 @@ body.fieldmode .audit-help{font-size:13px;color:var(--muted)}
   boxImg.addEventListener("pointercancel", () => { dragging = null; });
 
   /* ------------------------------------------------------- photos ---- */
-  /** Resolves a report's evidence photo to an object URL, once. */
-  async function photoUrl(id){
-    if(!id || missing.has(id)) return null;
-    if(urls.has(id)) return urls.get(id);
-    const ps = store();
-    if(!ps || !ps.get){ missing.add(id); return null; }
-    try {
-      const blob = await ps.get(id);
-      if(!blob){ missing.add(id); return null; }
-      const url = URL.createObjectURL(blob);
-      urls.set(id, url);
-      return url;
-    } catch(e){ missing.add(id); return null; }
+  /** Every evidence photo of a report (cloud first, else this device's
+      copies), resolved once and cached per report. */
+  async function reportPhotoSrcs(r){
+    if(!r || missing.has(r.id)) return [];
+    const key = r.id + "|" + ((r.photoUrls || []).length);
+    if(urls.has(key)) return urls.get(key);
+    const fn = window.YardOpsV2 && window.YardOpsV2.reportPhotos;
+    let list = [];
+    try { list = fn ? (await fn(r)).map(p => p.src) : []; } catch(e){ list = []; }
+    if(!list.length){ missing.add(r.id); return []; }
+    urls.set(key, list);
+    return list;
   }
+  const hasPhoto = r => !!(r && (r.hasPhoto || (Array.isArray(r.photoUrls) && r.photoUrls.length) || r.photoUrl));
+  async function photoUrl(id){ const list = await reportPhotoSrcs(reportById(id)); return list[0] || null; }
 
   function reportById(id){
     try { return (Sync.state.alerts || []).find(r => r.id === id) || null; }
@@ -9053,7 +9237,7 @@ body.fieldmode .audit-help{font-size:13px;color:var(--muted)}
       const id = row.dataset.reportId;
       const r = reportById(id);
       const productImg = r ? (window.YardInventory?.photoFor?.(r.sku) || null) : null;
-      if(!r || (!r.hasPhoto && !productImg)) return;
+      if(!r || (!hasPhoto(r) && !productImg)) return;
 
       const thumb = document.createElement("div");
       thumb.className = "ccm-thumb";
@@ -9071,9 +9255,13 @@ body.fieldmode .audit-help{font-size:13px;color:var(--muted)}
         thumb.onclick = e => { e.stopPropagation(); openLightbox(src, title); };
       };
 
-      if(r.hasPhoto){
-        photoUrl(id).then(url => {
-          if(url) fill(url, `${r.sku || ""} · ${tx("evidence")}`);
+      if(hasPhoto(r)){
+        reportPhotoSrcs(r).then(list => {
+          if(list.length){
+            fill(list[0], `${r.sku || ""} · ${tx("evidence")}`);
+            thumb.onclick = e => { e.stopPropagation(); openGallery(list, 0, `${r.sku || ""} · ${tx("evidence")}`); };
+            if(list.length > 1){ const c = document.createElement("span"); c.className = "ccm-count"; c.textContent = `${list.length}`; thumb.appendChild(c); }
+          }
           else if(productImg) fill(productImg, `${r.sku || ""} · ${tx("product")}`);
         });
       } else if(productImg){
@@ -9089,21 +9277,22 @@ body.fieldmode .audit-help{font-size:13px;color:var(--muted)}
     const r = reportById(id);
     if(!r) return;
 
-    const evidence = r.hasPhoto ? await photoUrl(id) : null;
+    const evidence = hasPhoto(r) ? await reportPhotoSrcs(r) : [];
     const productImg = window.YardInventory?.photoFor?.(r.sku) || null;
-    if(!evidence && !productImg && !r.hasPhoto) return;
+    if(!evidence.length && !productImg && !hasPhoto(r)) return;
+    if(body.querySelector(".ccm-block")) return;
 
     const block = document.createElement("div");
     block.className = "cc23-detail-block ccm-block";
     const figures = [];
-    if(evidence) figures.push({src:evidence, cap:tx("evidence"), title:`${r.sku||""} · ${tx("evidence")}`});
+    evidence.forEach((src, i) => figures.push({src, cap: evidence.length > 1 ? `${tx("evidence")} ${i + 1}` : tx("evidence"), title:`${r.sku||""} · ${tx("evidence")}`, gallery: i}));
     if(productImg) figures.push({src:productImg, cap:tx("product"), title:`${r.sku||""} · ${tx("product")}`});
 
     // hasPhoto but no blob means the report came from another device.
-    const note = (r.hasPhoto && !evidence) ? `<div class="ccm-note">${escM(tx("noPhoto"))}</div>` : "";
+    const note = (hasPhoto(r) && !evidence.length) ? `<div class="ccm-note">${escM(tx("noPhoto"))}</div>` : "";
     block.innerHTML = `<h5>${escM(tx("photo"))}</h5>` +
       (figures.length
-        ? `<div class="ccm-media ${figures.length > 1 ? "two" : ""}">` + figures.map((f, i) =>
+        ? `<div class="ccm-media ${figures.length > 2 ? "many" : figures.length > 1 ? "two" : ""}">` + figures.map((f, i) =>
             `<figure class="ccm-figure"><img src="${escM(f.src)}" alt="" data-ccm="${i}" />` +
             `<figcaption>${escM(f.cap)}</figcaption></figure>`).join("") + `</div>${note}`
         : `<div class="ccm-media">${note}</div>`);
@@ -9111,7 +9300,7 @@ body.fieldmode .audit-help{font-size:13px;color:var(--muted)}
     body.insertBefore(block, body.firstChild);
     block.querySelectorAll("[data-ccm]").forEach(im => {
       const f = figures[+im.dataset.ccm];
-      im.onclick = () => openLightbox(f.src, f.title);
+      im.onclick = () => f.gallery != null ? openGallery(evidence, f.gallery, f.title) : openLightbox(f.src, f.title);
     });
   }
 
@@ -9168,7 +9357,7 @@ body.fieldmode .audit-help{font-size:13px;color:var(--muted)}
     }, 120);
   }
 
-  window.YardCCMedia = { openLightbox, photoUrl, decorateRows, decorateDetail };
+  window.YardCCMedia = { openLightbox, openGallery, photoUrl, decorateRows, decorateDetail };
 })();
 </script>
 
@@ -10841,6 +11030,12 @@ body.fieldmode .tnav-ico{width:27px;height:27px}
     // Report form (ops-v2-module)
     "Control Center":"Centro de Control","Submit Report":"Enviar reporte","Report type":"Tipo de reporte",
     "Report Issue":"Reportar problema","Evidence":"Evidencia","Take / Add Photo":"Tomar / Agregar foto",
+    "Take photo":"Tomar foto","From gallery":"Desde galería","View photos":"Ver fotos","📷 Photos":"📷 Fotos",
+    "Up to 5 photos. They upload with the report so every device can see them.":"Hasta 5 fotos. Se suben con el reporte para que se vean en todos los dispositivos.",
+    "Add up to 5 clear photos so Quality can review the condition.":"Agrega hasta 5 fotos claras para que Calidad revise la condición.",
+    "Add up to 5 photos of the defect or reason for downgrading.":"Agrega hasta 5 fotos del defecto o del motivo para mandarlo a Seconds.",
+    "Add up to 5 photos to support the discrepancy, if useful.":"Agrega hasta 5 fotos que respalden la diferencia, si ayuda.",
+    "Add up to 5 photos of where the product was found.":"Agrega hasta 5 fotos de dónde se encontró el producto.",
     "Notes (optional)":"Notas (opcional)","Scan":"Escanear","SKU or barcode":"SKU o código de barras",
     "Select or scan a product.":"Selecciona o escanea un producto.",
     "SKU/barcode not found in the current map list.":"SKU/código no encontrado en la lista actual del mapa.",

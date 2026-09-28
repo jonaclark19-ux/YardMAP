@@ -35,7 +35,7 @@ export function alertToClient(a, recurringCount = undefined) {
   if (!list.length && a.photo_url) list.push(a.photo_url);
   out.photoUrls = list;
   out.photoUrl = list[0] || a.photo_url || null;
-  if (list.length) out.hasCloudPhoto = true;
+  if (list.length) out.hasPhoto = true;
   if (recurringCount !== undefined) out.recurringCount = recurringCount;
   return out;
 }
@@ -51,7 +51,7 @@ function payloadFor(input) {
   // Photo URLs are never taken from the payload as-is: they are validated and
   // set explicitly by mapAlertInput / the PATCH handler.
   const { status, createdAt, acknowledgedAt, inProgressAt, resolvedAt, resolvedBy,
-          by, role, id, photoUrl, photoUrls, hasPhoto, hasCloudPhoto, ...rest } = input;
+          by, role, id, photoUrl, photoUrls, ...rest } = input;
   if (!Object.keys(rest).length) return null;
   try {
     const json = JSON.stringify(rest);
