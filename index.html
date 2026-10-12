@@ -7625,7 +7625,11 @@ boot();
      offline); every change is sent to the server, and the server's answer
      -- the whole list -- replaces the cache. */
   const LOC_MIGRATED_KEY="tarter_yard_secondary_locations_uploaded";
-  function refreshLocationViews(){if(activeProduct)renderProductSheet(activeProduct,activeTileIdx);try{renderSecondaryPins();}catch(e){}}
+  // Only repaint the sheet while it is on screen: renderProductSheet also
+  // shows it, and this runs on every location sync (each minute and on tab
+  // focus), which kept reopening a product the user had already closed.
+  function productSheetOpen(){return $p("productSheetModal").classList.contains("show");}
+  function refreshLocationViews(){if(activeProduct&&productSheetOpen())renderProductSheet(activeProduct,activeTileIdx,activeFlexZone);try{renderSecondaryPins();}catch(e){}}
   function isRemote(){try{return Sync.mode==="remote";}catch(e){return false;}}
   function acceptServerLocations(body){if(body&&Array.isArray(body.items)){saveLocStore({version:1,items:body.items});refreshLocationViews();}}
   async function pushLocationOp(op){
