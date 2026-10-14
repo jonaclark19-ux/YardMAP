@@ -5,6 +5,45 @@ Dónde quedó el trabajo y qué sigue. Las reglas del proyecto están en
 
 ---
 
+## 14 oct 2026 — Cada quien elige su propio código
+
+Antes de darle acceso al CEO se revisó el flujo de cuentas y había tres fallas:
+- Un editor que cambiaba **su propio** código en Centro de Control → Users se
+  quedaba sin sesión en ese mismo aparato (la cookie llevaba la huella del
+  código viejo y el PATCH no daba una nueva), y el aviso decía que solo se
+  cerraban "los otros dispositivos".
+- Un editor podía bajarse a sí mismo a viewer sin confirmación y perder el
+  Centro de Control.
+- Los viewers no tenían forma de cambiar su código.
+
+Ahora:
+- **Columna nueva `yard_users.must_change_code`** (en `schema.sql`). Queda en
+  `true` cuando un editor pone el código (Add person, o New code para otra
+  persona) y vuelve a `false` cuando la persona elige el suyo. Las cuentas que
+  ya existían quedan en `false`.
+- Al entrar con un código temporal aparece **"Choose your own access code"**
+  (se puede posponer con *Later*; se vuelve a pedir en la siguiente carga).
+- **More → My access code**, para viewers y editores: pide el código actual y el
+  nuevo dos veces. `PATCH /api/me` con `{currentCode, newCode}`; los intentos
+  fallidos cuentan en el mismo límite que el login.
+- Cambiar el código propio (por cualquiera de los dos caminos) **ya no cierra la
+  sesión** en ese aparato: el servidor devuelve una cookie nueva. Los demás
+  aparatos sí se cierran.
+- El rol propio no se puede cambiar (menú bloqueado y `cannot_demote_self` en el
+  servidor).
+- `requireUser` y `GET /api/users` leen `select=*`: si falta una columna en la
+  base, se lee como vacía en lugar de tumbar todas las sesiones.
+
+**Orden de publicación:** correr `supabase/schema.sql` (o solo el
+`alter table … add column if not exists must_change_code …`) en producción
+**antes** de que el código llegue a `main`; si no, *Add person*, *New code* y
+*My access code* fallan hasta que exista la columna (el login sigue funcionando).
+
+El deploy de producción de #59 falló en Vercel con `git_info_fail` (sin logs);
+producción sigue en #58. El siguiente push a `main` lo vuelve a intentar.
+
+---
+
 ## 28 sep 2026 — Se juntan las dos sesiones y se prepara el lanzamiento
 
 Otra vez hubo dos líneas de trabajo desde el mismo punto (PR #54): la sesión

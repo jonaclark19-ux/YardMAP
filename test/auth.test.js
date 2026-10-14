@@ -91,7 +91,8 @@ test("readSession rejects an expired token", () => {
   assert.equal(session, null);
 });
 
-import { inviteRole, signupPolicy } from "../api/auth.js";
+import { inviteRole, signupPolicy, codePatch, ownCodeProblem } from "../api/auth.js";
+import { codeVersion } from "../api/_lib/auth.js";
 
 test("inviteRole: the editor code signs up an editor, the viewer code a viewer", () => {
   const env = { SIGNUP_INVITE_CODE: "VIEW-1234", SIGNUP_EDITOR_INVITE_CODE: "EDIT-9876" };
@@ -113,4 +114,31 @@ test("signupPolicy reflects the environment", () => {
   assert.equal(signupPolicy({}), "open");
   assert.equal(signupPolicy({ SIGNUP_INVITE_CODE: "x" }), "invite");
   assert.equal(signupPolicy({ SIGNUP_DISABLED: "1", SIGNUP_INVITE_CODE: "x" }), "closed");
+});
+
+test("a code an editor sets for someone is temporary; one people set for themselves is not", () => {
+  const forOther = codePatch("TEMP-1234", { self: false });
+  assert.equal(forOther.must_change_code, true);
+  assert.equal(verifyAccessCode("TEMP-1234", forOther.access_code_hash), true);
+  const own = codePatch("MINE-5678", { self: true });
+  assert.equal(own.must_change_code, false);
+  assert.equal(verifyAccessCode("MINE-5678", own.access_code_hash), true);
+  assert.throws(() => codePatch("abc", { self: true }), /code_too_short/);
+});
+
+test("changing your own code needs the current one and a different new one", () => {
+  assert.equal(ownCodeProblem(false, "NEW-12345", "OLD-12345"), "wrong_current_code");
+  assert.equal(ownCodeProblem(true, "OLD-12345", "OLD-12345"), "same_code");
+  assert.equal(ownCodeProblem(true, "NEW-12345", "OLD-12345"), null);
+});
+
+test("the session issued after a code change survives the code-version check", () => {
+  // requireUser rejects a session whose cv is not the current hash's; the
+  // cookie handed back after a self change must carry the new one.
+  const oldHash = hashAccessCode("OLD-12345");
+  const newHash = hashAccessCode("NEW-12345");
+  const before = readSession(new Request("https://x.test/", { headers: { cookie: `${COOKIE_NAME}=${encodeURIComponent(createSession({ id: "u1", username: "ana", role: "editor", access_code_hash: oldHash }))}` } }));
+  const after = readSession(new Request("https://x.test/", { headers: { cookie: `${COOKIE_NAME}=${encodeURIComponent(createSession({ id: "u1", username: "ana", role: "editor", access_code_hash: newHash }))}` } }));
+  assert.notEqual(before.cv, codeVersion(newHash), "the old cookie is rejected once the code changes");
+  assert.equal(after.cv, codeVersion(newHash), "the new cookie matches the new code");
 });
