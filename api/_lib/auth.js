@@ -78,7 +78,10 @@ export function clearSessionCookie() {
 export async function requireUser(request) {
   const session = readSession(request);
   if (!session) throw Object.assign(new Error("unauthorized"), { status: 401 });
-  const { data } = await rest("yard_users", `id=eq.${encodeURIComponent(session.uid)}&active=eq.true&select=id,username,display_name,role,active,onboarded_at,access_code_hash`, {});
+  // select=* rather than a column list: a column the code reads but the
+  // database does not have yet (a migration not run) then reads as missing
+  // instead of failing every signed-in request.
+  const { data } = await rest("yard_users", `id=eq.${encodeURIComponent(session.uid)}&active=eq.true&select=*`, {});
   const user = Array.isArray(data) ? data[0] : null;
   if (!user) throw Object.assign(new Error("unauthorized"), { status: 401 });
   // Sessions minted before this check existed carry no cv; they age out on
@@ -86,7 +89,7 @@ export async function requireUser(request) {
   if (session.cv && session.cv !== codeVersion(user.access_code_hash)) {
     throw Object.assign(new Error("unauthorized"), { status: 401 });
   }
-  return { ...session, name: user.display_name || user.username, role: user.role, onboarded: !!user.onboarded_at };
+  return { ...session, name: user.display_name || user.username, role: user.role, onboarded: !!user.onboarded_at, mustChangeCode: !!user.must_change_code };
 }
 
 export async function requireEditor(request) {

@@ -60,7 +60,21 @@ async function handleLogin(request) {
   await rest("yard_users", `id=eq.${encodeURIComponent(user.id)}`, { method: "PATCH", body: { last_login_at: new Date().toISOString() }, headers: { prefer: "return=minimal" } });
   const token = createSession(user);
   await audit({ name: user.display_name || user.username, role: user.role }, "login", "session", user.id);
-  return json({ role: user.role, name: user.display_name || user.username, onboarded: !!user.onboarded_at }, 200, { "set-cookie": sessionCookie(token) });
+  return json({ role: user.role, name: user.display_name || user.username, onboarded: !!user.onboarded_at, mustChangeCode: !!user.must_change_code }, 200, { "set-cookie": sessionCookie(token) });
+}
+
+/* A code an editor typed in for someone (a new account, or a "New code" for
+   someone else) is temporary: the person is asked to pick their own when they
+   next sign in. A code people set for themselves is theirs, so the flag clears. */
+export function codePatch(code, { self }) {
+  return { access_code_hash: hashAccessCode(String(code || "")), must_change_code: !self };
+}
+
+/** Why a self-service code change is refused, or null when it can go ahead. */
+export function ownCodeProblem(currentOk, newCode, currentCode) {
+  if (!currentOk) return "wrong_current_code";
+  if (String(newCode || "") === String(currentCode || "")) return "same_code";
+  return null;
 }
 
 /* Invite codes decide who can sign up and as what:
@@ -161,11 +175,12 @@ async function handleMe(request) {
   if (!backendReady()) return json({ error: "backend_not_configured" }, 503);
   if (request.method === "GET") {
     const user = await requireUser(request);
-    return json({ role: user.role, name: user.name, onboarded: !!user.onboarded });
+    return json({ role: user.role, name: user.name, onboarded: !!user.onboarded, mustChangeCode: !!user.mustChangeCode });
   }
   if (request.method === "PATCH") {
     const user = await requireUser(request);
     const body = await readJson(request, 5_000);
+    if (body.newCode !== undefined) return await changeOwnCode(user, body);
     if (body.onboarded === true) {
       await rest("yard_users", `id=eq.${encodeURIComponent(user.uid)}`, { method: "PATCH", body: { onboarded_at: new Date().toISOString() }, headers: { prefer: "return=minimal" } });
     }
@@ -174,12 +189,42 @@ async function handleMe(request) {
   return methodNotAllowed(["GET", "PATCH"]);
 }
 
-const safeUser = (u) => ({ id: u.id, username: u.username, name: u.display_name || u.username, role: u.role, active: u.active, lastLoginAt: u.last_login_at, createdAt: u.created_at });
+/* Anyone signed in, viewer or editor, can replace their own code. The current
+   code is asked for again so an unlocked phone left on a table cannot be used
+   to lock its owner out, and wrong guesses count against the same per-name
+   budget as the login screen. The answer carries a fresh session cookie: the
+   old one names the old code and requireUser would reject it. */
+async function changeOwnCode(user, body) {
+  const limits = [{ key: `login:${user.username}`, limit: LIMITS.loginName }];
+  await assertNotLimited(limits);
+  const { data: rows } = await rest("yard_users", `id=eq.${encodeURIComponent(user.uid)}&select=access_code_hash`);
+  const stored = Array.isArray(rows) ? rows[0]?.access_code_hash : null;
+  const currentCode = String(body.currentCode || "");
+  const currentOk = verifyAccessCode(currentCode, stored);
+  const problem = ownCodeProblem(currentOk, body.newCode, currentCode);
+  if (problem) {
+    if (problem === "wrong_current_code") await recordHit(limits);
+    return json({ error: problem }, 400);
+  }
+  const { data } = await rest("yard_users", `id=eq.${encodeURIComponent(user.uid)}`, {
+    method: "PATCH",
+    body: codePatch(body.newCode, { self: true }),
+    headers: { prefer: "return=representation" },
+  });
+  const updated = data?.[0];
+  if (!updated) return json({ error: "unauthorized" }, 401);
+  await clearHits([limits[0].key]);
+  await audit(user, "own_code_changed", "user", user.uid);
+  return json({ ok: true, mustChangeCode: false }, 200, { "set-cookie": sessionCookie(createSession(updated)) });
+}
+
+const safeUser = (u) => ({ id: u.id, username: u.username, name: u.display_name || u.username, role: u.role, active: u.active, mustChangeCode: !!u.must_change_code, lastLoginAt: u.last_login_at, createdAt: u.created_at });
 
 async function handleUsers(request) {
   const editor = await requireEditor(request);
   if (request.method === "GET") {
-    const { data } = await rest("yard_users", "select=id,username,display_name,role,active,last_login_at,created_at&order=display_name.asc");
+    // select=* for the same reason as requireUser; safeUser picks what leaves.
+    const { data } = await rest("yard_users", "select=*&order=display_name.asc");
     return json({ items: (data || []).map((u) => ({ ...safeUser(u), self: u.id === editor.uid })) });
   }
   if (request.method === "POST") {
@@ -192,7 +237,7 @@ async function handleUsers(request) {
     try {
       ({ data } = await rest("yard_users", "", {
         method: "POST",
-        body: { username: normalizeUsername(name), display_name: name, access_code_hash: hashAccessCode(code), role, active: true },
+        body: { username: normalizeUsername(name), display_name: name, ...codePatch(code, { self: false }), role, active: true },
         headers: { prefer: "return=representation" },
       }));
     } catch (e) {
@@ -216,10 +261,13 @@ async function handleUsers(request) {
     }
     if (["editor", "viewer"].includes(body.role)) patch.role = body.role;
     if (typeof body.active === "boolean") patch.active = body.active;
-    if (body.code !== undefined) patch.access_code_hash = hashAccessCode(String(body.code || ""));
+    const self = id === editor.uid;
+    if (body.code !== undefined) Object.assign(patch, codePatch(body.code, { self }));
     // Nobody can take away the last editor's access -- not even that editor
-    // -- because there would be no one left to give it back.
-    if (patch.active === false && id === editor.uid) return json({ error: "cannot_deactivate_self" }, 400);
+    // -- because there would be no one left to give it back. Nor their own:
+    // one slip on the role menu would lock them out of this screen.
+    if (patch.active === false && self) return json({ error: "cannot_deactivate_self" }, 400);
+    if (patch.role === "viewer" && self) return json({ error: "cannot_demote_self" }, 400);
     if (patch.role === "viewer" || patch.active === false) {
       const { data: editors } = await rest("yard_users", "role=eq.editor&active=eq.true&select=id");
       const others = (editors || []).filter((u) => u.id !== id);
@@ -238,7 +286,10 @@ async function handleUsers(request) {
     }
     const user = data?.[0];
     await audit(editor, "user_updated", "user", id, { fields: Object.keys(patch) });
-    return json({ user: user ? safeUser(user) : null });
+    // A new code of one's own would otherwise end this very session: the
+    // cookie names the old code. Hand back one that names the new code.
+    const headers = self && user && patch.access_code_hash ? { "set-cookie": sessionCookie(createSession(user)) } : {};
+    return json({ user: user ? safeUser(user) : null }, 200, headers);
   }
   return methodNotAllowed(["GET", "POST", "PATCH"]);
 }

@@ -20,10 +20,15 @@ create table if not exists public.yard_users (
   active boolean not null default true,
   created_at timestamptz not null default now(),
   last_login_at timestamptz,
-  onboarded_at timestamptz
+  onboarded_at timestamptz,
+  must_change_code boolean not null default false
 );
 -- Read by requireUser() on every signed-in request: without it, no one can log in.
 alter table public.yard_users add column if not exists onboarded_at timestamptz;
+-- True while the person is still on a code an editor gave them (added in the
+-- Control Center, or a "New code" for someone else). The app asks them to
+-- choose their own on the next sign-in; it clears when they do.
+alter table public.yard_users add column if not exists must_change_code boolean not null default false;
 
 create table if not exists public.map_state (
   id text primary key default 'yard',

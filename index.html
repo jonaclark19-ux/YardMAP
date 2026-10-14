@@ -1113,6 +1113,7 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
   </div>
 
   <div class="dr-sec">
+    <button class="dr-item" id="drMyCode" hidden><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4.2"/><path d="m11 12 8.6-8.6M16.4 6.6l2.4 2.4M14.2 8.8l2 2"/></svg></span><span data-i18n="mycode.menu">My access code</span></button>
     <button class="dr-item danger" id="signOutBtn"><span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.4v8.8"/><path d="M6.9 6.4a8 8 0 1 0 10.2 0"/></svg></span><span data-i18n="session.signOut">Sign out</span></button>
   </div>
 
@@ -1143,6 +1144,37 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       </div>
     </div>
   </div>
+</div>
+
+<!-- ======================================================= MY ACCESS CODE -->
+<div class="ops-v2-modal" id="myCodeModal">
+  <form class="ops-v2-box" id="myCodeForm" style="max-width:420px" autocomplete="off">
+    <div class="ops-v2-head">
+      <h2 id="myCodeTitle" data-i18n="mycode.title">Change my access code</h2>
+    </div>
+    <div class="ops-v2-body">
+      <!-- In the body, not as a header .sub: phones hide those under 390px. -->
+      <p id="myCodeIntro" style="margin:0;color:var(--muted);font-size:14.5px;line-height:1.5"></p>
+      <input type="text" id="myCodeUser" name="username" autocomplete="username" hidden />
+      <label class="fld" id="myCodeCurrentFld">
+        <span data-i18n="mycode.current">Current code</span>
+        <input type="password" id="myCodeCurrent" autocomplete="current-password" />
+      </label>
+      <label class="fld">
+        <span data-i18n="mycode.new">New code (6+ characters)</span>
+        <input type="password" id="myCodeNew" autocomplete="new-password" />
+      </label>
+      <label class="fld">
+        <span data-i18n="mycode.confirm">New code again</span>
+        <input type="password" id="myCodeAgain" autocomplete="new-password" />
+      </label>
+      <div class="login-err" id="myCodeErr" hidden></div>
+    </div>
+    <div class="ops-v2-foot">
+      <button type="button" id="myCodeLater" data-i18n="mycode.later">Later</button>
+      <button type="submit" class="primary" id="myCodeSave" data-i18n="mycode.save">Save code</button>
+    </div>
+  </form>
 </div>
 
 <div class="ghostwrap" id="ghostwrap"></div>
@@ -1385,6 +1417,26 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "session.signedOut": "Signed out.",
       "session.expired": "Your session expired. Please sign in again.",
       "session.noPermission": "Your account cannot do that. Ask an editor.",
+
+      /* ---- my access code ---- */
+      "mycode.menu": "My access code",
+      "mycode.titleFirst": "Choose your own access code",
+      "mycode.title": "Change my access code",
+      "mycode.introFirst": "You signed in with a code someone gave you. Pick one that only you know and use it from now on.",
+      "mycode.intro": "Pick a new code that only you know. Any other device still signed in to your account will be signed out.",
+      "mycode.current": "Current code",
+      "mycode.new": "New code (6+ characters)",
+      "mycode.confirm": "New code again",
+      "mycode.save": "Save code",
+      "mycode.later": "Later",
+      "mycode.cancel": "Cancel",
+      "mycode.saved": "Your new code is saved. Use it the next time you sign in.",
+      "mycode.errShort": "The new code needs at least 6 characters.",
+      "mycode.errMismatch": "The two new codes don't match.",
+      "mycode.errWrong": "The current code is not right.",
+      "mycode.errSame": "Pick a code different from the one you have now.",
+      "mycode.errTooMany": "Too many tries. Wait 15 minutes and try again.",
+      "mycode.errOffline": "Could not save right now. Check the connection and try again.",
 
       /* ---- search ---- */
       "search.placeholder": "Search a product… (WT214, 6EBR12, RC205BL)",
@@ -1797,6 +1849,26 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       "session.signedOut": "Sesión cerrada.",
       "session.expired": "Tu sesión expiró. Inicia sesión de nuevo.",
       "session.noPermission": "Tu cuenta no puede hacer eso. Pídeselo a un editor.",
+
+      /* ---- my access code ---- */
+      "mycode.menu": "Mi código de acceso",
+      "mycode.titleFirst": "Elige tu propio código de acceso",
+      "mycode.title": "Cambiar mi código de acceso",
+      "mycode.introFirst": "Entraste con un código que te dieron. Elige uno que solo tú conozcas y úsalo desde ahora.",
+      "mycode.intro": "Elige un código nuevo que solo tú conozcas. Cualquier otro dispositivo con tu cuenta abierta cerrará sesión.",
+      "mycode.current": "Código actual",
+      "mycode.new": "Código nuevo (6+ caracteres)",
+      "mycode.confirm": "Código nuevo otra vez",
+      "mycode.save": "Guardar código",
+      "mycode.later": "Después",
+      "mycode.cancel": "Cancelar",
+      "mycode.saved": "Tu código nuevo quedó guardado. Úsalo la próxima vez que entres.",
+      "mycode.errShort": "El código nuevo necesita al menos 6 caracteres.",
+      "mycode.errMismatch": "Los dos códigos nuevos no coinciden.",
+      "mycode.errWrong": "El código actual no es correcto.",
+      "mycode.errSame": "Elige un código distinto al que tienes ahora.",
+      "mycode.errTooMany": "Demasiados intentos. Espera 15 minutos e inténtalo otra vez.",
+      "mycode.errOffline": "No se pudo guardar ahora. Revisa la conexión e inténtalo otra vez.",
 
       /* ---- search ---- */
       "search.placeholder": "Busca un producto… (WT214, 6EBR12, RC205BL)",
@@ -2298,6 +2370,7 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
     role: "local",       // "editor" | "viewer" | "local"
     name: "",
     onboarded: false,    // account-level, synced from the server for remote accounts
+    mustChangeCode: false, // still on a code an editor gave them
     stateRev: 0,
     alertsRev: 0,
     alerts: [],
@@ -2344,6 +2417,7 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       const r = await api("me");
       if (r.ok && r.body.role) {
         S.mode = "remote"; S.role = r.body.role; S.name = r.body.name || ""; S.onboarded = !!r.body.onboarded;
+        S.mustChangeCode = !!r.body.mustChangeCode;
         rememberSession();
         return { mode: "remote", authed: true, role: S.role, name: S.name };
       }
@@ -2393,6 +2467,7 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
     const r = await api("login", { method: "POST", body: JSON.stringify({ name, code }) });
     if (r.ok) {
       S.mode = "remote"; S.role = r.body.role; S.name = r.body.name || name; S.onboarded = !!r.body.onboarded;
+      S.mustChangeCode = !!r.body.mustChangeCode;
       try { localStorage.setItem(LS_NAME, S.name); } catch (e) {}
       rememberSession();
       return { ok: true, role: S.role, name: S.name };
@@ -2414,6 +2489,18 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
       return { ok: true, role: S.role, name: S.name };
     }
     return { ok: false, status: r.status, error: r.body.error || "unknown" };
+  }
+
+  /* Replaces the signed-in person's own code. The server answers with a new
+     session cookie, so this device stays signed in. */
+  async function changeMyCode(currentCode, newCode) {
+    try {
+      const r = await api("me", { method: "PATCH", body: JSON.stringify({ currentCode, newCode }) });
+      if (r.ok) { S.mustChangeCode = false; return { ok: true }; }
+      return { ok: false, status: r.status, error: r.body.error || "unknown" };
+    } catch (e) {
+      return { ok: false, offline: true };
+    }
   }
 
   async function markOnboarded() {
@@ -2788,7 +2875,7 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
   global.Sync = {
     state: S,
     api,
-    probe, login, signup, signupPolicy, logout, useLocalMode, markOnboarded,
+    probe, login, signup, signupPolicy, logout, useLocalMode, markOnboarded, changeMyCode,
     loadState, pushState, pushStateNow, flush,
     loadAlerts, addAlert, setAlertStatus, patchAlert, pollOnce, startPolling, stopPolling,
     onState: (fn) => listeners.state.push(fn),
@@ -2799,6 +2886,7 @@ header.topbar{min-height:64px;padding:10px 14px;gap:12px;flex-wrap:nowrap;backgr
     get name() { return S.name; },
     get mode() { return S.mode; },
     get onboarded() { return S.onboarded; },
+    get mustChangeCode() { return S.mustChangeCode; },
     canEdit: () => S.role === "editor" || S.role === "local",
     rememberedName: () => lsGet(LS_NAME, ""),
     clearLocalState: () => { try { localStorage.removeItem(LS_STATE); } catch (e) {} },
@@ -5424,6 +5512,7 @@ function updateDrawerInfo(){
   const role = Sync.role === "editor" ? t("role.editor") : Sync.role === "viewer" ? t("role.viewer") : t("role.local");
   $("#drName").textContent = Sync.name || "—";
   $("#drRole").textContent = role;
+  $("#drMyCode").hidden = Sync.mode !== "remote";
   const s = $("#drSync");
   if(Sync.mode === "remote"){
     s.classList.remove("warn");
@@ -5537,7 +5626,7 @@ $("#loginForm").addEventListener("submit", async e => {
   btn.textContent = t("login.working");
   try {
     const r = loginSignupMode ? await Sync.signup(name, code, $("#loginInvite").value.trim()) : await Sync.login(name, code);
-    if(r.ok){ await startApp(); return; }
+    if(r.ok){ if(!loginSignupMode) codeJustTyped = code; await startApp(); return; }
     showLoginError(loginErrorText(r));
   } catch(err){
     showLoginError(t("login.unavailable"));
@@ -5551,6 +5640,63 @@ $("#loginLocalBtn").onclick = async () => {
   Sync.useLocalMode(name);
   await startApp();
 };
+
+/* ---------------------------------------------------- my access code ---- */
+
+/* Anyone with an account can replace their own code (More > My access code).
+   Someone still on a code an editor gave them is asked right after signing
+   in. The code just typed on the login screen is kept in memory only until
+   that prompt uses it, so they are not asked for it twice in a row. */
+let codeJustTyped = null;
+let myCodeAfter = null;
+const MY_CODE_ERR = { wrong_current_code: "mycode.errWrong", same_code: "mycode.errSame", code_too_short: "mycode.errShort", too_many_attempts: "mycode.errTooMany", unauthorized: "session.expired" };
+
+function showMyCodeError(msg){
+  const el = $("#myCodeErr");
+  el.textContent = msg;
+  el.hidden = !msg;
+}
+function openMyCode(opts = {}){
+  const first = !!opts.first;
+  const known = first && !!codeJustTyped;
+  myCodeAfter = opts.after || null;
+  $("#myCodeTitle").textContent = t(first ? "mycode.titleFirst" : "mycode.title");
+  $("#myCodeIntro").textContent = t(first ? "mycode.introFirst" : "mycode.intro");
+  $("#myCodeLater").textContent = t(first ? "mycode.later" : "mycode.cancel");
+  $("#myCodeCurrentFld").hidden = known;
+  ["#myCodeCurrent", "#myCodeNew", "#myCodeAgain"].forEach(id => { $(id).value = ""; });
+  $("#myCodeUser").value = Sync.name || "";
+  showMyCodeError("");
+  $("#myCodeModal").classList.add("show");
+  setTimeout(() => (known ? $("#myCodeNew") : $("#myCodeCurrent")).focus(), 0);
+}
+function closeMyCode(){
+  $("#myCodeModal").classList.remove("show");
+  codeJustTyped = null;
+  const after = myCodeAfter;
+  myCodeAfter = null;
+  if(after) after();
+}
+$("#myCodeLater").onclick = closeMyCode;
+$("#drMyCode").onclick = () => { closeDrawer(); openMyCode(); };
+$("#myCodeForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const currentHidden = $("#myCodeCurrentFld").hidden;
+  const current = currentHidden ? codeJustTyped : $("#myCodeCurrent").value;
+  const next = $("#myCodeNew").value;
+  if(next.length < MIN_CODE){ showMyCodeError(t("mycode.errShort")); return; }
+  if(next !== $("#myCodeAgain").value){ showMyCodeError(t("mycode.errMismatch")); return; }
+  showMyCodeError("");
+  const btn = $("#myCodeSave");
+  btn.disabled = true;
+  const r = await Sync.changeMyCode(current || "", next);
+  btn.disabled = false;
+  if(r.ok){ toast(t("mycode.saved")); closeMyCode(); return; }
+  // The remembered code no longer matches (changed elsewhere meanwhile): ask for it.
+  if(r.error === "wrong_current_code" && currentHidden){ $("#myCodeCurrentFld").hidden = false; codeJustTyped = null; }
+  const key = r.status === 429 ? "mycode.errTooMany" : (r.status === 401 ? "session.expired" : MY_CODE_ERR[r.error]);
+  showMyCodeError(t(key || "mycode.errOffline"));
+});
 
 /* ---------------------------------------------------- boot ---- */
 
@@ -5670,7 +5816,13 @@ async function startApp(){
   });
 
   window.addEventListener("resize", applyView);
-  try{ maybeShowOnboarding(); }catch(e){}
+  // Still on a code an editor gave them: choose their own first; the welcome
+  // guide (for a new account) follows once that is closed.
+  if(Sync.mode === "remote" && Sync.mustChangeCode){
+    openMyCode({ first: true, after: () => { try{ maybeShowOnboarding(); }catch(e){} } });
+  } else {
+    try{ maybeShowOnboarding(); }catch(e){}
+  }
 }
 
 async function boot(){
@@ -7942,6 +8094,7 @@ boot();
 .cc23-role.editor{background:rgba(227,58,50,.16);color:#ff8a83}
 .cc23-invite-info{display:grid;gap:8px;font-size:12px;color:#aebbc6;line-height:1.45}
 .cc23-invite-info b{color:#e9eef3}
+.cc23-user-name small.cc23-temp-code{color:#ffbf27}
 .cc23-invite-info .ok{color:#5fd39b;font-weight:800}.cc23-invite-info .no{color:#ffbf27;font-weight:800}
 @media(max-width:560px){.cc23-user-row{grid-template-columns:1fr}.cc23-user-acts{justify-content:flex-start}}
 </style>
@@ -7964,7 +8117,7 @@ boot();
     }catch(e){users=users||[];}
     finally{usersBusy=false;if(state.tab==="users")render();}
   }
-  const USER_ERR={last_editor:"There has to be at least one active editor.",cannot_deactivate_self:"You can't deactivate your own account.",name_taken:"Someone already uses that name.",code_too_short:"Access codes need at least 6 characters.",missing_name:"Enter a name.",forbidden:"Only editors can manage users."};
+  const USER_ERR={last_editor:"There has to be at least one active editor.",cannot_deactivate_self:"You can't deactivate your own account.",cannot_demote_self:"You can't change your own role. Ask another editor.",name_taken:"Someone already uses that name.",code_too_short:"Access codes need at least 6 characters.",missing_name:"Enter a name.",forbidden:"Only editors can manage users."};
   async function userCall(method,body){
     const r=await Sync.api("users",{method,body:JSON.stringify(body)});
     if(!r.ok){toast(USER_ERR[r.body.error]||"Could not save the change.");return false;}
@@ -8182,10 +8335,10 @@ boot();
     const active=users.filter(u=>u.active), editors=active.filter(u=>u.role==="editor").length;
     const sorted=users.slice().sort((a,b)=>(b.active-a.active)||(a.role===b.role?0:a.role==="editor"?-1:1)||String(a.name).localeCompare(String(b.name)));
     const row=u=>`<div class="cc23-user-row ${u.active?"":"off"}">
-      <div><div class="cc23-user-name">${esc(u.name)}<span class="cc23-role ${u.role==="editor"?"editor":""}">${u.role==="editor"?"Editor":"Viewer"}</span>${u.self?"<small>you</small>":""}</div>
+      <div><div class="cc23-user-name">${esc(u.name)}<span class="cc23-role ${u.role==="editor"?"editor":""}">${u.role==="editor"?"Editor":"Viewer"}</span>${u.self?"<small>you</small>":""}${u.mustChangeCode&&u.active?'<small class="cc23-temp-code" title="Will be asked to choose their own code at the next sign-in">temporary code</small>':""}</div>
       <div class="cc23-user-meta">${u.active?"Active":"Deactivated"} · Last sign-in ${u.lastLoginAt?esc(fmtDT(u.lastLoginAt)):"never"} · Joined ${esc(fmtDT(u.createdAt))}</div></div>
       <div class="cc23-user-acts">
-        <select data-user-role="${esc(u.id)}" aria-label="Role for ${esc(u.name)}"><option value="viewer" ${u.role==="viewer"?"selected":""}>Viewer</option><option value="editor" ${u.role==="editor"?"selected":""}>Editor</option></select>
+        <select data-user-role="${esc(u.id)}" aria-label="Role for ${esc(u.name)}" ${u.self?'disabled title="Another editor has to change your role"':""}><option value="viewer" ${u.role==="viewer"?"selected":""}>Viewer</option><option value="editor" ${u.role==="editor"?"selected":""}>Editor</option></select>
         <button data-user-code="${esc(u.id)}">New code</button>
         ${u.self?"":`<button data-user-active="${esc(u.id)}" data-on="${u.active?"1":"0"}" class="${u.active?"danger":""}">${u.active?"Deactivate":"Activate"}</button>`}
       </div>
@@ -8215,7 +8368,7 @@ boot();
       if(!name){toast(USER_ERR.missing_name);return;}
       if(code.length<6){toast(USER_ERR.code_too_short);return;}
       add.disabled=true;
-      if(await userCall("POST",{name,code,role})){toast(`${name} added as ${role}.`);await loadUsers(true);}
+      if(await userCall("POST",{name,code,role})){toast(`${name} added as ${role}. Give them the code; they will choose their own when they first sign in.`);await loadUsers(true);}
       add.disabled=false;
     };
     page.querySelectorAll("[data-user-role]").forEach(sel=>sel.onchange=async()=>{
@@ -8237,7 +8390,9 @@ boot();
     if(save)save.onclick=async()=>{
       const u=users.find(x=>x.id===save.dataset.userCodeSave),code=page.querySelector("#cc23UserCode").value;
       if(code.length<6){toast(USER_ERR.code_too_short);return;}
-      if(await userCall("PATCH",{id:u.id,code})){toast(`New code saved for ${u.name}. Their other devices are signed out.`);codeFor=null;await loadUsers(true);}
+      // Your own code: this device stays signed in (the server sends a new
+      // session). Someone else's: it is temporary, they pick their own next time.
+      if(await userCall("PATCH",{id:u.id,code})){toast(u.self?"Your new code is saved. Your other devices are signed out.":`New code saved for ${u.name}. They are signed out everywhere and will choose their own code when they sign in with it.`);codeFor=null;await loadUsers(true);}
     };
   }
   function announcementsPage(){
@@ -11468,7 +11623,7 @@ body.fieldmode .tnav-ico{width:27px;height:27px}
     "Users":"Usuarios","Who can use the app, and what they can do.":"Quién puede usar la app y qué puede hacer.",
     "People":"Personas","How people join":"Cómo entran las personas","Add a person":"Agregar una persona",
     "Full name":"Nombre completo","Role":"Rol","Access code (6+ characters, give it to them)":"Código de acceso (6+ caracteres, dáselo a la persona)",
-    "Add person":"Agregar persona","New code":"Nuevo código","Deactivate":"Desactivar","Activate":"Activar","Save":"Guardar","Cancel":"Cancelar",
+    "Add person":"Agregar persona","New code":"Nuevo código","temporary code":"código temporal","Deactivate":"Desactivar","Activate":"Activar","Save":"Guardar","Cancel":"Cancelar",
     "Viewer":"Viewer","Editor":"Editor","you":"tú","Operators (viewers)":"Operadores (viewers)","Editors":"Editores",
     "Invite code required.":"Requiere código de invitación.","They sign up with the viewer invite code.":"Se registran con el código de invitación de viewer.",
     "Editor invite code set.":"Código de editor configurado.","Signing up with it makes an editor right away.":"Quien se registre con él queda como editor de inmediato.",
